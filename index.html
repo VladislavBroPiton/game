@@ -1,0 +1,1604 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0B0C10">
+<title>Кузница — план развития</title>
+<style>
+  :root {
+    --fire:      #FF8A3D;
+    --fire-dim:  #3A1D0B;
+    --fire-soft: #FFB07A;
+    --gold:      #F0B429;
+    --gold-dim:  #2E2100;
+    --black:     #0B0C10;
+    --dark:      #101218;
+    --card:      #171A22;
+    --card2:     #1E222D;
+    --border:    #262B38;
+    --border2:   #333A4B;
+    --white:     #EEF1F8;
+    --gray:      #7C879E;
+    --gray2:     #A9B4C8;
+    --green:     #3DD68C;
+    --green-dim: #08281A;
+    --blue:      #5AA0F0;
+    --blue-dim:  #0C1A2E;
+    --purple:    #A98BF0;
+    --purple-dim:#1C1430;
+    --red:       #E8615A;
+    --nav-h:     58px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--black);
+    color: var(--white);
+    line-height: 1.55;
+    font-size: 15px;
+    overflow-x: hidden;
+  }
+
+  button, input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+  button { cursor: pointer; border: none; background: none; }
+  a { color: var(--fire); }
+
+  /* ─────────── NAV ─────────── */
+  nav {
+    position: sticky; top: 0; z-index: 200;
+    height: var(--nav-h);
+    background: rgba(11,12,16,0.94);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 4px;
+    padding: 0 16px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 9px; margin-right: 18px; flex-shrink: 0; }
+  .nav-logo-icon {
+    width: 32px; height: 32px; border-radius: 9px;
+    background: linear-gradient(140deg, var(--fire), #E2571F);
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+  }
+  .nav-logo-text { font-weight: 700; font-size: 15px; letter-spacing: .2px; }
+  .nav-tab {
+    padding: 8px 13px; border-radius: 9px;
+    color: var(--gray); font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 7px; transition: .15s;
+  }
+  .nav-tab:hover { color: var(--white); background: var(--card); }
+  .nav-tab.active { color: var(--fire); background: var(--fire-dim); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .nav-xp {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--border);
+    padding: 5px 12px; border-radius: 100px; font-size: 13px;
+  }
+  .nav-xp b { color: var(--gold); }
+  .nav-streak { color: var(--fire); font-size: 13px; font-weight: 600; }
+
+  /* ─────────── LAYOUT ─────────── */
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 26px 16px 60px; }
+  .section { display: none; }
+  .section.active { display: block; animation: fade .22s ease; }
+  @keyframes fade { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+
+  h2.page-title { font-size: 24px; font-weight: 700; margin-bottom: 5px; letter-spacing: -.3px; }
+  p.page-sub { color: var(--gray); font-size: 14px; margin-bottom: 22px; }
+
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 18px; }
+  .card h3 { font-size: 16px; margin-bottom: 12px; }
+
+  /* ─────────── HERO ─────────── */
+  .hero {
+    background: linear-gradient(150deg, #1C1410 0%, var(--card) 55%);
+    border: 1px solid var(--border2);
+    border-radius: 18px; padding: 22px; margin-bottom: 16px;
+    position: relative; overflow: hidden;
+  }
+  .hero::after {
+    content: ""; position: absolute; right: -70px; top: -70px;
+    width: 220px; height: 220px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,138,61,.16), transparent 70%);
+  }
+  .hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; position: relative; }
+  .hero-av {
+    width: 54px; height: 54px; border-radius: 15px;
+    background: linear-gradient(140deg, var(--fire), #C7451A);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 25px; flex-shrink: 0;
+    box-shadow: 0 4px 18px rgba(255,138,61,.25);
+  }
+  .hero-name { font-size: 19px; font-weight: 700; }
+  .hero-rank { color: var(--gold); font-size: 13px; font-weight: 600; }
+  .hero-lvl { margin-left: auto; text-align: right; flex-shrink: 0; }
+  .hero-lvl .n { font-size: 30px; font-weight: 800; line-height: 1; color: var(--fire); }
+  .hero-lvl .l { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: .6px; }
+
+  .xpbar { height: 9px; background: var(--dark); border-radius: 6px; overflow: hidden; position: relative; }
+  .xpbar-fill {
+    height: 100%; border-radius: 6px;
+    background: linear-gradient(90deg, #E2571F, var(--fire), var(--gold));
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .xpbar-labels { display: flex; justify-content: space-between; margin-top: 7px; font-size: 12px; color: var(--gray); }
+
+  .hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 18px; position: relative; }
+  .hstat { background: rgba(0,0,0,.28); border: 1px solid var(--border); border-radius: 11px; padding: 11px 12px; }
+  .hstat .n { font-size: 19px; font-weight: 700; line-height: 1.2; }
+  .hstat .l { font-size: 11px; color: var(--gray); margin-top: 1px; }
+
+  /* ─────────── QUEST OF THE DAY ─────────── */
+  .today {
+    background: linear-gradient(140deg, var(--fire-dim), var(--card));
+    border: 1px solid #4A2A12; border-radius: 16px; padding: 18px; margin-bottom: 16px;
+  }
+  .today-label {
+    font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--fire); font-weight: 700; margin-bottom: 9px;
+  }
+  .today-title { font-size: 17px; font-weight: 700; margin-bottom: 5px; }
+  .today-desc { color: var(--gray2); font-size: 14px; margin-bottom: 14px; }
+  .today-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ─────────── CHIPS ─────────── */
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 7px; font-size: 12px; font-weight: 600;
+    background: var(--card2); color: var(--gray2); border: 1px solid var(--border);
+  }
+  .chip.xp    { background: var(--gold-dim);   color: var(--gold);   border-color: #4A3800; }
+  .chip.read  { background: var(--blue-dim);   color: var(--blue);   border-color: #17304F; }
+  .chip.do    { background: var(--green-dim);  color: var(--green);  border-color: #0F4429; }
+  .chip.boss  { background: var(--purple-dim); color: var(--purple); border-color: #33255C; }
+  .chip.lock  { background: var(--card2);      color: var(--gray); }
+
+  /* ─────────── BUTTONS ─────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    background: var(--card2); border: 1px solid var(--border2); color: var(--white);
+    transition: .15s;
+  }
+  .btn:hover { background: var(--border); }
+  .btn.primary { background: linear-gradient(135deg, var(--fire), #E2571F); border-color: transparent; color: #180C04; }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; }
+  .btn.sm { padding: 7px 13px; font-size: 13px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.danger { color: var(--red); border-color: #4A2320; }
+
+  /* ─────────── TREE ─────────── */
+  .branch-card { border: 1px solid var(--border); border-radius: 15px; padding: 16px; background: var(--card); margin-bottom: 12px; }
+  .branch-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .branch-ic { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .branch-name { font-weight: 700; font-size: 16px; }
+  .branch-why { color: var(--gray); font-size: 12.5px; line-height: 1.4; }
+  .branch-pct { margin-left: auto; text-align: right; flex-shrink: 0; }
+  .branch-pct .n { font-size: 18px; font-weight: 700; }
+  .branch-pct .l { font-size: 11px; color: var(--gray); }
+  .branch-bar { height: 6px; background: var(--dark); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+  .branch-bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+  .nodes { display: flex; flex-wrap: wrap; gap: 7px; }
+  .node {
+    width: 34px; height: 34px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    background: var(--dark); border: 1px solid var(--border); color: var(--gray);
+    transition: .15s;
+  }
+  .node:hover { transform: translateY(-2px); border-color: var(--border2); }
+  .node.done { background: var(--green-dim); border-color: #17663F; color: var(--green); }
+  .node.open { border-color: var(--fire); color: var(--fire-soft); background: var(--fire-dim); }
+  .node.boss { border-radius: 50%; }
+
+  /* ─────────── QUEST LIST ─────────── */
+  .week-head {
+    display: flex; align-items: center; gap: 10px;
+    margin: 22px 0 11px; font-size: 13px; font-weight: 700;
+    color: var(--gray2); text-transform: uppercase; letter-spacing: .8px;
+  }
+  .week-head::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  .quest { border: 1px solid var(--border); border-radius: 13px; background: var(--card); margin-bottom: 9px; overflow: hidden; transition: border-color .15s; }
+  .quest:hover { border-color: var(--border2); }
+  .quest.is-done { border-color: rgba(23,102,63,.35); background: #0F1A15; }
+  .quest.is-lock { opacity: .5; }
+  .quest.is-boss { border-color: #33255C; background: linear-gradient(140deg, #16112A, var(--card)); }
+
+  .quest-head { display: flex; align-items: flex-start; gap: 12px; padding: 14px 15px; }
+  .quest-check {
+    width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; margin-top: 1px;
+    border: 2px solid var(--border2); background: var(--dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: transparent; transition: .15s;
+  }
+  .quest-check:hover { border-color: var(--fire); }
+  .quest.is-done .quest-check { background: var(--green); border-color: var(--green); color: #062015; }
+  .quest-body { flex: 1; min-width: 0; }
+  .quest-title { font-weight: 650; font-size: 15px; margin-bottom: 5px; }
+  .quest.is-done .quest-title { color: var(--gray2); }
+  .quest-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+  .quest-arrow { color: var(--gray); font-size: 12px; flex-shrink: 0; margin-top: 5px; transition: transform .2s; }
+  .quest.open .quest-arrow { transform: rotate(90deg); }
+
+  .quest-detail { display: none; padding: 0 15px 15px 51px; }
+  .quest.open .quest-detail { display: block; }
+  .quest-desc { color: var(--gray2); font-size: 14px; margin-bottom: 13px; }
+  .quest-steps { margin-bottom: 13px; }
+  .quest-steps li { list-style: none; padding-left: 20px; position: relative; color: var(--gray2); font-size: 13.5px; margin-bottom: 6px; }
+  .quest-steps li::before { content: ""; position: absolute; left: 5px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--fire); }
+  .proof-box { background: var(--dark); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .proof-label { font-size: 12px; color: var(--gold); font-weight: 600; margin-bottom: 7px; }
+  .proof-input {
+    width: 100%; background: var(--black); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 9px 11px; font-size: 13.5px; color: var(--white);
+  }
+  .proof-input:focus { outline: none; border-color: var(--fire); }
+  .proof-input::placeholder { color: #4E566B; }
+  .quest-done-line { font-size: 12.5px; color: var(--green); margin-top: 9px; }
+
+  /* ─────────── MONEY ─────────── */
+  .money-form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: end; }
+  .field label { display: block; font-size: 12px; color: var(--gray); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; background: var(--dark); border: 1px solid var(--border2);
+    border-radius: 9px; padding: 9px 11px; font-size: 14px;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--fire); }
+
+  .chart { display: flex; align-items: flex-end; gap: 8px; height: 170px; margin: 18px 0 6px; }
+  .chart-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 5px; min-width: 0; }
+  .chart-val { font-size: 11px; color: var(--gray2); white-space: nowrap; }
+  .chart-bar { width: 100%; border-radius: 6px 6px 0 0; min-height: 3px; background: linear-gradient(180deg, var(--fire), #B33F12); transition: height .5s; }
+  .chart-lbl { font-size: 11px; color: var(--gray); white-space: nowrap; }
+  .money-empty { color: var(--gray); text-align: center; padding: 34px 0; font-size: 14px; }
+
+  /* ─────────── ACHIEVEMENTS ─────────── */
+  .ach { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); margin-bottom: 8px; }
+  .ach.got { border-color: #4A3800; background: linear-gradient(120deg, var(--gold-dim), var(--card)); }
+  .ach-ic { font-size: 22px; width: 38px; text-align: center; flex-shrink: 0; filter: grayscale(1) opacity(.4); }
+  .ach.got .ach-ic { filter: none; }
+  .ach-name { font-weight: 650; font-size: 14px; }
+  .ach.got .ach-name { color: var(--gold); }
+  .ach-desc { font-size: 12.5px; color: var(--gray); }
+
+  /* ─────────── MODAL ─────────── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(5,6,9,.86); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .modal { background: var(--card); border: 1px solid var(--border2); border-radius: 18px; padding: 26px; max-width: 460px; width: 100%; max-height: 86vh; overflow-y: auto; }
+  .modal h3 { font-size: 20px; margin-bottom: 8px; }
+  .modal p { color: var(--gray2); font-size: 14px; margin-bottom: 16px; }
+  .modal textarea {
+    width: 100%; height: 130px; resize: vertical;
+    background: var(--dark); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 11px; font-size: 12px; font-family: ui-monospace, Consolas, monospace; color: var(--gray2);
+  }
+  .modal input.big {
+    width: 100%; background: var(--dark); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 12px 14px; font-size: 15px; color: var(--white);
+  }
+  .modal input.big:focus { outline: none; border-color: var(--fire); }
+  .modal-btns { display: flex; gap: 9px; margin-top: 16px; }
+  .modal-btns .btn { flex: 1; }
+
+  /* ─────────── TOAST ─────────── */
+  .toast {
+    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px);
+    background: var(--card2); border: 1px solid var(--border2);
+    padding: 11px 19px; border-radius: 11px; font-size: 14px; font-weight: 600;
+    z-index: 600; opacity: 0; pointer-events: none; transition: .3s;
+    box-shadow: 0 8px 30px rgba(0,0,0,.5); max-width: 90vw; text-align: center;
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.xp { border-color: #4A3800; color: var(--gold); }
+
+  /* ─────────── MOBILE ─────────── */
+  .mobile-nav { display: none; }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 18px 13px 90px; }
+    nav { padding: 0 13px; }
+    .nav-tab { display: none; }
+    .nav-right { gap: 9px; }
+    .nav-xp { padding: 4px 10px; font-size: 12px; }
+
+    .mobile-nav {
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+      background: rgba(11,12,16,.97); backdrop-filter: blur(14px);
+      border-top: 1px solid var(--border);
+      padding: 7px 4px calc(7px + env(safe-area-inset-bottom));
+    }
+    .mnav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 5px 2px; color: var(--gray); font-size: 10.5px; font-weight: 600; border-radius: 10px;
+    }
+    .mnav-item .ic { font-size: 19px; line-height: 1; }
+    .mnav-item.active { color: var(--fire); }
+
+    .hero-stats { grid-template-columns: 1fr 1fr; }
+    .grid2 { grid-template-columns: 1fr; }
+    .money-form { grid-template-columns: 1fr 1fr; }
+    .quest-detail { padding-left: 15px; }
+    h2.page-title { font-size: 21px; }
+    .hero-lvl .n { font-size: 26px; }
+    .toast { bottom: 100px; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">🔥</div>
+    <div class="nav-logo-text">Кузница</div>
+  </div>
+  <button class="nav-tab active" data-go="home"><span class="ic">🏠</span>Кузница</button>
+  <button class="nav-tab" data-go="tree"><span class="ic">🌳</span>Дерево</button>
+  <button class="nav-tab" data-go="season"><span class="ic">⚔️</span>Квесты</button>
+  <button class="nav-tab" data-go="money"><span class="ic">💰</span>Деньги</button>
+  <button class="nav-tab" data-go="profile"><span class="ic">🎖</span>Профиль</button>
+  <div class="nav-right">
+    <div class="nav-streak" id="nav-streak"></div>
+    <div class="nav-xp">💎 <b id="nav-xp">0</b></div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ══════════ ГЛАВНАЯ ══════════ -->
+  <section class="section active" id="section-home">
+    <div class="hero">
+      <div class="hero-top">
+        <div class="hero-av">🔨</div>
+        <div>
+          <div class="hero-name" id="hero-name">Кузнец</div>
+          <div class="hero-rank" id="hero-rank">Подмастерье</div>
+        </div>
+        <div class="hero-lvl">
+          <div class="n" id="hero-level">1</div>
+          <div class="l">уровень</div>
+        </div>
+      </div>
+      <div class="xpbar"><div class="xpbar-fill" id="hero-xpbar" style="width:0%"></div></div>
+      <div class="xpbar-labels">
+        <span id="hero-xp-now">0 XP</span>
+        <span id="hero-xp-next">до 2 уровня: 300 XP</span>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="n" id="stat-quests">0</div><div class="l">квестов пройдено</div></div>
+        <div class="hstat"><div class="n" id="stat-streak">0</div><div class="l">дней подряд</div></div>
+        <div class="hstat"><div class="n" id="stat-hours">0 ч</div><div class="l">вложено времени</div></div>
+        <div class="hstat"><div class="n" id="stat-income">—</div><div class="l">доход за месяц</div></div>
+      </div>
+    </div>
+
+    <div class="today" id="today-box"></div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Ветки навыков</h3>
+        <div id="home-branches"></div>
+        <button class="btn sm ghost" data-go="tree" style="margin-top:12px;width:100%">Открыть дерево →</button>
+      </div>
+      <div class="card">
+        <h3>Правила игры</h3>
+        <div style="color:var(--gray2);font-size:13.5px;line-height:1.65">
+          <p style="margin-bottom:10px"><b style="color:var(--white)">XP — только за сделанное.</b> Квест 🔨 засчитывается, когда есть пруф: ссылка на коммит, деплой или скриншот. Галочка «прочитал» денег не приносит.</p>
+          <p style="margin-bottom:10px"><b style="color:var(--white)">Час в день.</b> Квесты нарезаны по 30–90 минут. Если игра начала давить — сломана игра, а не вы.</p>
+          <p style="margin-bottom:10px"><b style="color:var(--white)">Всё на своих проектах.</b> RAG — на ваших доках Salebot. Инструменты — над базой «Туров». Агент — поверх Car monitor.</p>
+          <p><b style="color:var(--white)">Деньги — часть игры.</b> Ветка 💰 весит столько же, сколько технические. Можно выучить всё и остаться на 40 тысячах.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ ДЕРЕВО ══════════ -->
+  <section class="section" id="section-tree">
+    <h2 class="page-title">Дерево навыков</h2>
+    <p class="page-sub">Пять веток. Технические поднимают потолок, «Деньги» и «Мировой рынок» превращают потолок в доход.</p>
+    <div id="tree-list"></div>
+  </section>
+
+  <!-- ══════════ КВЕСТЫ ══════════ -->
+  <section class="section" id="section-season">
+    <h2 class="page-title" id="season-title">Сезон 1 — «Первый агент»</h2>
+    <p class="page-sub" id="season-sub"></p>
+    <div id="season-switch" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px"></div>
+    <div id="quest-list"></div>
+  </section>
+
+  <!-- ══════════ ДЕНЬГИ ══════════ -->
+  <section class="section" id="section-money">
+    <h2 class="page-title">Деньги</h2>
+    <p class="page-sub">Уровень в игре ничего не стоит, если эта кривая не растёт. Здесь видно, расходятся они или идут вместе.</p>
+
+    <div class="card" style="margin-bottom:14px">
+      <h3>Записать месяц</h3>
+      <div class="money-form">
+        <div class="field">
+          <label>Месяц</label>
+          <input type="month" id="mn-month">
+        </div>
+        <div class="field">
+          <label>Доход, ₽</label>
+          <input type="number" id="mn-rub" placeholder="120000" inputmode="numeric">
+        </div>
+        <div class="field">
+          <label>Из них в валюте, $</label>
+          <input type="number" id="mn-usd" placeholder="0" inputmode="numeric">
+        </div>
+        <div class="field">
+          <button class="btn primary" id="mn-save" style="width:100%">Сохранить</button>
+        </div>
+      </div>
+      <div style="color:var(--gray);font-size:12.5px;margin-top:11px">
+        Средний чек считается сам: доход месяца ÷ количество сданных проектов. Число проектов спросим при сохранении.
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <h3>Доход по месяцам</h3>
+      <div id="money-chart"></div>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <h3>Показатели</h3>
+        <div id="money-stats"></div>
+      </div>
+      <div class="card">
+        <h3>Цель</h3>
+        <div id="money-goal"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══════════ ПРОФИЛЬ ══════════ -->
+  <section class="section" id="section-profile">
+    <h2 class="page-title">Профиль</h2>
+    <p class="page-sub">Достижения, пруфы и перенос прогресса между устройствами.</p>
+
+    <div class="card" style="margin-bottom:14px">
+      <h3>Достижения</h3>
+      <div id="ach-list"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <h3>Доказательства работы</h3>
+      <div style="color:var(--gray);font-size:13px;margin-bottom:12px">
+        Всё, что вы сдали с пруфом. Через полгода это готовый список кейсов для портфолио — не придётся вспоминать.
+      </div>
+      <div id="proof-list"></div>
+    </div>
+
+    <div class="card">
+      <h3>Настройки</h3>
+      <div style="display:flex;gap:9px;flex-wrap:wrap">
+        <button class="btn sm" id="btn-name">Сменить имя</button>
+        <button class="btn sm" id="btn-export">Код синхронизации</button>
+        <button class="btn sm" id="btn-import">Загрузить код</button>
+        <button class="btn sm danger" id="btn-reset">Сбросить всё</button>
+      </div>
+      <div style="color:var(--gray);font-size:12.5px;margin-top:13px;line-height:1.6">
+        Прогресс хранится в браузере этого устройства. Чтобы продолжить на телефоне — нажмите «Код синхронизации», скопируйте текст, откройте игру на телефоне и вставьте через «Загрузить код».
+      </div>
+    </div>
+  </section>
+
+</div>
+
+<div class="mobile-nav">
+  <button class="mnav-item active" data-go="home"><span class="ic">🏠</span>Кузница</button>
+  <button class="mnav-item" data-go="tree"><span class="ic">🌳</span>Дерево</button>
+  <button class="mnav-item" data-go="season"><span class="ic">⚔️</span>Квесты</button>
+  <button class="mnav-item" data-go="money"><span class="ic">💰</span>Деньги</button>
+  <button class="mnav-item" data-go="profile"><span class="ic">🎖</span>Профиль</button>
+</div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ═══════════════════════════════════════════════
+   ДАННЫЕ: ветки, сезоны, квесты
+   ═══════════════════════════════════════════════ */
+
+var BRANCHES = {
+  ai:     { name: "AI-слой",              icon: "🧠", color: "#A98BF0", bg: "#1C1430",
+            why: "Главный множитель чека: тот же клиент и та же задача стоят в 5–6 раз дороже" },
+  global: { name: "Мировой рынок",        icon: "🌍", color: "#5AA0F0", bg: "#0C1A2E",
+            why: "Бот за 40 000 ₽ здесь на западном рынке стоит 2 500–4 000 $" },
+  craft:  { name: "Продуктовая инженерия",icon: "⚡", color: "#F0B429", bg: "#2E2100",
+            why: "Разрыв между «сверстал лендинг» и «сделал веб-приложение» — это порядок в чеке" },
+  money:  { name: "Деньги",               icon: "💰", color: "#3DD68C", bg: "#08281A",
+            why: "Можно прокачать всё техническое и продолжать брать 40 000 ₽. Эта ветка — чтобы не случилось" },
+  rigor:  { name: "Зрелость",             icon: "🛡", color: "#E8615A", bg: "#2A1210",
+            why: "Серьёзный клиент проверяет не «работает ли», а «не развалится ли»" }
+};
+
+var SEASONS = [
+  { id: 1, name: "Первый агент", sub: "Перестать быть разработчиком ботов на кнопках. К концу — работающий AI-агент, который понимает запрос словами, сам ходит в вашу базу и отвечает по вашим документам.", hours: 26 },
+  { id: 2, name: "Витрина",      sub: "Портфолио, которое продаёт зарубежному клиенту. Первый нормальный веб-стек.", hours: 25 },
+  { id: 3, name: "Первый доллар",sub: "Каналы прямых клиентов, приём платежей, договор. Босс — первая валютная оплата, дошедшая до счёта.", hours: 25 },
+  { id: 4, name: "Чек ×3",       sub: "Прайсинг, пакеты, ретейнер и сложные агенты: память, несколько инструментов, голос.", hours: 25 },
+  { id: 5, name: "Продукт",      sub: "Свой micro-SaaS на англоязычную аудиторию и первые платящие подписчики.", hours: 25 },
+  { id: 6, name: "Система",      sub: "Поток входящих, делегирование, инженерная зрелость.", hours: 25 }
+];
+</script>
+<script>
+/* ── КВЕСТЫ ──
+   t: read = изучить, do = сделать (нужен пруф), boss = босс
+   dep: id квестов, которые надо закрыть раньше                      */
+
+var QUESTS = [
+
+/* ═══════ СЕЗОН 1 ═══════ */
+
+{ id:"1.1", s:1, w:"Неделя 1 — фундамент LLM", b:"ai", t:"read", min:40, xp:60,
+  title:"Как на самом деле работает вызов модели",
+  desc:"Токены, окно контекста, температура, стоимость запроса. Почему «бот тупит» почти всегда означает «плохой system prompt», а не «слабая модель».",
+  steps:[
+    "Разобраться, что такое токен и почему счёт идёт и за ваш запрос, и за ответ",
+    "Понять окно контекста: что происходит, когда диалог в него не влезает",
+    "Температура: когда нужна нулевая (извлечение данных), когда высокая (тексты)",
+    "Открыть страницу цен и посчитать, сколько стоит один диалог из 10 сообщений"
+  ],
+  proof:"" },
+
+{ id:"1.2", s:1, w:"Неделя 1 — фундамент LLM", b:"ai", t:"read", min:40, xp:80,
+  title:"Доступ к API моделей из РФ",
+  desc:"Разведка без иллюзий: чем платить, нужен ли прокси, где уместны GigaChat и YandexGPT. Решение записать — к нему вернётесь на каждом проекте.",
+  steps:[
+    "Выписать 3 варианта доступа с ценой и рисками для каждого",
+    "Отдельно посмотреть GigaChat и YandexGPT: где они реально уместны, а где слабее",
+    "Выбрать основной путь и запасной",
+    "Записать решение в Развитие/notes/api-access.md"
+  ],
+  proof:"" },
+
+{ id:"1.3", s:1, w:"Неделя 1 — фундамент LLM", b:"ai", t:"do", min:60, xp:150,
+  title:"Первый вызов из Python",
+  desc:"Скрипт на 20 строк: вопрос уходит в модель, ответ печатается. Ключ в .env, не в коде — привычка, которую потом не придётся переучивать.",
+  steps:[
+    "Поставить SDK, положить ключ в .env, добавить .env в .gitignore",
+    "Скрипт: вопрос из аргумента командной строки → ответ в консоль",
+    "Добавить обработку ошибки сети и превышения лимита — без неё в проде больно",
+    "Вывести в конце, сколько токенов ушло и сколько это стоило"
+  ],
+  proof:"Ссылка на коммит",
+  dep:["1.1"] },
+
+{ id:"1.4", s:1, w:"Неделя 1 — фундамент LLM", b:"ai", t:"do", min:60, xp:200,
+  title:"System prompt на живом проекте",
+  desc:"В боте «Туры» уведомление собирается f-строкой. Заменить на текст от модели: дать ей данные тура и роль консультанта турагентства — получить живое описание вместо шаблона.",
+  steps:[
+    "Найти в Туры/bot/notifier.py место, где собирается текст",
+    "Написать system prompt: роль, тон, длина, что запрещено (не выдумывать цены)",
+    "Передать данные тура структурой, не текстом — так модель реже врёт",
+    "Оставить шаблон запасным вариантом, если API недоступен"
+  ],
+  proof:"Скриншот двух уведомлений: было и стало",
+  dep:["1.3"] },
+
+{ id:"2.1", s:1, w:"Неделя 2 — инструменты в руках модели", b:"ai", t:"read", min:40, xp:60,
+  title:"Function calling: почему это меняет цену бота",
+  desc:"Модель не отвечает текстом, а просит вызвать вашу функцию и получает результат. Отсюда берётся «агент» вместо «чата» — и отсюда же берётся другая цена.",
+  steps:[
+    "Разобрать схему: описание функции → модель выбирает → вы исполняете → отдаёте результат",
+    "Понять, почему описание аргументов важнее кода функции",
+    "Посмотреть, что происходит при нескольких вызовах подряд",
+    "Сформулировать для себя, чем это отличается от кнопочного сценария"
+  ],
+  proof:"",
+  dep:["1.4"] },
+
+{ id:"2.2", s:1, w:"Неделя 2 — инструменты в руках модели", b:"ai", t:"do", min:90, xp:300,
+  title:"Первый инструмент над своей базой",
+  desc:"Описать модели функцию search_tours(country, budget, month), которая ходит в вашу Neon-базу. Проверить, что модель вызывает её с правильными аргументами, а не выдумывает.",
+  steps:[
+    "Описать функцию по схеме: имя, назначение, типы аргументов, что вернёт",
+    "Подключить к существующим запросам в Туры/db/database.py",
+    "Залогировать каждый вызов с аргументами — вы должны видеть, что решила модель",
+    "Прогнать 5 разных формулировок и посмотреть на логи"
+  ],
+  proof:"Коммит + лог вызовов",
+  dep:["2.1"] },
+
+{ id:"2.3", s:1, w:"Неделя 2 — инструменты в руках модели", b:"ai", t:"do", min:90, xp:300,
+  title:"Диалог вместо кнопок",
+  desc:"Пользователь пишет «хочу в Турцию до 100 тысяч в июне» — агент сам разбирает фразу, зовёт инструмент, отвечает подборкой. Кнопки остаются запасным путём.",
+  steps:[
+    "Завести обработчик свободного текста рядом с существующими командами",
+    "Прокинуть историю диалога, чтобы работало уточнение «а подешевле?»",
+    "Обработать случай «ничего не нашлось» — предложить ослабить фильтр",
+    "Оставить кнопки: часть людей никогда не будет писать текстом"
+  ],
+  proof:"Видео диалога, 30 секунд",
+  dep:["2.2"] },
+
+{ id:"2.4", s:1, w:"Неделя 2 — инструменты в руках модели", b:"money", t:"read", min:30, xp:60,
+  title:"Токены и деньги",
+  desc:"Сколько стоит обслужить 1 000 пользователей в месяц, что такое кэширование промпта и почему оно экономит до 90%. Это те же цифры, которые вы называете клиенту в смете.",
+  steps:[
+    "Посчитать среднюю стоимость одного диалога в вашем боте по логам",
+    "Умножить на 1 000 пользователей — получить цифру для сметы",
+    "Разобраться с кэшированием системного промпта и пересчитать",
+    "Записать формулу, чтобы не считать заново на каждом созвоне"
+  ],
+  proof:"",
+  dep:["2.2"] },
+
+{ id:"3.1", s:1, w:"Неделя 3 — RAG на своих данных", b:"ai", t:"read", min:40, xp:60,
+  title:"Эмбеддинги и векторный поиск без математики",
+  desc:"Что значит «похожие по смыслу», зачем резать документы на куски и почему поиск по ключевым словам проигрывает вопросу, заданному другими словами.",
+  steps:[
+    "Понять идею вектора как «координат смысла»",
+    "Разобраться с размером куска: почему 300 слов лучше, чем весь документ",
+    "Посмотреть, зачем куски перекрывают друг друга",
+    "Уяснить, где RAG не нужен и достаточно обычного поиска"
+  ],
+  proof:"",
+  dep:["2.3"] },
+
+{ id:"3.2", s:1, w:"Неделя 3 — RAG на своих данных", b:"ai", t:"do", min:90, xp:300,
+  title:"Проиндексировать базу Salebot",
+  desc:"350 файлов из Salebot/docs/mirror превратить в куски, посчитать эмбеддинги и сложить в таблицу с pgvector в Neon. Ваши собственные данные, не учебный набор.",
+  steps:[
+    "Скрипт: обойти файлы, нарезать на куски по ~300 слов с перекрытием",
+    "Посчитать эмбеддинги пачками, а не по одному — это дешевле и быстрее",
+    "Включить pgvector в Neon, создать таблицу с индексом",
+    "Сохранять вместе с куском путь к исходному файлу — понадобится для ссылок"
+  ],
+  proof:"Скриншот таблицы с количеством строк",
+  dep:["3.1"] },
+
+{ id:"3.3", s:1, w:"Неделя 3 — RAG на своих данных", b:"ai", t:"do", min:90, xp:350,
+  title:"Бот отвечает по базе знаний",
+  desc:"Вопрос → находим 5 релевантных кусков → отдаём модели → ответ со ссылкой на исходный документ. Ссылка обязательна: без неё клиент не отличит правду от выдумки.",
+  steps:[
+    "Поиск по вектору вопроса, топ-5 кусков",
+    "Собрать промпт: «отвечай только по этим фрагментам, не знаешь — так и скажи»",
+    "В ответе указывать, из какого документа взято",
+    "Проверить на вопросе, которого в базе нет — бот должен признаться, а не сочинить"
+  ],
+  proof:"Видео с тремя вопросами, включая тот, ответа на который нет",
+  dep:["3.2"] },
+
+{ id:"3.4", s:1, w:"Неделя 3 — RAG на своих данных", b:"rigor", t:"do", min:60, xp:200,
+  title:"Замерить, а не поверить",
+  desc:"20 вопросов по докам Salebot, ответы разложить в таблицу: верно / неполно / выдумал. Посчитать процент. Этот же приём вы потом продаёте клиенту как «оценку качества».",
+  steps:[
+    "Составить 20 вопросов: простые, составные и один без ответа в базе",
+    "Прогнать, ответы записать в таблицу",
+    "Разметить: верно / неполно / выдумал",
+    "Посчитать процент и записать, что улучшить в промпте или размере куска"
+  ],
+  proof:"Ссылка на таблицу",
+  dep:["3.3"] },
+
+{ id:"4.1", s:1, w:"Неделя 4 — босс и упаковка", b:"ai", t:"boss", min:270, xp:1000,
+  title:"БОСС: AI-ассистент поверх Car monitor",
+  desc:"Всё вместе на самом сильном проекте. «Найди BMW X5 до 3 миллионов, дизель, не старше 2018, только Москва» — агент разбирает запрос, ставит фильтр, парсеры работают как раньше, а на выходе человеческий отчёт: сколько нашлось, что интересно, на что смотреть по цене.",
+  steps:[
+    "Инструмент create_filter: из текста собрать фильтр и записать в базу",
+    "Инструмент summarize_results: по найденным объявлениям выдать разбор, а не список",
+    "Подключить к боту как обычный текстовый диалог",
+    "Прогнать 10 разных запросов и починить то, что сломается",
+    "Записать демо: запрос → отчёт"
+  ],
+  proof:"Ссылка на коммит + запись экрана",
+  dep:["3.3","2.3"] },
+
+{ id:"4.2", s:1, w:"Неделя 4 — босс и упаковка", b:"global", t:"do", min:60, xp:250,
+  title:"Демо-ролик на английском",
+  desc:"60 секунд: проблема → решение → результат. Титры на английском, голос можно синтезировать. Это то, что вы будете прикладывать к письмам клиентам.",
+  steps:[
+    "Сценарий на 60 секунд: 10 сек проблема, 35 решение, 15 результат",
+    "Записать экран без монтажных склеек — так честнее",
+    "Титры на английском, короткими фразами",
+    "Выложить и получить ссылку"
+  ],
+  proof:"Ссылка на видео",
+  dep:["4.1"] },
+
+{ id:"4.3", s:1, w:"Неделя 4 — босс и упаковка", b:"global", t:"do", min:60, xp:200,
+  title:"Кейс в портфолио",
+  desc:"Страница по схеме: задача клиента → что сделано → цифры → стек. Без «я использовал aiogram» — клиенту важно «время ответа сократилось с 4 часов до 20 секунд».",
+  steps:[
+    "Сформулировать задачу словами клиента, а не разработчика",
+    "Найти хотя бы одну измеримую цифру",
+    "Стек — последним абзацем и мелко",
+    "Добавить кейс в botforge"
+  ],
+  proof:"Ссылка на страницу кейса",
+  dep:["4.2"] },
+
+{ id:"G.1", s:1, w:"Фоновая ветка — выход на мир", b:"global", t:"read", min:40, xp:80,
+  title:"Где сидят англоязычные заказчики на AI-ботов",
+  desc:"Upwork и Fiverr для РФ закрыты с 2022 года — исходим из этого, а не из статей пятилетней давности. Ищем места, где клиент находится напрямую.",
+  steps:[
+    "Профильные Discord и Slack сообщества по автоматизации и AI",
+    "Reddit: r/SaaS, r/automation, r/nocode и подобные — читать, кто жалуется на рутину",
+    "LinkedIn и X: кто публично ищет подрядчика",
+    "Субподряд: зарубежные студии, которым нужны руки",
+    "Выписать 10 конкретных мест со ссылками в Развитие/notes/channels.md"
+  ],
+  proof:"" },
+
+{ id:"G.2", s:1, w:"Фоновая ветка — выход на мир", b:"global", t:"do", min:30, xp:120,
+  title:"Кто вы, одним предложением на английском",
+  desc:"Не «Telegram bot developer» — таких тысячи. А «I build AI agents that pull data competitors hide and turn it into sales conversations». Ваша реальная сила — доставать данные оттуда, откуда их не отдают.",
+  steps:[
+    "Выписать, что вы умеете такого, чего не умеет средний бот-разработчик",
+    "Сформулировать одним предложением на английском, без слова «квалифицированный»",
+    "Проверить на трёх знакомых: поняли ли с первого раза",
+    "Поставить в шапку профилей"
+  ],
+  proof:"Текст формулировки",
+  dep:["G.1"] },
+
+{ id:"G.3", s:1, w:"Фоновая ветка — выход на мир", b:"global", t:"do", min:60, xp:250,
+  title:"Настроить приём денег",
+  desc:"Wise и PayPal для РФ фактически не работают, у Payoneer ограничения. Выбрать рабочий путь и довести до конца: ИП с валютным счётом и SWIFT, стейблкоины или сервис-посредник. Не изучить — а открыть и проверить поступлением.",
+  steps:[
+    "Сравнить три пути по: скорость, комиссия, риск блокировки, легальность декларирования",
+    "Выбрать основной и запасной",
+    "Открыть счёт или кошелёк",
+    "Проверить тестовым поступлением — пока деньги не дошли, ничего не готово",
+    "Отдельно выяснить, как это декларировать: канал не отменяет налог"
+  ],
+  proof:"Скриншот работающего счёта или кошелька",
+  dep:["G.1"] },
+
+{ id:"G.4", s:1, w:"Фоновая ветка — выход на мир", b:"global", t:"read", min:30, xp:60,
+  title:"20 фраз для созвона на английском",
+  desc:"Уточнить требования, назвать срок, попросить предоплату, отодвинуть дедлайн, вежливо отказать. Выучить до автоматизма — на созвоне думать над формулировкой некогда.",
+  steps:[
+    "Выписать 20 фраз под эти пять ситуаций",
+    "Проговорить вслух, пока не перестанете спотыкаться",
+    "Отдельно отработать «I need to check and come back to you tomorrow» — спасает от поспешных обещаний",
+    "Держать список открытым во время первых созвонов"
+  ],
+  proof:"" },
+
+{ id:"G.5", s:1, w:"Фоновая ветка — выход на мир", b:"money", t:"do", min:45, xp:200,
+  title:"Прайс на английском: три пакета",
+  desc:"Bot / AI Agent / AI Agent + Support. Цены в долларах, границы пакетов чёткие. Верхний пакет с ежемесячной платой — тот самый, ради которого всё затевалось.",
+  steps:[
+    "Пакет 1: обычный бот, фиксированная цена",
+    "Пакет 2: AI-агент с инструментами — в 3–4 раза дороже первого",
+    "Пакет 3: агент + поддержка и доработки помесячно",
+    "Для каждого: что входит, что не входит, срок",
+    "Проверить, что средний пакет выглядит самым разумным — его и будут брать"
+  ],
+  proof:"Ссылка на прайс",
+  dep:["2.4"] },
+
+/* ═══════ СЕЗОН 2 — «Витрина» ═══════ */
+{ id:"S2.1", s:2, w:"Сезон 2", b:"global", t:"read", min:40, xp:80, title:"Технический английский: доки и письма без переводчика", desc:"", steps:[], proof:"" },
+{ id:"S2.2", s:2, w:"Сезон 2", b:"global", t:"do",   min:120,xp:300, title:"Портфолио на английском: переписать botforge под другой рынок", desc:"", steps:[], proof:"Ссылка" },
+{ id:"S2.3", s:2, w:"Сезон 2", b:"global", t:"do",   min:150,xp:350, title:"Три кейса по схеме «проблема → решение → цифры»", desc:"", steps:[], proof:"Ссылка" },
+{ id:"S2.4", s:2, w:"Сезон 2", b:"craft",  t:"read", min:120,xp:120, title:"TypeScript за три подхода: типы, интерфейсы, дженерики", desc:"", steps:[], proof:"" },
+{ id:"S2.5", s:2, w:"Сезон 2", b:"craft",  t:"do",   min:180,xp:350, title:"Первый проект на Next.js: перенести лендинг с чистого HTML", desc:"", steps:[], proof:"Коммит" },
+{ id:"S2.6", s:2, w:"Сезон 2", b:"craft",  t:"do",   min:120,xp:250, title:"Tailwind вместо ручного CSS: переверстать страницу «Ампер»", desc:"", steps:[], proof:"Коммит" },
+{ id:"S2.7", s:2, w:"Сезон 2", b:"craft",  t:"do",   min:90, xp:250, title:"Деплой на Vercel, свой домен, аналитика", desc:"", steps:[], proof:"Ссылка" },
+{ id:"S2.8", s:2, w:"Сезон 2", b:"craft",  t:"boss", min:300,xp:1000,title:"БОСС: публичная витрина агента — любой может попробовать его вживую", desc:"", steps:[], proof:"Ссылка" },
+
+/* ═══════ СЕЗОН 3 — «Первый доллар» ═══════ */
+{ id:"S3.1", s:3, w:"Сезон 3", b:"global", t:"read", min:40, xp:80,  title:"Первое письмо клиенту, на которое отвечают", desc:"", steps:[], proof:"" },
+{ id:"S3.2", s:3, w:"Сезон 3", b:"global", t:"do",   min:300,xp:400, title:"30 писем за месяц: таблица откликов", desc:"", steps:[], proof:"Таблица" },
+{ id:"S3.3", s:3, w:"Сезон 3", b:"global", t:"do",   min:120,xp:250, title:"LinkedIn и X на английском, первые публикации", desc:"", steps:[], proof:"Ссылки" },
+{ id:"S3.4", s:3, w:"Сезон 3", b:"money",  t:"read", min:60, xp:100, title:"Договор и инвойс для зарубежного клиента", desc:"", steps:[], proof:"" },
+{ id:"S3.5", s:3, w:"Сезон 3", b:"money",  t:"do",   min:240,xp:400, title:"Пробный заказ за 200–500 $: пройти весь путь целиком", desc:"", steps:[], proof:"Скрин оплаты" },
+{ id:"S3.6", s:3, w:"Сезон 3", b:"money",  t:"read", min:60, xp:100, title:"Налоги с валютного дохода: что и как платить", desc:"", steps:[], proof:"" },
+{ id:"S3.7", s:3, w:"Сезон 3", b:"money",  t:"boss", min:180,xp:1200,title:"БОСС: первая оплата от зарубежного клиента дошла до счёта", desc:"", steps:[], proof:"Скрин поступления" },
+
+/* ═══════ СЕЗОН 4 — «Чек ×3» ═══════ */
+{ id:"S4.1", s:4, w:"Сезон 4", b:"money", t:"read", min:60, xp:100, title:"Прайсинг по ценности вместо часов", desc:"", steps:[], proof:"" },
+{ id:"S4.2", s:4, w:"Сезон 4", b:"money", t:"do",   min:120,xp:500, title:"Поднять прайс на 40% и продать по новой цене", desc:"", steps:[], proof:"Договор или переписка" },
+{ id:"S4.3", s:4, w:"Сезон 4", b:"money", t:"do",   min:120,xp:450, title:"Ретейнер: перевести клиента на ежемесячную оплату", desc:"", steps:[], proof:"Договор" },
+{ id:"S4.4", s:4, w:"Сезон 4", b:"ai",    t:"do",   min:180,xp:350, title:"Агент с памятью диалога и несколькими инструментами", desc:"", steps:[], proof:"Коммит" },
+{ id:"S4.5", s:4, w:"Сезон 4", b:"ai",    t:"do",   min:120,xp:300, title:"Голосовой ввод и озвучка ответа", desc:"", steps:[], proof:"Видео" },
+{ id:"S4.6", s:4, w:"Сезон 4", b:"ai",    t:"read", min:60, xp:100, title:"MCP: как подключать агента к чужим системам", desc:"", steps:[], proof:"" },
+{ id:"S4.7", s:4, w:"Сезон 4", b:"money", t:"boss", min:600,xp:1500,title:"БОСС: проект на 250 000 ₽ или 3 000 $", desc:"", steps:[], proof:"Скрин оплаты" },
+
+/* ═══════ СЕЗОН 5 — «Продукт» ═══════ */
+{ id:"S5.1", s:5, w:"Сезон 5", b:"money", t:"read", min:60, xp:100, title:"Как выбрать нишу для micro-SaaS: где искать боль", desc:"", steps:[], proof:"" },
+{ id:"S5.2", s:5, w:"Сезон 5", b:"craft", t:"do",   min:120,xp:300, title:"Лендинг с формой ожидания: 50 подписок до единой строчки кода", desc:"", steps:[], proof:"Скрин" },
+{ id:"S5.3", s:5, w:"Сезон 5", b:"craft", t:"do",   min:600,xp:700, title:"MVP за три недели: узко и без лишнего", desc:"", steps:[], proof:"Ссылка" },
+{ id:"S5.4", s:5, w:"Сезон 5", b:"money", t:"do",   min:120,xp:300, title:"Подписка и приём платежей от иностранной аудитории", desc:"", steps:[], proof:"Скрин" },
+{ id:"S5.5", s:5, w:"Сезон 5", b:"global",t:"do",   min:180,xp:400, title:"Запуск на Product Hunt, Reddit и X", desc:"", steps:[], proof:"Ссылки" },
+{ id:"S5.6", s:5, w:"Сезон 5", b:"money", t:"boss", min:300,xp:1500,title:"БОСС: первые 10 платящих подписчиков", desc:"", steps:[], proof:"Скрин панели" },
+
+/* ═══════ СЕЗОН 6 — «Система» ═══════ */
+{ id:"S6.1", s:6, w:"Сезон 6", b:"rigor", t:"do",   min:180,xp:350, title:"Тесты и CI на своих ботах: перестать деплоить наугад", desc:"", steps:[], proof:"Коммит" },
+{ id:"S6.2", s:6, w:"Сезон 6", b:"rigor", t:"do",   min:120,xp:300, title:"Логи и мониторинг: узнавать о падении раньше клиента", desc:"", steps:[], proof:"Скрин" },
+{ id:"S6.3", s:6, w:"Сезон 6", b:"rigor", t:"do",   min:180,xp:350, title:"Шаблон проекта: новый бот собирается за день", desc:"", steps:[], proof:"Репозиторий" },
+{ id:"S6.4", s:6, w:"Сезон 6", b:"money", t:"do",   min:180,xp:400, title:"Делегирование: передать часть работы подрядчику", desc:"", steps:[], proof:"Переписка" },
+{ id:"S6.5", s:6, w:"Сезон 6", b:"global",t:"do",   min:240,xp:400, title:"Входящий поток: контент, по которому приходят сами", desc:"", steps:[], proof:"Ссылки" },
+{ id:"S6.6", s:6, w:"Сезон 6", b:"money", t:"boss", min:60, xp:2000,title:"БОСС: месяц с доходом ×3 от стартового, половина — повторяющаяся", desc:"", steps:[], proof:"Данные из вкладки «Деньги»" }
+
+];
+
+var ACHIEVEMENTS = [
+  { id:"first_llm",  ic:"⚡", name:"Первая искра",       desc:"Первый вызов модели из своего кода",             check:function(){ return isDone("1.3"); } },
+  { id:"first_tool", ic:"🔧", name:"Инструмент в руках",  desc:"Модель впервые вызвала вашу функцию",            check:function(){ return isDone("2.2"); } },
+  { id:"first_rag",  ic:"📚", name:"Своя база знаний",    desc:"Бот отвечает по вашим документам со ссылками",   check:function(){ return isDone("3.3"); } },
+  { id:"boss1",      ic:"👑", name:"Первый агент",        desc:"Босс сезона 1 повержен",                        check:function(){ return isDone("4.1"); } },
+  { id:"money_ready",ic:"🏦", name:"Касса открыта",       desc:"Приём валютных платежей настроен и проверен",    check:function(){ return isDone("G.3"); } },
+  { id:"first_usd",  ic:"💵", name:"Первый доллар",       desc:"Оплата от зарубежного клиента дошла до счёта",   check:function(){ return isDone("S3.7"); } },
+  { id:"streak7",    ic:"🔥", name:"Неделя в кузнице",    desc:"7 дней подряд",                                  check:function(){ return S.streak.best >= 7; } },
+  { id:"streak30",   ic:"🌋", name:"Месяц у горна",       desc:"30 дней подряд",                                 check:function(){ return S.streak.best >= 30; } },
+  { id:"lvl5",       ic:"🛠", name:"Ремесленник",         desc:"5-й уровень",                                    check:function(){ return levelOf(totalXP()).lvl >= 5; } },
+  { id:"lvl10",      ic:"⚒", name:"Мастер",              desc:"10-й уровень",                                   check:function(){ return levelOf(totalXP()).lvl >= 10; } },
+  { id:"check100",   ic:"💎", name:"Чек 100 000",         desc:"Средний чек перевалил за 100 000 ₽",             check:function(){ return maxCheck() >= 100000; } },
+  { id:"check300",   ic:"👑", name:"Чек 300 000",         desc:"Средний чек перевалил за 300 000 ₽",             check:function(){ return maxCheck() >= 300000; } },
+  { id:"income_x2",  ic:"📈", name:"Доход ×2",            desc:"Месячный доход вырос вдвое от первого записанного", check:function(){ return incomeGrowth() >= 2; } },
+  { id:"income_x3",  ic:"🚀", name:"Доход ×3",            desc:"Месячный доход вырос втрое",                     check:function(){ return incomeGrowth() >= 3; } }
+];
+</script>
+<script>
+/* ═══════════════════════════════════════════════
+   СОСТОЯНИЕ
+   ═══════════════════════════════════════════════ */
+
+var KEY = "forge_progress_v1";
+
+var S = {
+  name: "",
+  done: {},                                  // id -> { ts: "2026-08-27", proof: "..." }
+  streak: { last: "", count: 0, best: 0 },
+  income: [],                                // { m:"2026-08", rub:0, usd:0, projects:1 }
+  season: 1,
+  seenAch: []
+};
+
+function load() {
+  try {
+    var raw = localStorage.getItem(KEY);
+    if (!raw) return;
+    var p = JSON.parse(raw);
+    if (typeof p.name === "string") S.name = p.name;
+    if (p.done && typeof p.done === "object") S.done = p.done;
+    if (p.streak && typeof p.streak === "object") S.streak = p.streak;
+    if (Object.prototype.toString.call(p.income) === "[object Array]") S.income = p.income;
+    if (typeof p.season === "number") S.season = p.season;
+    if (Object.prototype.toString.call(p.seenAch) === "[object Array]") S.seenAch = p.seenAch;
+  } catch (e) {}
+}
+
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(S)); } catch (e) {}
+}
+
+/* ═══════════════════════════════════════════════
+   ВЫЧИСЛЕНИЯ
+   ═══════════════════════════════════════════════ */
+
+function questById(id) {
+  for (var i = 0; i < QUESTS.length; i++) if (QUESTS[i].id === id) return QUESTS[i];
+  return null;
+}
+
+function isDone(id) { return !!S.done[id]; }
+
+function totalXP() {
+  var x = 0;
+  for (var id in S.done) { var q = questById(id); if (q) x += q.xp; }
+  return x;
+}
+
+function doneCount() { var n = 0; for (var k in S.done) n++; return n; }
+
+function totalMinutes() {
+  var m = 0;
+  for (var id in S.done) { var q = questById(id); if (q) m += q.min; }
+  return m;
+}
+
+/* Уровень: L1→L2 нужно 300 XP, дальше каждый уровень на 200 дороже */
+function xpForLevel(n) { return 300 + (n - 1) * 200; }
+
+function levelOf(xp) {
+  var lvl = 1, left = xp;
+  while (left >= xpForLevel(lvl)) { left -= xpForLevel(lvl); lvl++; if (lvl > 60) break; }
+  var need = xpForLevel(lvl);
+  return { lvl: lvl, cur: left, need: need, pct: Math.round(left / need * 100) };
+}
+
+function rankName(lvl) {
+  if (lvl >= 17) return "Легенда кузницы";
+  if (lvl >= 12) return "Архитектор";
+  if (lvl >= 8)  return "Инженер";
+  if (lvl >= 5)  return "Мастер";
+  if (lvl >= 3)  return "Ремесленник";
+  return "Подмастерье";
+}
+
+function seasonQuests(s) {
+  var r = [];
+  for (var i = 0; i < QUESTS.length; i++) if (QUESTS[i].s === s) r.push(QUESTS[i]);
+  return r;
+}
+
+function seasonPct(s) {
+  var qs = seasonQuests(s), d = 0;
+  for (var i = 0; i < qs.length; i++) if (isDone(qs[i].id)) d++;
+  return qs.length ? Math.round(d / qs.length * 100) : 0;
+}
+
+function seasonUnlocked(s) {
+  if (s === 1) return true;
+  return seasonPct(s - 1) >= 70;
+}
+
+function isUnlocked(q) {
+  if (!seasonUnlocked(q.s)) return false;
+  if (!q.dep) return true;
+  for (var i = 0; i < q.dep.length; i++) if (!isDone(q.dep[i])) return false;
+  return true;
+}
+
+function branchStats(b) {
+  var tot = 0, done = 0;
+  for (var i = 0; i < QUESTS.length; i++) {
+    if (QUESTS[i].b !== b) continue;
+    tot++;
+    if (isDone(QUESTS[i].id)) done++;
+  }
+  return { total: tot, done: done, pct: tot ? Math.round(done / tot * 100) : 0 };
+}
+
+function nextQuest() {
+  for (var s = 1; s <= 6; s++) {
+    var qs = seasonQuests(s);
+    for (var i = 0; i < qs.length; i++) {
+      if (!isDone(qs[i].id) && isUnlocked(qs[i])) return qs[i];
+    }
+  }
+  return null;
+}
+
+/* ── деньги ── */
+function sortedIncome() {
+  var a = S.income.slice();
+  a.sort(function (x, y) { return x.m < y.m ? -1 : x.m > y.m ? 1 : 0; });
+  return a;
+}
+function lastIncome() { var a = sortedIncome(); return a.length ? a[a.length - 1] : null; }
+function maxCheck() {
+  var m = 0, a = S.income;
+  for (var i = 0; i < a.length; i++) {
+    var p = a[i].projects || 1;
+    var c = Math.round((a[i].rub || 0) / p);
+    if (c > m) m = c;
+  }
+  return m;
+}
+function incomeGrowth() {
+  var a = sortedIncome();
+  if (a.length < 2) return 0;
+  var first = a[0].rub || 0;
+  if (!first) return 0;
+  var mx = 0;
+  for (var i = 1; i < a.length; i++) if ((a[i].rub || 0) > mx) mx = a[i].rub;
+  return mx / first;
+}
+
+/* ═══════════════════════════════════════════════
+   УТИЛИТЫ
+   ═══════════════════════════════════════════════ */
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function today() {
+  var d = new Date();
+  var m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+}
+
+function daysBetween(a, b) {
+  var da = new Date(a + "T00:00:00"), db = new Date(b + "T00:00:00");
+  return Math.round((db - da) / 86400000);
+}
+
+function fmt(n) {
+  n = Math.round(n || 0);
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+function hoursWord(m) {
+  var h = m / 60;
+  return (h >= 10 ? Math.round(h) : Math.round(h * 10) / 10) + " ч";
+}
+
+function timeLabel(min) {
+  if (min < 60) return min + " мин";
+  var h = min / 60;
+  return (h % 1 === 0 ? h : Math.round(h * 10) / 10) + " ч";
+}
+
+var toastTimer = null;
+function toast(msg, gold) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (gold ? " xp" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.className = "toast"; }, 2600);
+}
+
+/* ═══════════════════════════════════════════════
+   МОДАЛКИ
+   ═══════════════════════════════════════════════ */
+
+function openModal(html) {
+  document.getElementById("modal").innerHTML = html;
+  document.getElementById("overlay").className = "overlay show";
+}
+function closeModal() { document.getElementById("overlay").className = "overlay"; }
+
+document.getElementById("overlay").addEventListener("click", function (e) {
+  if (e.target.id === "overlay") closeModal();
+});
+
+/* ═══════════════════════════════════════════════
+   СТРИК
+   ═══════════════════════════════════════════════ */
+
+function touchStreak() {
+  var t = today();
+  if (S.streak.last === t) return;
+  if (!S.streak.last) S.streak.count = 1;
+  else {
+    var gap = daysBetween(S.streak.last, t);
+    if (gap === 1) S.streak.count++;
+    else if (gap === 2) S.streak.count++;      // один пропуск прощается
+    else S.streak.count = 1;
+  }
+  S.streak.last = t;
+  if (S.streak.count > S.streak.best) S.streak.best = S.streak.count;
+}
+
+/* ═══════════════════════════════════════════════
+   ДЕЙСТВИЯ С КВЕСТАМИ
+   ═══════════════════════════════════════════════ */
+
+function toggleQuest(id) {
+  var q = questById(id);
+  if (!q) return;
+
+  if (isDone(id)) {
+    delete S.done[id];
+    save(); renderAll();
+    toast("Квест снят: −" + q.xp + " XP");
+    return;
+  }
+
+  if (!isUnlocked(q)) {
+    var need = [];
+    if (q.dep) for (var i = 0; i < q.dep.length; i++) if (!isDone(q.dep[i])) {
+      var d = questById(q.dep[i]); if (d) need.push(d.title);
+    }
+    if (!seasonUnlocked(q.s)) toast("Сезон откроется, когда предыдущий пройден на 70%");
+    else toast("Сначала: " + need.join(", "));
+    return;
+  }
+
+  if (q.t !== "read") {
+    var inp = document.getElementById("proof-" + id);
+    var val = inp ? inp.value.trim() : "";
+    if (!val) {
+      var el = document.getElementById("q-" + id);
+      if (el && el.className.indexOf("open") === -1) el.className += " open";
+      if (inp) { inp.focus(); inp.style.borderColor = "var(--fire)"; }
+      toast("Нужен пруф: ссылка на коммит, деплой или скриншот");
+      return;
+    }
+    S.done[id] = { ts: today(), proof: val };
+  } else {
+    S.done[id] = { ts: today(), proof: "" };
+  }
+
+  var before = levelOf(totalXP() - q.xp).lvl;
+  touchStreak();
+  save();
+  var after = levelOf(totalXP()).lvl;
+
+  renderAll();
+
+  if (after > before) {
+    openModal(
+      '<h3 style="color:var(--fire)">Уровень ' + after + "</h3>" +
+      "<p>" + rankName(after) + ". Пройдено квестов: " + doneCount() + ", вложено " + hoursWord(totalMinutes()) + ".</p>" +
+      '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Дальше</button></div>'
+    );
+  } else {
+    toast("+" + q.xp + " XP", true);
+  }
+  checkAchievements();
+}
+
+function saveProof(id, val) {
+  if (S.done[id]) { S.done[id].proof = val; save(); }
+}
+
+function toggleOpen(id) {
+  var el = document.getElementById("q-" + id);
+  if (!el) return;
+  if (el.className.indexOf("open") > -1) el.className = el.className.replace(" open", "");
+  else el.className += " open";
+}
+
+function checkAchievements() {
+  for (var i = 0; i < ACHIEVEMENTS.length; i++) {
+    var a = ACHIEVEMENTS[i];
+    var got = false;
+    try { got = a.check(); } catch (e) {}
+    if (got && S.seenAch.indexOf(a.id) === -1) {
+      S.seenAch.push(a.id);
+      save();
+      setTimeout(function (ac) {
+        return function () { toast(ac.ic + "  Достижение: " + ac.name, true); };
+      }(a), 900);
+    }
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   РЕНДЕР
+   ═══════════════════════════════════════════════ */
+
+function typeChip(t) {
+  if (t === "read") return '<span class="chip read">📖 изучить</span>';
+  if (t === "boss") return '<span class="chip boss">👑 босс</span>';
+  return '<span class="chip do">🔨 сделать</span>';
+}
+
+function renderHome() {
+  var xp = totalXP(), L = levelOf(xp);
+  document.getElementById("hero-name").textContent = S.name || "Кузнец";
+  document.getElementById("hero-rank").textContent = rankName(L.lvl);
+  document.getElementById("hero-level").textContent = L.lvl;
+  document.getElementById("hero-xpbar").style.width = L.pct + "%";
+  document.getElementById("hero-xp-now").textContent = fmt(xp) + " XP всего";
+  document.getElementById("hero-xp-next").textContent = "до " + (L.lvl + 1) + " уровня: " + fmt(L.need - L.cur) + " XP";
+
+  document.getElementById("nav-xp").textContent = fmt(xp);
+  document.getElementById("nav-streak").textContent = S.streak.count > 0 ? "🔥 " + S.streak.count : "";
+
+  document.getElementById("stat-quests").textContent = doneCount() + " / " + QUESTS.length;
+  document.getElementById("stat-streak").textContent = S.streak.count;
+  document.getElementById("stat-hours").textContent = hoursWord(totalMinutes());
+  var li = lastIncome();
+  document.getElementById("stat-income").textContent = li ? fmt(li.rub) + " ₽" : "—";
+
+  /* квест дня */
+  var q = nextQuest(), box = document.getElementById("today-box");
+  if (!q) {
+    box.innerHTML = '<div class="today-label">Всё пройдено</div>' +
+      '<div class="today-title">Шесть сезонов закрыты</div>' +
+      '<div class="today-desc">Пора писать сезон 7 — под то, чем вы занимаетесь теперь.</div>';
+  } else {
+    box.innerHTML =
+      '<div class="today-label">Следующий шаг · сезон ' + q.s + "</div>" +
+      '<div class="today-title">' + esc(q.title) + "</div>" +
+      (q.desc ? '<div class="today-desc">' + esc(q.desc) + "</div>" : "") +
+      '<div class="today-meta">' + typeChip(q.t) +
+        '<span class="chip time">⏱ ' + timeLabel(q.min) + "</span>" +
+        '<span class="chip xp">💎 ' + q.xp + " XP</span>" +
+        '<span class="chip">' + BRANCHES[q.b].icon + " " + esc(BRANCHES[q.b].name) + "</span>" +
+      "</div>" +
+      '<button class="btn primary" onclick="goToQuest(&quot;' + q.id + '&quot;)">Открыть квест →</button>';
+  }
+
+  /* мини-ветки */
+  var h = "";
+  for (var key in BRANCHES) {
+    var b = BRANCHES[key], st = branchStats(key);
+    h += '<div style="margin-bottom:11px">' +
+         '<div style="display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:5px">' +
+           "<span>" + b.icon + "</span><span>" + esc(b.name) + "</span>" +
+           '<span style="margin-left:auto;color:var(--gray);font-size:12px">' + st.done + " / " + st.total + "</span>" +
+         "</div>" +
+         '<div class="branch-bar"><div class="branch-bar-fill" style="width:' + st.pct + "%;background:" + b.color + '"></div></div>' +
+         "</div>";
+  }
+  document.getElementById("home-branches").innerHTML = h;
+}
+
+function renderTree() {
+  var h = "";
+  for (var key in BRANCHES) {
+    var b = BRANCHES[key], st = branchStats(key);
+    h += '<div class="branch-card">' +
+      '<div class="branch-head">' +
+        '<div class="branch-ic" style="background:' + b.bg + ";color:" + b.color + '">' + b.icon + "</div>" +
+        "<div><div class=\"branch-name\">" + esc(b.name) + "</div>" +
+        '<div class="branch-why">' + esc(b.why) + "</div></div>" +
+        '<div class="branch-pct"><div class="n" style="color:' + b.color + '">' + st.pct + "%</div>" +
+        '<div class="l">' + st.done + " из " + st.total + "</div></div>" +
+      "</div>" +
+      '<div class="branch-bar"><div class="branch-bar-fill" style="width:' + st.pct + "%;background:" + b.color + '"></div></div>' +
+      '<div class="nodes">';
+
+    for (var i = 0; i < QUESTS.length; i++) {
+      var q = QUESTS[i];
+      if (q.b !== key) continue;
+      var cls = "node" + (q.t === "boss" ? " boss" : "");
+      if (isDone(q.id)) cls += " done";
+      else if (isUnlocked(q)) cls += " open";
+      var label = q.t === "boss" ? "👑" : q.id.replace(/^S\d\./, "").replace(/^G\./, "G");
+      h += '<button class="' + cls + '" title="' + esc(q.title) + '" onclick="goToQuest(&quot;' + q.id + '&quot;)">' + esc(label) + "</button>";
+    }
+    h += "</div></div>";
+  }
+  document.getElementById("tree-list").innerHTML = h;
+}
+
+function renderSeason() {
+  var s = S.season, info = SEASONS[s - 1];
+  document.getElementById("season-title").textContent = "Сезон " + s + " — «" + info.name + "»";
+  document.getElementById("season-sub").textContent = info.sub + "  ·  около " + info.hours + " часов  ·  пройдено " + seasonPct(s) + "%";
+
+  var sw = "";
+  for (var i = 0; i < SEASONS.length; i++) {
+    var n = SEASONS[i].id, on = n === s, un = seasonUnlocked(n);
+    sw += '<button class="btn sm' + (on ? " primary" : "") + '" onclick="setSeason(' + n + ')" style="' +
+          (un ? "" : "opacity:.5") + '">' + (un ? "" : "🔒 ") + n + ". " + esc(SEASONS[i].name) +
+          " · " + seasonPct(n) + "%</button>";
+  }
+  document.getElementById("season-switch").innerHTML = sw;
+
+  var qs = seasonQuests(s), h = "", curWeek = "";
+  for (var j = 0; j < qs.length; j++) {
+    var q = qs[j];
+    if (q.w !== curWeek) { curWeek = q.w; h += '<div class="week-head">' + esc(curWeek) + "</div>"; }
+
+    var done = isDone(q.id), un2 = isUnlocked(q);
+    var cls = "quest" + (done ? " is-done" : "") + (!un2 && !done ? " is-lock" : "") + (q.t === "boss" ? " is-boss" : "");
+    var rec = S.done[q.id];
+
+    h += '<div class="' + cls + '" id="q-' + q.id + '">';
+
+    h += '<div class="quest-head">' +
+           '<button class="quest-check" onclick="toggleQuest(&quot;' + q.id + '&quot;)">✓</button>' +
+           '<div class="quest-body" onclick="toggleOpen(&quot;' + q.id + '&quot;)">' +
+             '<div class="quest-title">' + esc(q.title) + "</div>" +
+             '<div class="quest-meta">' + typeChip(q.t) +
+               '<span class="chip time">⏱ ' + timeLabel(q.min) + "</span>" +
+               '<span class="chip xp">💎 ' + q.xp + "</span>" +
+               '<span class="chip" style="color:' + BRANCHES[q.b].color + '">' + BRANCHES[q.b].icon + "</span>" +
+               (!un2 && !done ? '<span class="chip lock">🔒 закрыт</span>' : "") +
+             "</div>" +
+           "</div>" +
+           '<div class="quest-arrow" onclick="toggleOpen(&quot;' + q.id + '&quot;)">▶</div>' +
+         "</div>";
+
+    h += '<div class="quest-detail">';
+    if (q.desc) h += '<div class="quest-desc">' + esc(q.desc) + "</div>";
+    if (q.steps && q.steps.length) {
+      h += '<ul class="quest-steps">';
+      for (var k = 0; k < q.steps.length; k++) h += "<li>" + esc(q.steps[k]) + "</li>";
+      h += "</ul>";
+    }
+    if (!q.steps || !q.steps.length) {
+      h += '<div style="color:var(--gray);font-size:13px;margin-bottom:12px">Шаги распишем, когда подойдёте к этому сезону — иначе план устареет раньше, чем вы до него доберётесь.</div>';
+    }
+    if (q.t !== "read") {
+      h += '<div class="proof-box">' +
+             '<div class="proof-label">🔗 Пруф — ' + esc(q.proof || "ссылка на результат") + "</div>" +
+             '<input class="proof-input" id="proof-' + q.id + '" placeholder="https://github.com/... или описание, где смотреть" value="' +
+               esc(rec ? rec.proof : "") + '" oninput="saveProof(&quot;' + q.id + '&quot;, this.value)">' +
+           "</div>";
+    }
+    if (rec) h += '<div class="quest-done-line">✓ Сдано ' + esc(rec.ts) + "</div>";
+    h += "</div></div>";
+  }
+  document.getElementById("quest-list").innerHTML = h;
+}
+
+function renderMoney() {
+  var a = sortedIncome();
+  var chart = document.getElementById("money-chart");
+
+  if (!a.length) {
+    chart.innerHTML = '<div class="money-empty">Пока пусто. Запишите текущий месяц — это точка отсчёта,<br>от неё будет считаться рост.</div>';
+  } else {
+    var max = 0;
+    for (var i = 0; i < a.length; i++) if (a[i].rub > max) max = a[i].rub;
+    var h = '<div class="chart">';
+    for (var j = 0; j < a.length; j++) {
+      var pct = max ? Math.round(a[j].rub / max * 100) : 2;
+      var parts = a[j].m.split("-");
+      var MN = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+      h += '<div class="chart-col">' +
+             '<div class="chart-val">' + (a[j].rub >= 1000 ? Math.round(a[j].rub / 1000) + "к" : a[j].rub) + "</div>" +
+             '<div class="chart-bar" style="height:' + Math.max(pct, 2) + '%"></div>' +
+             '<div class="chart-lbl">' + MN[parseInt(parts[1], 10) - 1] + "</div>" +
+           "</div>";
+    }
+    h += "</div>";
+    chart.innerHTML = h;
+  }
+
+  var last = lastIncome();
+  var st = "";
+  function row(l, v, c) {
+    return '<div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)">' +
+           '<span style="color:var(--gray);font-size:13.5px">' + l + "</span>" +
+           '<span style="font-weight:650' + (c ? ";color:" + c : "") + '">' + v + "</span></div>";
+  }
+  if (last) {
+    var check = Math.round(last.rub / (last.projects || 1));
+    st += row("Последний месяц", fmt(last.rub) + " ₽");
+    st += row("Средний чек", fmt(check) + " ₽", check >= 100000 ? "var(--green)" : "");
+    st += row("В валюте", last.usd ? "$" + fmt(last.usd) : "—", last.usd ? "var(--green)" : "var(--gray)");
+    var g = incomeGrowth();
+    st += row("Рост от первого месяца", g ? "×" + (Math.round(g * 10) / 10) : "—", g >= 2 ? "var(--green)" : "");
+    st += row("Лучший средний чек", fmt(maxCheck()) + " ₽");
+  } else {
+    st = '<div style="color:var(--gray);font-size:13.5px">Данных пока нет.</div>';
+  }
+  document.getElementById("money-stats").innerHTML = st;
+
+  var goal = "";
+  if (last) {
+    var a0 = sortedIncome()[0];
+    var target = (a0.rub || 0) * 3;
+    var pct2 = target ? Math.min(100, Math.round(last.rub / target * 100)) : 0;
+    goal = '<div style="font-size:13.5px;color:var(--gray2);margin-bottom:12px">Цель сезона 6 — доход ×3 от первого записанного месяца, и чтобы половина была повторяющейся.</div>' +
+           '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">' +
+             "<span>" + fmt(last.rub) + " ₽</span><span style=\"color:var(--gold)\">" + fmt(target) + " ₽</span></div>" +
+           '<div class="branch-bar" style="height:9px"><div class="branch-bar-fill" style="width:' + pct2 + '%;background:linear-gradient(90deg,var(--fire),var(--gold))"></div></div>' +
+           '<div style="text-align:right;font-size:12px;color:var(--gray);margin-top:6px">' + pct2 + "%</div>";
+  } else {
+    goal = '<div style="color:var(--gray);font-size:13.5px">Запишите первый месяц — он станет точкой отсчёта для цели ×3.</div>';
+  }
+  document.getElementById("money-goal").innerHTML = goal;
+}
+
+function renderProfile() {
+  var h = "";
+  for (var i = 0; i < ACHIEVEMENTS.length; i++) {
+    var a = ACHIEVEMENTS[i], got = false;
+    try { got = a.check(); } catch (e) {}
+    h += '<div class="ach' + (got ? " got" : "") + '">' +
+           '<div class="ach-ic">' + a.ic + "</div>" +
+           '<div><div class="ach-name">' + esc(a.name) + "</div>" +
+           '<div class="ach-desc">' + esc(a.desc) + "</div></div>" +
+         "</div>";
+  }
+  document.getElementById("ach-list").innerHTML = h;
+
+  var p = "", any = false;
+  for (var s = 1; s <= 6; s++) {
+    var qs = seasonQuests(s);
+    for (var j = 0; j < qs.length; j++) {
+      var rec = S.done[qs[j].id];
+      if (!rec || !rec.proof) continue;
+      any = true;
+      var isLink = /^https?:\/\//.test(rec.proof);
+      p += '<div style="padding:9px 0;border-bottom:1px solid var(--border)">' +
+             '<div style="font-size:13.5px;font-weight:600">' + esc(qs[j].title) + "</div>" +
+             '<div style="font-size:12.5px;color:var(--gray);margin-top:2px">' + esc(rec.ts) + " · " +
+               (isLink ? '<a href="' + esc(rec.proof) + '" target="_blank" rel="noopener">' + esc(rec.proof) + "</a>" : esc(rec.proof)) +
+             "</div></div>";
+    }
+  }
+  document.getElementById("proof-list").innerHTML = any ? p :
+    '<div style="color:var(--gray);font-size:13.5px">Пока ничего не сдано с пруфом.</div>';
+}
+
+function renderAll() {
+  renderHome();
+  renderTree();
+  renderSeason();
+  renderMoney();
+  renderProfile();
+}
+
+/* ═══════════════════════════════════════════════
+   НАВИГАЦИЯ
+   ═══════════════════════════════════════════════ */
+
+function go(name) {
+  var secs = document.querySelectorAll(".section");
+  for (var i = 0; i < secs.length; i++) secs[i].className = "section";
+  document.getElementById("section-" + name).className = "section active";
+
+  var tabs = document.querySelectorAll(".nav-tab, .mnav-item");
+  for (var j = 0; j < tabs.length; j++) {
+    var isOn = tabs[j].getAttribute("data-go") === name;
+    var base = tabs[j].className.indexOf("mnav-item") > -1 ? "mnav-item" : "nav-tab";
+    tabs[j].className = base + (isOn ? " active" : "");
+  }
+  window.scrollTo(0, 0);
+}
+
+function setSeason(n) {
+  S.season = n; save(); renderSeason();
+}
+
+function goToQuest(id) {
+  var q = questById(id);
+  if (!q) return;
+  S.season = q.s; save();
+  renderSeason();
+  go("season");
+  setTimeout(function () {
+    var el = document.getElementById("q-" + id);
+    if (!el) return;
+    if (el.className.indexOf("open") === -1) el.className += " open";
+    el.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, 60);
+}
+
+var navBtns = document.querySelectorAll("[data-go]");
+for (var n = 0; n < navBtns.length; n++) {
+  navBtns[n].addEventListener("click", function () { go(this.getAttribute("data-go")); });
+}
+
+/* ═══════════════════════════════════════════════
+   ДЕНЬГИ: сохранение
+   ═══════════════════════════════════════════════ */
+
+document.getElementById("mn-save").addEventListener("click", function () {
+  var m = document.getElementById("mn-month").value;
+  var rub = parseInt(document.getElementById("mn-rub").value, 10) || 0;
+  var usd = parseInt(document.getElementById("mn-usd").value, 10) || 0;
+  if (!m) { toast("Выберите месяц"); return; }
+
+  openModal(
+    "<h3>Сколько проектов сдано?</h3>" +
+    "<p>Нужно, чтобы посчитать средний чек. Если работали по абонплате — считайте каждого клиента за проект.</p>" +
+    '<input class="big" type="number" id="mn-proj" value="1" min="1" inputmode="numeric">' +
+    '<div class="modal-btns">' +
+      '<button class="btn" onclick="closeModal()">Отмена</button>' +
+      '<button class="btn primary" onclick="commitIncome(&quot;' + m + '&quot;,' + rub + "," + usd + ')">Сохранить</button>' +
+    "</div>"
+  );
+});
+
+function commitIncome(m, rub, usd) {
+  var proj = parseInt(document.getElementById("mn-proj").value, 10) || 1;
+  var found = false;
+  for (var i = 0; i < S.income.length; i++) {
+    if (S.income[i].m === m) { S.income[i] = { m: m, rub: rub, usd: usd, projects: proj }; found = true; }
+  }
+  if (!found) S.income.push({ m: m, rub: rub, usd: usd, projects: proj });
+  save();
+  closeModal();
+  renderAll();
+  checkAchievements();
+  toast("Месяц записан");
+}
+
+/* ═══════════════════════════════════════════════
+   ПРОФИЛЬ: имя, синк, сброс
+   ═══════════════════════════════════════════════ */
+
+document.getElementById("btn-name").addEventListener("click", function () {
+  openModal(
+    "<h3>Как вас звать в кузнице?</h3>" +
+    '<input class="big" id="nm" maxlength="24" value="' + esc(S.name) + '" placeholder="Имя">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="saveName()">Сохранить</button></div>'
+  );
+  setTimeout(function () { var e = document.getElementById("nm"); if (e) e.focus(); }, 50);
+});
+
+function saveName() {
+  var v = document.getElementById("nm").value.trim();
+  S.name = v; save(); closeModal(); renderHome();
+}
+
+function encodeState() {
+  try { return btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
+  catch (e) { return ""; }
+}
+function decodeState(str) {
+  try { return JSON.parse(decodeURIComponent(escape(atob(str.trim())))); }
+  catch (e) { return null; }
+}
+
+document.getElementById("btn-export").addEventListener("click", function () {
+  openModal(
+    "<h3>Код синхронизации</h3>" +
+    "<p>Скопируйте всё содержимое, откройте игру на другом устройстве и вставьте через «Загрузить код».</p>" +
+    '<textarea id="ex" readonly>' + esc(encodeState()) + "</textarea>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Закрыть</button>' +
+    '<button class="btn primary" onclick="copyCode()">Скопировать</button></div>'
+  );
+});
+
+function copyCode() {
+  var t = document.getElementById("ex");
+  t.select(); t.setSelectionRange(0, 999999);
+  try { document.execCommand("copy"); toast("Скопировано"); } catch (e) { toast("Выделите и скопируйте вручную"); }
+}
+
+document.getElementById("btn-import").addEventListener("click", function () {
+  openModal(
+    "<h3>Загрузить код</h3>" +
+    "<p>Вставьте код с другого устройства. Текущий прогресс на этом устройстве будет заменён.</p>" +
+    '<textarea id="im" placeholder="Вставьте код сюда"></textarea>' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="doImport()">Загрузить</button></div>'
+  );
+});
+
+function doImport() {
+  var v = document.getElementById("im").value;
+  var p = decodeState(v);
+  if (!p || !p.done) { toast("Код не распознан"); return; }
+  S = p;
+  if (!S.streak) S.streak = { last: "", count: 0, best: 0 };
+  if (!S.income) S.income = [];
+  if (!S.seenAch) S.seenAch = [];
+  save(); closeModal(); renderAll();
+  toast("Прогресс загружен");
+}
+
+document.getElementById("btn-reset").addEventListener("click", function () {
+  openModal(
+    '<h3 style="color:var(--red)">Сбросить всё?</h3>' +
+    "<p>Удалятся квесты, пруфы, стрик и записи о доходе. Отменить будет нельзя. Если хотите сохранить копию — сначала возьмите код синхронизации.</p>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Не надо</button>' +
+    '<button class="btn danger" onclick="doReset()">Сбросить</button></div>'
+  );
+});
+
+function doReset() {
+  S = { name: "", done: {}, streak: { last: "", count: 0, best: 0 }, income: [], season: 1, seenAch: [] };
+  save(); closeModal(); renderAll(); go("home");
+  toast("Прогресс сброшен");
+}
+
+/* ═══════════════════════════════════════════════
+   ОНБОРДИНГ И СТАРТ
+   ═══════════════════════════════════════════════ */
+
+function boot() {
+  load();
+
+  var d = new Date();
+  var mm = d.getMonth() + 1;
+  document.getElementById("mn-month").value = d.getFullYear() + "-" + (mm < 10 ? "0" : "") + mm;
+
+  renderAll();
+  go("home");
+
+  if (!S.name && doneCount() === 0) {
+    setTimeout(function () {
+      openModal(
+        "<h3>🔥 Кузница</h3>" +
+        "<p>План развития в виде игры: шесть сезонов, пять веток навыков, боссы — реальные проекты. XP даётся за сделанное, а не за прочитанное.<br><br>Как к вам обращаться?</p>" +
+        '<input class="big" id="nm" maxlength="24" placeholder="Имя">' +
+        '<div class="modal-btns"><button class="btn" onclick="closeModal()">Потом</button>' +
+        '<button class="btn primary" onclick="saveName()">Начать</button></div>'
+      );
+      setTimeout(function () { var e = document.getElementById("nm"); if (e) e.focus(); }, 50);
+    }, 400);
+  }
+}
+
+boot();
+</script>
+</body>
+</html>
