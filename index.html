@@ -355,6 +355,60 @@
   .path-step.active .path-lbl { color: var(--white); font-weight: 600; }
   .path-step.complete .path-lbl { color: var(--gray2); }
 
+  /* ─────────── ГРАФ ДЕРЕВА ─────────── */
+  .tree-wrap { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 15px; background: var(--card); overflow: hidden; }
+  .tree-labels { flex-shrink: 0; width: 132px; border-right: 1px solid var(--border); background: var(--dark); }
+  .tree-lane-lbl {
+    height: 78px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+    border-bottom: 1px solid var(--border); font-size: 12.5px; font-weight: 600; line-height: 1.25;
+  }
+  .tree-lane-lbl:last-child { border-bottom: none; }
+  .tree-lane-lbl .ic { font-size: 16px; flex-shrink: 0; }
+  .tree-lane-lbl .pc { margin-left: auto; font-size: 11px; color: var(--gray); }
+  .tree-scroll { flex: 1; overflow-x: auto; overflow-y: hidden; }
+  .tree-inner { position: relative; height: 100%; }
+  .tree-lane-bg { position: absolute; left: 0; right: 0; height: 78px; border-bottom: 1px solid var(--border); }
+  .tree-links { position: absolute; inset: 0; pointer-events: none; }
+  .tnode {
+    position: absolute; width: 44px; height: 44px; border-radius: 13px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; z-index: 2;
+    background: var(--dark); border: 2px solid var(--border); color: var(--gray);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .tnode:hover { transform: scale(1.12); z-index: 5; }
+  .tnode.done { background: var(--green-dim); border-color: #17663F; color: var(--green); }
+  .tnode.open { border-color: var(--fire); color: var(--fire-soft); background: var(--fire-dim);
+                box-shadow: 0 0 0 4px rgba(255,138,61,.12); }
+  .tnode.boss { border-radius: 50%; width: 50px; height: 50px; font-size: 18px; }
+  .tnode.boss.open { box-shadow: 0 0 0 5px rgba(169,139,240,.18); border-color: var(--purple); color: var(--purple); }
+  .tree-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--gray); margin-top: 12px; }
+  .tree-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .tree-dot { width: 12px; height: 12px; border-radius: 4px; border: 2px solid var(--border); background: var(--dark); }
+  .tree-dot.done { background: var(--green-dim); border-color: #17663F; }
+  .tree-dot.open { background: var(--fire-dim); border-color: var(--fire); }
+
+  /* ─────────── ТАЙМЕР ─────────── */
+  .timer-box {
+    display: flex; align-items: center; gap: 11px;
+    background: var(--dark); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+  }
+  .timer-box.running { border-color: var(--fire); background: var(--fire-dim); }
+  .timer-val { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 62px; }
+  .timer-box.running .timer-val { color: var(--fire); }
+  .timer-hint { font-size: 12.5px; color: var(--gray); flex: 1; line-height: 1.4; }
+  .timer-spent { font-size: 12px; color: var(--green); font-weight: 600; }
+
+  /* ─────────── ФИЛЬТРЫ ─────────── */
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .fchip {
+    padding: 6px 12px; border-radius: 100px; font-size: 12.5px; font-weight: 600;
+    background: var(--card); border: 1px solid var(--border); color: var(--gray2); transition: .15s;
+  }
+  .fchip:hover { border-color: var(--border2); }
+  .fchip.on { background: var(--fire-dim); border-color: var(--fire); color: var(--fire); }
+
   /* ─────────── КАЛЕНДАРЬ АКТИВНОСТИ ─────────── */
   .heat { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
   .heat-week { display: flex; flex-direction: column; gap: 3px; }
@@ -570,15 +624,28 @@
   <!-- ══════════ ДЕРЕВО ══════════ -->
   <section class="section" id="section-tree">
     <h2 class="page-title">Дерево навыков</h2>
-    <p class="page-sub">Пять веток. Технические поднимают потолок, «Деньги» и «Мировой рынок» превращают потолок в доход.</p>
-    <div id="tree-list"></div>
+    <p class="page-sub">Пять веток-дорожек. Линии — зависимости: пока не закрыт квест слева, следующий не откроется.</p>
+    <div id="tree-seasons" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div class="tree-wrap">
+      <div class="tree-labels" id="tree-labels"></div>
+      <div class="tree-scroll"><div class="tree-inner" id="tree-inner"></div></div>
+    </div>
+    <div class="tree-legend">
+      <span><i class="tree-dot done"></i> пройдено</span>
+      <span><i class="tree-dot open"></i> открыто сейчас</span>
+      <span><i class="tree-dot"></i> закрыто</span>
+      <span>👑 босс сезона</span>
+      <span style="margin-left:auto" id="tree-hint">Нажмите на узел, чтобы открыть квест</span>
+    </div>
+    <div style="margin-top:20px" id="tree-list"></div>
   </section>
 
   <!-- ══════════ КВЕСТЫ ══════════ -->
   <section class="section" id="section-season">
     <h2 class="page-title" id="season-title">Сезон 1 — «Первый агент»</h2>
     <p class="page-sub" id="season-sub"></p>
-    <div id="season-switch" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:20px"></div>
+    <div id="season-switch" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div class="filters" id="quest-filters"></div>
     <div id="quest-list"></div>
   </section>
 
@@ -1057,7 +1124,8 @@ var S = {
   income: [],                                // { m:"2026-08", rub:0, usd:0, projects:1 }
   season: 1,
   seenAch: [],
-  log: []                                    // { ts, ic, text } — последние 40 событий
+  log: [],                                   // { ts, ic, text } — последние 40 событий
+  sessions: []                               // { d:"2026-08-30", id:"1.3", m:25 } — замеры таймером
 };
 
 var DAY_GOAL = 60;                           // минут в день
@@ -1074,6 +1142,7 @@ function load() {
     if (typeof p.season === "number") S.season = p.season;
     if (Object.prototype.toString.call(p.seenAch) === "[object Array]") S.seenAch = p.seenAch;
     if (Object.prototype.toString.call(p.log) === "[object Array]") S.log = p.log;
+    if (Object.prototype.toString.call(p.sessions) === "[object Array]") S.sessions = p.sessions;
   } catch (e) {}
 }
 
@@ -1101,8 +1170,13 @@ function totalXP() {
 function doneCount() { var n = 0; for (var k in S.done) n++; return n; }
 
 function totalMinutes() {
-  var m = 0;
-  for (var id in S.done) { var q = questById(id); if (q) m += q.min; }
+  var m = 0, i;
+  for (i = 0; i < S.sessions.length; i++) m += S.sessions[i].m;
+  for (var id in S.done) {
+    if (sessionMinutes(id) > 0) continue;
+    var q = questById(id);
+    if (q) m += q.min;
+  }
   return m;
 }
 
@@ -1183,11 +1257,21 @@ function nextQuest() {
   return null;
 }
 
-/* ── время по дням ── */
-function minutesOn(date) {
+/* ── время по дням ──
+   Если по квесту были замеры таймером — берём факт.
+   Если нет — берём оценку из плана в день, когда квест закрыт. */
+function sessionMinutes(id) {
   var m = 0;
+  for (var i = 0; i < S.sessions.length; i++) if (S.sessions[i].id === id) m += S.sessions[i].m;
+  return m;
+}
+
+function minutesOn(date) {
+  var m = 0, i;
+  for (i = 0; i < S.sessions.length; i++) if (S.sessions[i].d === date) m += S.sessions[i].m;
   for (var id in S.done) {
     if (S.done[id].ts !== date) continue;
+    if (sessionMinutes(id) > 0) continue;
     var q = questById(id);
     if (q) m += q.min;
   }
@@ -1412,12 +1496,84 @@ function touchStreak() {
 }
 
 /* ═══════════════════════════════════════════════
+   ТАЙМЕР РАБОТЫ НАД КВЕСТОМ
+   ═══════════════════════════════════════════════ */
+
+var timer = { id: null, start: 0, tick: null };
+
+function mmss(sec) {
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return (m < 10 ? "0" : "") + m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+function timerTick() {
+  if (!timer.id) return;
+  var sec = Math.floor((Date.now() - timer.start) / 1000);
+  var el = document.getElementById("tmv-" + timer.id);
+  if (el) el.textContent = mmss(sec);
+}
+
+function startTimer(id) {
+  if (timer.id && timer.id !== id) stopTimer(true);
+  timer.id = id;
+  timer.start = Date.now();
+  timer.tick = setInterval(timerTick, 1000);
+  renderTimerBox(id);
+  toast("Таймер пошёл. Остановите, когда закончите — время запишется.");
+}
+
+function stopTimer(silent) {
+  if (!timer.id) return;
+  var id = timer.id;
+  var min = Math.round((Date.now() - timer.start) / 60000);
+  clearInterval(timer.tick);
+  timer.id = null; timer.tick = null;
+
+  if (min >= 1) {
+    S.sessions.push({ d: today(), id: id, m: min });
+    touchStreak();
+    save();
+    renderAll();
+    if (!silent) toast("Записано " + min + " " + plural(min, "минута", "минуты", "минут"), true);
+  } else {
+    renderTimerBox(id);
+    if (!silent) toast("Меньше минуты — не записываю");
+  }
+}
+
+function toggleTimer(id) {
+  if (timer.id === id) stopTimer(false);
+  else startTimer(id);
+}
+
+/* Перерисовать только один блок таймера, не трогая остальную карточку */
+function renderTimerBox(id) {
+  var box = document.getElementById("tm-" + id);
+  if (!box) return;
+  var q = questById(id);
+  var spent = sessionMinutes(id);
+  var running = timer.id === id;
+  box.className = "timer-box" + (running ? " running" : "");
+  box.innerHTML =
+    '<button class="btn sm' + (running ? "" : " primary") + '" onclick="toggleTimer(&quot;' + id + '&quot;)">' +
+      (running ? "⏹ Стоп" : "▶ Начать") + "</button>" +
+    '<div class="timer-val" id="tmv-' + id + '">' + (running ? mmss(Math.floor((Date.now() - timer.start) / 1000)) : "00:00") + "</div>" +
+    '<div class="timer-hint">' +
+      (running ? "Идёт работа. Остановите — минуты уйдут в дневное кольцо."
+               : "Оценка: " + timeLabel(q.min) + ".") +
+      (spent ? ' <span class="timer-spent">Уже потрачено: ' + timeLabel(spent) + "</span>" : "") +
+    "</div>";
+}
+
+/* ═══════════════════════════════════════════════
    ДЕЙСТВИЯ С КВЕСТАМИ
    ═══════════════════════════════════════════════ */
 
 function toggleQuest(id) {
   var q = questById(id);
   if (!q) return;
+
+  if (timer.id === id) stopTimer(true);      // закрываем квест — таймер дописывает время
 
   if (isDone(id)) {
     delete S.done[id];
@@ -1461,7 +1617,7 @@ function toggleQuest(id) {
   var btn = document.querySelector('[id="q-' + q.id + '"] .quest-check');
   xpPop(btn, q.xp);
 
-  var dayBefore = todayMinutes() - q.min;
+  var dayBefore = todayMinutes() - (sessionMinutes(id) ? 0 : q.min);
   renderAll();
 
   if (q.t === "boss") {
@@ -1745,7 +1901,142 @@ function renderHome() {
   document.getElementById("home-branches").innerHTML = h;
 }
 
+/* ── граф дерева: дорожки = ветки, колонки = порядок по зависимостям ── */
+var LANE_H = 78, COL_W = 74, NODE = 44;
+
+function layoutSeason(s) {
+  var qs = seasonQuests(s);
+  var byId = {}, i, j;
+  for (i = 0; i < qs.length; i++) byId[qs[i].id] = qs[i];
+
+  /* дорожки — только ветки, встречающиеся в этом сезоне */
+  var lanes = [], laneIdx = {};
+  for (var key in BRANCHES) {
+    for (i = 0; i < qs.length; i++) if (qs[i].b === key) { laneIdx[key] = lanes.length; lanes.push(key); break; }
+  }
+
+  /* колонка: правее всех своих зависимостей и правее соседа по дорожке */
+  var col = {};
+  for (i = 0; i < qs.length; i++) col[qs[i].id] = 0;
+
+  for (var pass = 0; pass < 30; pass++) {
+    var moved = false;
+
+    for (i = 0; i < qs.length; i++) {
+      var q = qs[i];
+      if (!q.dep) continue;
+      for (j = 0; j < q.dep.length; j++) {
+        var d = q.dep[j];
+        if (col[d] === undefined) continue;               // зависимость из другого сезона
+        if (col[q.id] <= col[d]) { col[q.id] = col[d] + 1; moved = true; }
+      }
+    }
+
+    for (var l = 0; l < lanes.length; l++) {
+      var inLane = [];
+      for (i = 0; i < qs.length; i++) if (qs[i].b === lanes[l]) inLane.push(qs[i]);
+      inLane.sort(function (a, b) { return col[a.id] - col[b.id]; });
+      for (i = 1; i < inLane.length; i++) {
+        if (col[inLane[i].id] <= col[inLane[i - 1].id]) {
+          col[inLane[i].id] = col[inLane[i - 1].id] + 1;
+          moved = true;
+        }
+      }
+    }
+    if (!moved) break;
+  }
+
+  var maxCol = 0;
+  for (i = 0; i < qs.length; i++) if (col[qs[i].id] > maxCol) maxCol = col[qs[i].id];
+
+  var pos = {};
+  for (i = 0; i < qs.length; i++) {
+    var qq = qs[i];
+    pos[qq.id] = {
+      x: 18 + col[qq.id] * COL_W,
+      y: laneIdx[qq.b] * LANE_H + (LANE_H - NODE) / 2
+    };
+  }
+  return { quests: qs, lanes: lanes, pos: pos, width: 18 + (maxCol + 1) * COL_W, height: lanes.length * LANE_H };
+}
+
+function renderTreeGraph() {
+  var s = S.season, L = layoutSeason(s);
+  var i;
+
+  /* переключатель сезонов */
+  var sw = "";
+  for (i = 0; i < SEASONS.length; i++) {
+    var n = SEASONS[i].id, un = seasonUnlocked(n);
+    sw += '<button class="fchip' + (n === s ? " on" : "") + '" onclick="setSeason(' + n + ')">' +
+          (un ? "" : "🔒 ") + n + ". " + esc(SEASONS[i].name) + "</button>";
+  }
+  document.getElementById("tree-seasons").innerHTML = sw;
+
+  /* подписи дорожек */
+  var lh = "";
+  for (i = 0; i < L.lanes.length; i++) {
+    var b = BRANCHES[L.lanes[i]];
+    var tot = 0, dn = 0;
+    for (var k = 0; k < L.quests.length; k++) {
+      if (L.quests[k].b !== L.lanes[i]) continue;
+      tot++; if (isDone(L.quests[k].id)) dn++;
+    }
+    lh += '<div class="tree-lane-lbl" style="color:' + b.color + '">' +
+            '<span class="ic">' + b.icon + "</span>" +
+            "<span>" + esc(b.name) + "</span>" +
+            '<span class="pc">' + dn + "/" + tot + "</span>" +
+          "</div>";
+  }
+  document.getElementById("tree-labels").innerHTML = lh;
+
+  /* полотно */
+  var inner = document.getElementById("tree-inner");
+  inner.style.width = L.width + "px";
+  inner.style.height = L.height + "px";
+  document.getElementById("tree-labels").style.height = L.height + "px";
+
+  var h = "";
+  for (i = 0; i < L.lanes.length; i++) {
+    h += '<div class="tree-lane-bg" style="top:' + (i * LANE_H) + "px;background:" +
+         (i % 2 ? "rgba(255,255,255,.012)" : "transparent") + '"></div>';
+  }
+
+  /* связи */
+  var paths = "";
+  for (i = 0; i < L.quests.length; i++) {
+    var q = L.quests[i];
+    if (!q.dep) continue;
+    for (var j = 0; j < q.dep.length; j++) {
+      var from = L.pos[q.dep[j]], to = L.pos[q.id];
+      if (!from || !to) continue;
+      var x1 = from.x + NODE, y1 = from.y + NODE / 2;
+      var x2 = to.x,          y2 = to.y + NODE / 2;
+      var stroke = isDone(q.dep[j]) ? (isDone(q.id) ? "#17663F" : "#FF8A3D") : "#262B38";
+      paths += '<path d="M' + x1 + " " + y1 + " C" + (x1 + 34) + " " + y1 + "," + (x2 - 34) + " " + y2 +
+               "," + x2 + " " + y2 + '" fill="none" stroke="' + stroke + '" stroke-width="2" ' +
+               (isDone(q.dep[j]) ? "" : 'stroke-dasharray="4 4" ') + "/>";
+    }
+  }
+  h += '<svg class="tree-links" width="' + L.width + '" height="' + L.height + '">' + paths + "</svg>";
+
+  /* узлы */
+  for (i = 0; i < L.quests.length; i++) {
+    var qn = L.quests[i], p = L.pos[qn.id];
+    var cls = "tnode" + (qn.t === "boss" ? " boss" : "");
+    if (isDone(qn.id)) cls += " done";
+    else if (isUnlocked(qn)) cls += " open";
+    var label = qn.t === "boss" ? "👑" : isDone(qn.id) ? "✓" : qn.id.replace(/^S\d\./, "").replace(/^G\.(\d)/, "G$1");
+    var off = qn.t === "boss" ? -3 : 0;
+    h += '<button class="' + cls + '" style="left:' + (p.x + off) + "px;top:" + (p.y + off) + 'px" ' +
+         'title="' + esc(qn.title) + " · " + qn.xp + ' XP" onclick="goToQuest(&quot;' + qn.id + '&quot;)">' +
+         esc(label) + "</button>";
+  }
+  inner.innerHTML = h;
+}
+
 function renderTree() {
+  renderTreeGraph();
   var h = "";
   for (var key in BRANCHES) {
     var b = BRANCHES[key], st = branchStats(key);
@@ -1758,20 +2049,10 @@ function renderTree() {
         '<div class="l">' + st.done + " из " + st.total + "</div></div>" +
       "</div>" +
       '<div class="branch-bar"><div class="branch-bar-fill" style="width:' + st.pct + "%;background:" + b.color + '"></div></div>' +
-      '<div class="nodes">';
-
-    for (var i = 0; i < QUESTS.length; i++) {
-      var q = QUESTS[i];
-      if (q.b !== key) continue;
-      var cls = "node" + (q.t === "boss" ? " boss" : "");
-      if (isDone(q.id)) cls += " done";
-      else if (isUnlocked(q)) cls += " open";
-      var label = q.t === "boss" ? "👑" : q.id.replace(/^S\d\./, "").replace(/^G\./, "G");
-      h += '<button class="' + cls + '" title="' + esc(q.title) + '" onclick="goToQuest(&quot;' + q.id + '&quot;)">' + esc(label) + "</button>";
-    }
-    h += "</div></div>";
+      '</div>';
   }
-  document.getElementById("tree-list").innerHTML = h;
+  document.getElementById("tree-list").innerHTML =
+    '<h3 style="font-size:15px;margin-bottom:12px;color:var(--gray2)">Все шесть сезонов вместе</h3>' + h;
 }
 
 function renderSeason() {
@@ -1790,7 +2071,32 @@ function renderSeason() {
   }
   document.getElementById("season-switch").innerHTML = sw;
 
-  var qs = seasonQuests(s), h = "", curWeek = "";
+  /* фильтры: ветки этого сезона + «осталось» */
+  var used = [], fh = "";
+  var all = seasonQuests(s);
+  for (var f = 0; f < all.length; f++) if (used.indexOf(all[f].b) === -1) used.push(all[f].b);
+  fh += '<button class="fchip' + (FILTER === "all" ? " on" : "") + '" onclick="setFilter(&quot;all&quot;)">Все · ' + all.length + "</button>";
+  var leftCnt = 0;
+  for (f = 0; f < all.length; f++) if (!isDone(all[f].id)) leftCnt++;
+  fh += '<button class="fchip' + (FILTER === "todo" ? " on" : "") + '" onclick="setFilter(&quot;todo&quot;)">Осталось · ' + leftCnt + "</button>";
+  for (f = 0; f < used.length; f++) {
+    var bb = BRANCHES[used[f]], cnt = 0;
+    for (var g = 0; g < all.length; g++) if (all[g].b === used[f]) cnt++;
+    fh += '<button class="fchip' + (FILTER === used[f] ? " on" : "") + '" onclick="setFilter(&quot;' + used[f] + '&quot;)">' +
+          bb.icon + " " + esc(bb.name) + " · " + cnt + "</button>";
+  }
+  document.getElementById("quest-filters").innerHTML = fh;
+
+  var qs = [];
+  for (var fi = 0; fi < all.length; fi++) {
+    var qf = all[fi];
+    if (FILTER === "all") qs.push(qf);
+    else if (FILTER === "todo") { if (!isDone(qf.id)) qs.push(qf); }
+    else if (qf.b === FILTER) qs.push(qf);
+  }
+
+  var h = "", curWeek = "";
+  if (!qs.length) h = '<div class="card" style="text-align:center;color:var(--gray)">Здесь пусто — всё пройдено.</div>';
   for (var j = 0; j < qs.length; j++) {
     var q = qs[j];
     if (q.w !== curWeek) { curWeek = q.w; h += '<div class="week-head">' + esc(curWeek) + "</div>"; }
@@ -1825,6 +2131,7 @@ function renderSeason() {
     if (!q.steps || !q.steps.length) {
       h += '<div style="color:var(--gray);font-size:13px;margin-bottom:12px">Шаги распишем, когда подойдёте к этому сезону — иначе план устареет раньше, чем вы до него доберётесь.</div>';
     }
+    h += '<div class="timer-box" id="tm-' + q.id + '"></div>';
     if (q.t !== "read") {
       h += '<div class="proof-box">' +
              '<div class="proof-label">🔗 Пруф — ' + esc(q.proof || "ссылка на результат") + "</div>" +
@@ -1836,6 +2143,7 @@ function renderSeason() {
     h += "</div></div>";
   }
   document.getElementById("quest-list").innerHTML = h;
+  for (var t = 0; t < qs.length; t++) renderTimerBox(qs[t].id);
 }
 
 function renderMoney() {
@@ -1960,14 +2268,20 @@ function go(name) {
   window.scrollTo(0, 0);
 }
 
+var FILTER = "all";
+
+function setFilter(f) { FILTER = f; renderSeason(); }
+
 function setSeason(n) {
-  S.season = n; save(); renderSeason(); renderPath(); renderDay();
+  S.season = n; save(); renderSeason(); renderPath(); renderDay(); renderTreeGraph();
 }
 
 function goToQuest(id) {
   var q = questById(id);
   if (!q) return;
-  S.season = q.s; save();
+  S.season = q.s;
+  FILTER = "all";                            // иначе нужный квест может быть отфильтрован
+  save();
   renderSeason();
   go("season");
   setTimeout(function () {
@@ -2083,6 +2397,7 @@ function doImport() {
   if (!S.income) S.income = [];
   if (!S.seenAch) S.seenAch = [];
   if (!S.log) S.log = [];
+  if (!S.sessions) S.sessions = [];
   save(); closeModal(); renderAll();
   toast("Прогресс загружен");
 }
@@ -2097,7 +2412,7 @@ document.getElementById("btn-reset").addEventListener("click", function () {
 });
 
 function doReset() {
-  S = { name: "", done: {}, streak: { last: "", count: 0, best: 0 }, income: [], season: 1, seenAch: [], log: [] };
+  S = { name: "", done: {}, streak: { last: "", count: 0, best: 0 }, income: [], season: 1, seenAch: [], log: [], sessions: [] };
   save(); closeModal(); renderAll(); go("home");
   toast("Прогресс сброшен");
 }
