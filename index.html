@@ -301,6 +301,132 @@
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
   .toast.xp { border-color: #4A3800; color: var(--gold); }
 
+  /* ─────────── КОЛЬЦО ДНЯ ─────────── */
+  .day-card { display: flex; align-items: center; gap: 18px; }
+  .ring-wrap { position: relative; width: 92px; height: 92px; flex-shrink: 0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--dark); stroke-width: 9; }
+  .ring-fg {
+    fill: none; stroke: url(#ringGrad); stroke-width: 9; stroke-linecap: round;
+    transition: stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);
+  }
+  .ring-txt {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0;
+  }
+  .ring-txt .n { font-size: 21px; font-weight: 800; line-height: 1; }
+  .ring-txt .l { font-size: 10px; color: var(--gray); margin-top: 2px; }
+  .day-info { flex: 1; min-width: 0; }
+  .day-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .day-sub { color: var(--gray); font-size: 13px; line-height: 1.5; }
+  .day-flame {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--fire-dim); border: 1px solid #4A2A12;
+    color: var(--fire); font-weight: 700; font-size: 13px;
+    padding: 4px 11px; border-radius: 100px; margin-top: 9px;
+  }
+
+  /* ─────────── КАРТА СЕЗОНА ─────────── */
+  .path { display: flex; align-items: stretch; gap: 0; margin-top: 4px; }
+  .path-step { flex: 1; position: relative; text-align: center; min-width: 0; }
+  .path-step::before {
+    content: ""; position: absolute; top: 17px; left: 0; right: 50%;
+    height: 3px; background: var(--border);
+  }
+  .path-step::after {
+    content: ""; position: absolute; top: 17px; left: 50%; right: 0;
+    height: 3px; background: var(--border);
+  }
+  .path-step:first-child::before, .path-step:last-child::after { display: none; }
+  .path-step.filled::before, .path-step.filled-r::after { background: var(--fire); }
+  .path-dot {
+    position: relative; z-index: 2; width: 36px; height: 36px; margin: 0 auto 8px;
+    border-radius: 50%; background: var(--dark); border: 3px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--gray); transition: .3s;
+  }
+  .path-step.active .path-dot {
+    border-color: var(--fire); color: var(--fire); background: var(--fire-dim);
+    box-shadow: 0 0 0 5px rgba(255,138,61,.12);
+  }
+  .path-step.complete .path-dot { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+  .path-step.boss-step .path-dot { border-radius: 12px; }
+  .path-lbl { font-size: 11.5px; color: var(--gray); line-height: 1.35; padding: 0 4px; }
+  .path-step.active .path-lbl { color: var(--white); font-weight: 600; }
+  .path-step.complete .path-lbl { color: var(--gray2); }
+
+  /* ─────────── КАЛЕНДАРЬ АКТИВНОСТИ ─────────── */
+  .heat { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+  .heat-week { display: flex; flex-direction: column; gap: 3px; }
+  .heat-cell { width: 13px; height: 13px; border-radius: 3px; background: var(--dark); border: 1px solid transparent; }
+  .heat-cell.l1 { background: #3A2410; }
+  .heat-cell.l2 { background: #6B3C13; }
+  .heat-cell.l3 { background: #B3601C; }
+  .heat-cell.l4 { background: var(--fire); }
+  .heat-cell.today { border-color: var(--gold); }
+  .heat-legend { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--gray); margin-top: 10px; }
+
+  /* ─────────── ЛЕНТА СОБЫТИЙ ─────────── */
+  .log-item { display: flex; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .log-item:last-child { border-bottom: none; }
+  .log-ic { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+  .log-txt { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.4; }
+  .log-date { font-size: 11.5px; color: var(--gray); flex-shrink: 0; }
+  .log-empty { color: var(--gray); font-size: 13.5px; padding: 10px 0; }
+
+  /* ─────────── ЭКРАН ПОБЕДЫ ─────────── */
+  .victory { text-align: center; }
+  .victory-crown { font-size: 56px; line-height: 1; margin-bottom: 12px; animation: pop .5s cubic-bezier(.2,1.4,.5,1); }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .victory h3 { font-size: 24px; background: linear-gradient(90deg, var(--fire), var(--gold));
+                -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 6px; }
+  .victory-xp { font-size: 34px; font-weight: 800; color: var(--gold); margin: 14px 0 4px; }
+  .victory-stats { display: flex; gap: 10px; margin-top: 18px; }
+  .victory-stats > div { flex: 1; background: var(--dark); border: 1px solid var(--border); border-radius: 11px; padding: 11px 8px; }
+  .victory-stats .n { font-size: 18px; font-weight: 700; }
+  .victory-stats .l { font-size: 11px; color: var(--gray); }
+
+  .confetti-piece {
+    position: fixed; width: 9px; height: 14px; top: -20px; z-index: 700;
+    pointer-events: none; opacity: .95;
+  }
+  @keyframes fall {
+    to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ─────────── ВСПЛЫВАЮЩИЙ XP ─────────── */
+  .xp-pop {
+    position: fixed; z-index: 650; pointer-events: none;
+    font-weight: 800; font-size: 20px; color: var(--gold);
+    text-shadow: 0 2px 10px rgba(0,0,0,.6);
+    animation: xpfly 1.1s ease-out forwards;
+  }
+  @keyframes xpfly {
+    0%   { transform: translateY(0) scale(.7); opacity: 0; }
+    18%  { transform: translateY(-8px) scale(1.15); opacity: 1; }
+    100% { transform: translateY(-64px) scale(1); opacity: 0; }
+  }
+
+  /* ─────────── ПРОГНОЗ ─────────── */
+  .forecast {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--dark); border: 1px solid var(--border);
+    border-radius: 11px; padding: 11px 13px; margin-top: 14px;
+    font-size: 13px; color: var(--gray2);
+  }
+  .forecast b { color: var(--white); }
+
+  /* ─────────── СЛЕДУЮЩАЯ НАГРАДА ─────────── */
+  .next-reward {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 13px; border-radius: 11px; margin-top: 12px;
+    background: linear-gradient(120deg, var(--gold-dim), var(--card));
+    border: 1px solid #4A3800;
+  }
+  .next-reward .ic { font-size: 21px; filter: grayscale(1) opacity(.5); }
+  .next-reward .t { font-size: 13px; font-weight: 650; color: var(--gold); }
+  .next-reward .s { font-size: 12px; color: var(--gray); }
+
   /* ─────────── MOBILE ─────────── */
   .mobile-nav { display: none; }
 
@@ -331,6 +457,14 @@
     h2.page-title { font-size: 21px; }
     .hero-lvl .n { font-size: 26px; }
     .toast { bottom: 100px; }
+
+    .path { overflow-x: auto; padding-bottom: 6px; }
+    .path-step { min-width: 84px; }
+    .path-lbl { font-size: 11px; }
+    .ring-wrap { width: 80px; height: 80px; }
+    .day-card { gap: 14px; }
+    .victory-stats { flex-direction: column; }
+    .heat-cell { width: 12px; height: 12px; }
   }
 </style>
 </head>
@@ -375,13 +509,50 @@
       </div>
       <div class="hero-stats">
         <div class="hstat"><div class="n" id="stat-quests">0</div><div class="l">квестов пройдено</div></div>
-        <div class="hstat"><div class="n" id="stat-streak">0</div><div class="l">дней подряд</div></div>
+        <div class="hstat"><div class="n" id="stat-streak">0</div><div class="l" id="stat-streak-word">дней подряд</div></div>
         <div class="hstat"><div class="n" id="stat-hours">0 ч</div><div class="l">вложено времени</div></div>
         <div class="hstat"><div class="n" id="stat-income">—</div><div class="l">доход за месяц</div></div>
       </div>
     </div>
 
-    <div class="today" id="today-box"></div>
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="day-card">
+          <div class="ring-wrap">
+            <svg width="92" height="92" viewBox="0 0 92 92">
+              <defs>
+                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#E2571F"/>
+                  <stop offset="60%" stop-color="#FF8A3D"/>
+                  <stop offset="100%" stop-color="#F0B429"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-bg" cx="46" cy="46" r="38"/>
+              <circle class="ring-fg" id="day-ring" cx="46" cy="46" r="38"
+                      stroke-dasharray="238.8" stroke-dashoffset="238.8"/>
+            </svg>
+            <div class="ring-txt">
+              <div class="n" id="day-min">0</div>
+              <div class="l">из 60 мин</div>
+            </div>
+          </div>
+          <div class="day-info">
+            <div class="day-title" id="day-title">Сегодня ещё не начинали</div>
+            <div class="day-sub" id="day-sub">Час в день — весь темп, который нужен.</div>
+            <div class="day-flame" id="day-flame">🔥 <span id="day-streak">0</span> <span id="day-streak-word">дней подряд</span></div>
+          </div>
+        </div>
+        <div class="forecast" id="forecast"></div>
+      </div>
+
+      <div class="today" id="today-box"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3 id="path-title">Путь сезона 1</h3>
+      <div class="path" id="season-path"></div>
+      <div class="next-reward" id="next-reward"></div>
+    </div>
 
     <div class="grid2">
       <div class="card">
@@ -390,13 +561,8 @@
         <button class="btn sm ghost" data-go="tree" style="margin-top:12px;width:100%">Открыть дерево →</button>
       </div>
       <div class="card">
-        <h3>Правила игры</h3>
-        <div style="color:var(--gray2);font-size:13.5px;line-height:1.65">
-          <p style="margin-bottom:10px"><b style="color:var(--white)">XP — только за сделанное.</b> Квест 🔨 засчитывается, когда есть пруф: ссылка на коммит, деплой или скриншот. Галочка «прочитал» денег не приносит.</p>
-          <p style="margin-bottom:10px"><b style="color:var(--white)">Час в день.</b> Квесты нарезаны по 30–90 минут. Если игра начала давить — сломана игра, а не вы.</p>
-          <p style="margin-bottom:10px"><b style="color:var(--white)">Всё на своих проектах.</b> RAG — на ваших доках Salebot. Инструменты — над базой «Туров». Агент — поверх Car monitor.</p>
-          <p><b style="color:var(--white)">Деньги — часть игры.</b> Ветка 💰 весит столько же, сколько технические. Можно выучить всё и остаться на 40 тысячах.</p>
-        </div>
+        <h3>Что происходило</h3>
+        <div id="log-list"></div>
       </div>
     </div>
   </section>
@@ -468,8 +634,36 @@
     <p class="page-sub">Достижения, пруфы и перенос прогресса между устройствами.</p>
 
     <div class="card" style="margin-bottom:14px">
+      <h3>Календарь кузницы</h3>
+      <div style="color:var(--gray);font-size:13px;margin-bottom:14px">
+        Последние 12 недель. Чем ярче клетка — тем больше вложено в тот день.
+      </div>
+      <div class="heat" id="heatmap"></div>
+      <div class="heat-legend">
+        <span>пусто</span>
+        <span class="heat-cell"></span>
+        <span class="heat-cell l1"></span>
+        <span class="heat-cell l2"></span>
+        <span class="heat-cell l3"></span>
+        <span class="heat-cell l4"></span>
+        <span>больше двух часов</span>
+        <span style="margin-left:auto" id="heat-summary"></span>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
       <h3>Достижения</h3>
       <div id="ach-list"></div>
+    </div>
+
+    <div class="card" style="margin-bottom:14px">
+      <h3>Правила игры</h3>
+      <div style="color:var(--gray2);font-size:13.5px;line-height:1.65">
+        <p style="margin-bottom:10px"><b style="color:var(--white)">XP — только за сделанное.</b> Квест 🔨 засчитывается, когда есть пруф: ссылка на коммит, деплой или скриншот. Галочка «прочитал» денег не приносит.</p>
+        <p style="margin-bottom:10px"><b style="color:var(--white)">Час в день.</b> Квесты нарезаны по 30–90 минут. Если игра начала давить — сломана игра, а не вы.</p>
+        <p style="margin-bottom:10px"><b style="color:var(--white)">Всё на своих проектах.</b> RAG — на ваших доках Salebot. Инструменты — над базой «Туров». Агент — поверх Car monitor.</p>
+        <p><b style="color:var(--white)">Деньги — часть игры.</b> Ветка 💰 весит столько же, сколько технические. Можно выучить всё и остаться на 40 тысячах.</p>
+      </div>
     </div>
 
     <div class="card" style="margin-bottom:14px">
@@ -529,12 +723,12 @@ var BRANCHES = {
 };
 
 var SEASONS = [
-  { id: 1, name: "Первый агент", sub: "Перестать быть разработчиком ботов на кнопках. К концу — работающий AI-агент, который понимает запрос словами, сам ходит в вашу базу и отвечает по вашим документам.", hours: 26 },
-  { id: 2, name: "Витрина",      sub: "Портфолио, которое продаёт зарубежному клиенту. Первый нормальный веб-стек.", hours: 25 },
-  { id: 3, name: "Первый доллар",sub: "Каналы прямых клиентов, приём платежей, договор. Босс — первая валютная оплата, дошедшая до счёта.", hours: 25 },
-  { id: 4, name: "Чек ×3",       sub: "Прайсинг, пакеты, ретейнер и сложные агенты: память, несколько инструментов, голос.", hours: 25 },
-  { id: 5, name: "Продукт",      sub: "Свой micro-SaaS на англоязычную аудиторию и первые платящие подписчики.", hours: 25 },
-  { id: 6, name: "Система",      sub: "Поток входящих, делегирование, инженерная зрелость.", hours: 25 }
+  { id: 1, name: "Первый агент", sub: "Перестать быть разработчиком ботов на кнопках. К концу — работающий AI-агент, который понимает запрос словами, сам ходит в вашу базу и отвечает по вашим документам." },
+  { id: 2, name: "Витрина",      sub: "Портфолио, которое продаёт зарубежному клиенту. Первый нормальный веб-стек." },
+  { id: 3, name: "Первый доллар",sub: "Каналы прямых клиентов, приём платежей, договор. Босс — первая валютная оплата, дошедшая до счёта." },
+  { id: 4, name: "Чек ×3",       sub: "Прайсинг, пакеты, ретейнер и сложные агенты: память, несколько инструментов, голос." },
+  { id: 5, name: "Продукт",      sub: "Свой micro-SaaS на англоязычную аудиторию и первые платящие подписчики." },
+  { id: 6, name: "Система",      sub: "Поток входящих, делегирование, инженерная зрелость." }
 ];
 </script>
 <script>
@@ -862,8 +1056,11 @@ var S = {
   streak: { last: "", count: 0, best: 0 },
   income: [],                                // { m:"2026-08", rub:0, usd:0, projects:1 }
   season: 1,
-  seenAch: []
+  seenAch: [],
+  log: []                                    // { ts, ic, text } — последние 40 событий
 };
+
+var DAY_GOAL = 60;                           // минут в день
 
 function load() {
   try {
@@ -876,6 +1073,7 @@ function load() {
     if (Object.prototype.toString.call(p.income) === "[object Array]") S.income = p.income;
     if (typeof p.season === "number") S.season = p.season;
     if (Object.prototype.toString.call(p.seenAch) === "[object Array]") S.seenAch = p.seenAch;
+    if (Object.prototype.toString.call(p.log) === "[object Array]") S.log = p.log;
   } catch (e) {}
 }
 
@@ -933,6 +1131,20 @@ function seasonQuests(s) {
   return r;
 }
 
+/* Часы сезона считаем из самих квестов — чтобы цифра не расходилась с содержимым */
+function seasonHours(s) {
+  var qs = seasonQuests(s), m = 0;
+  for (var i = 0; i < qs.length; i++) m += qs[i].min;
+  return Math.round(m / 60);
+}
+
+function plural(n, one, few, many) {
+  var n10 = n % 10, n100 = n % 100;
+  if (n10 === 1 && n100 !== 11) return one;
+  if (n10 >= 2 && n10 <= 4 && (n100 < 10 || n100 >= 20)) return few;
+  return many;
+}
+
 function seasonPct(s) {
   var qs = seasonQuests(s), d = 0;
   for (var i = 0; i < qs.length; i++) if (isDone(qs[i].id)) d++;
@@ -969,6 +1181,93 @@ function nextQuest() {
     }
   }
   return null;
+}
+
+/* ── время по дням ── */
+function minutesOn(date) {
+  var m = 0;
+  for (var id in S.done) {
+    if (S.done[id].ts !== date) continue;
+    var q = questById(id);
+    if (q) m += q.min;
+  }
+  return m;
+}
+
+function todayMinutes() { return minutesOn(today()); }
+
+function shiftDate(d, delta) {
+  var dt = new Date(d + "T00:00:00");
+  dt.setDate(dt.getDate() + delta);
+  var m = dt.getMonth() + 1, day = dt.getDate();
+  return dt.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+}
+
+function firstActiveDate() {
+  var min = "";
+  for (var id in S.done) {
+    var ts = S.done[id].ts;
+    if (ts && (!min || ts < min)) min = ts;
+  }
+  return min;
+}
+
+function activeDaysCount() {
+  var seen = {}, n = 0;
+  for (var id in S.done) {
+    var ts = S.done[id].ts;
+    if (ts && !seen[ts]) { seen[ts] = 1; n++; }
+  }
+  return n;
+}
+
+/* Темп: минут в день за последние 14 дней.
+   Делим не на жёсткие 14, а на прожитый отрезок — иначе первая неделя
+   занижает темп в разы и прогноз выходит бессмысленным. */
+function pace() {
+  var t = today(), sum = 0;
+  for (var i = 0; i < 14; i++) sum += minutesOn(shiftDate(t, -i));
+  var first = firstActiveDate();
+  if (!first) return 0;
+  var span = Math.min(14, daysBetween(first, t) + 1);
+  return sum / Math.max(span, 1);
+}
+
+function dateAfter(days) {
+  var d = new Date();
+  d.setDate(d.getDate() + days);
+  var MN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+  return d.getDate() + " " + MN[d.getMonth()];
+}
+
+/* Прогноз окончания сезона.
+   Пока активных дней меньше четырёх — статистики нет, показываем плановый
+   темп в час в день, а не выдуманный факт. */
+function seasonForecast(s) {
+  var qs = seasonQuests(s), left = 0;
+  for (var i = 0; i < qs.length; i++) if (!isDone(qs[i].id)) left += qs[i].min;
+  if (!left) return { left: 0, mode: "done" };
+
+  if (activeDaysCount() < 4) {
+    return { left: left, mode: "plan", date: dateAfter(Math.ceil(left / DAY_GOAL)) };
+  }
+  var p = pace();
+  if (p < 3) return { left: left, mode: "plan", date: dateAfter(Math.ceil(left / DAY_GOAL)) };
+  return { left: left, mode: "fact", date: dateAfter(Math.ceil(left / p)), perDay: Math.round(p) };
+}
+
+function rankIcon(lvl) {
+  if (lvl >= 17) return "🔥";
+  if (lvl >= 12) return "🏛";
+  if (lvl >= 8)  return "⚙️";
+  if (lvl >= 5)  return "🛠";
+  if (lvl >= 3)  return "⚒";
+  return "🔨";
+}
+
+function pushLog(ic, text) {
+  S.log.unshift({ ts: today(), ic: ic, text: text });
+  if (S.log.length > 40) S.log = S.log.slice(0, 40);
 }
 
 /* ── деньги ── */
@@ -1044,6 +1343,43 @@ function toast(msg, gold) {
 }
 
 /* ═══════════════════════════════════════════════
+   ЭФФЕКТЫ
+   ═══════════════════════════════════════════════ */
+
+var CONFETTI_COLORS = ["#FF8A3D", "#F0B429", "#3DD68C", "#5AA0F0", "#A98BF0", "#EEF1F8"];
+
+function confetti(count) {
+  count = count || 70;
+  for (var i = 0; i < count; i++) {
+    (function (n) {
+      setTimeout(function () {
+        var p = document.createElement("div");
+        p.className = "confetti-piece";
+        p.style.left = Math.random() * 100 + "vw";
+        p.style.background = CONFETTI_COLORS[n % CONFETTI_COLORS.length];
+        p.style.animation = "fall " + (2.2 + Math.random() * 1.6) + "s linear forwards";
+        if (Math.random() > .6) p.style.borderRadius = "50%";
+        document.body.appendChild(p);
+        setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 4200);
+      }, n * 22);
+    })(i);
+  }
+}
+
+/* Цифра XP, вылетающая от кнопки квеста */
+function xpPop(el, xp) {
+  if (!el) return;
+  var r = el.getBoundingClientRect();
+  var d = document.createElement("div");
+  d.className = "xp-pop";
+  d.textContent = "+" + xp;
+  d.style.left = (r.left + r.width / 2 - 20) + "px";
+  d.style.top = (r.top - 6) + "px";
+  document.body.appendChild(d);
+  setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 1200);
+}
+
+/* ═══════════════════════════════════════════════
    МОДАЛКИ
    ═══════════════════════════════════════════════ */
 
@@ -1116,18 +1452,57 @@ function toggleQuest(id) {
   }
 
   var before = levelOf(totalXP() - q.xp).lvl;
+  var wasStreak = S.streak.count;
   touchStreak();
+  pushLog(q.t === "boss" ? "👑" : q.t === "do" ? "🔨" : "📖", esc(q.title) + " · +" + q.xp + " XP");
   save();
   var after = levelOf(totalXP()).lvl;
 
+  var btn = document.querySelector('[id="q-' + q.id + '"] .quest-check');
+  xpPop(btn, q.xp);
+
+  var dayBefore = todayMinutes() - q.min;
   renderAll();
 
-  if (after > before) {
+  if (q.t === "boss") {
+    confetti(110);
     openModal(
-      '<h3 style="color:var(--fire)">Уровень ' + after + "</h3>" +
-      "<p>" + rankName(after) + ". Пройдено квестов: " + doneCount() + ", вложено " + hoursWord(totalMinutes()) + ".</p>" +
-      '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Дальше</button></div>'
+      '<div class="victory">' +
+        '<div class="victory-crown">👑</div>' +
+        "<h3>Босс повержен</h3>" +
+        '<p style="margin-bottom:0">' + esc(q.title.replace(/^БОСС:\s*/, "")) + "</p>" +
+        '<div class="victory-xp">+' + q.xp + " XP</div>" +
+        '<div style="color:var(--gray);font-size:13px">Это не учебное задание — это то, что можно показывать клиенту.</div>' +
+        '<div class="victory-stats">' +
+          '<div><div class="n">' + after + '</div><div class="l">уровень</div></div>' +
+          '<div><div class="n">' + doneCount() + '</div><div class="l">квестов</div></div>' +
+          '<div><div class="n">' + hoursWord(totalMinutes()) + '</div><div class="l">вложено</div></div>' +
+        "</div>" +
+        '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Дальше</button></div>' +
+      "</div>"
     );
+  } else if (after > before) {
+    confetti(50);
+    pushLog("⭐", "Уровень " + after + " — " + rankName(after));
+    save();
+    openModal(
+      '<div class="victory">' +
+        '<div class="victory-crown">' + rankIcon(after) + "</div>" +
+        "<h3>Уровень " + after + "</h3>" +
+        "<p>" + rankName(after) + "</p>" +
+        '<div class="victory-stats">' +
+          '<div><div class="n">' + doneCount() + '</div><div class="l">квестов</div></div>' +
+          '<div><div class="n">' + hoursWord(totalMinutes()) + '</div><div class="l">вложено</div></div>' +
+          '<div><div class="n">' + S.streak.count + '</div><div class="l">дней подряд</div></div>' +
+        "</div>" +
+        '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Дальше</button></div>' +
+      "</div>"
+    );
+  } else if (dayBefore < DAY_GOAL && todayMinutes() >= DAY_GOAL) {
+    confetti(35);
+    toast("Час за день закрыт 🔥", true);
+  } else if (S.streak.count > wasStreak && S.streak.count > 1) {
+    toast("+" + q.xp + " XP · серия " + S.streak.count + " дней 🔥", true);
   } else {
     toast("+" + q.xp + " XP", true);
   }
@@ -1152,9 +1527,11 @@ function checkAchievements() {
     try { got = a.check(); } catch (e) {}
     if (got && S.seenAch.indexOf(a.id) === -1) {
       S.seenAch.push(a.id);
+      pushLog(a.ic, "Достижение: " + a.name);
       save();
+      renderLog();
       setTimeout(function (ac) {
-        return function () { toast(ac.ic + "  Достижение: " + ac.name, true); };
+        return function () { toast(ac.ic + "  Достижение: " + ac.name, true); confetti(30); };
       }(a), 900);
     }
   }
@@ -1170,8 +1547,152 @@ function typeChip(t) {
   return '<span class="chip do">🔨 сделать</span>';
 }
 
+/* ── кольцо дня, стрик, прогноз ── */
+function renderDay() {
+  var m = todayMinutes();
+  var pct = Math.min(1, m / DAY_GOAL);
+  var C = 2 * Math.PI * 38;
+  document.getElementById("day-ring").setAttribute("stroke-dasharray", C.toFixed(1));
+  document.getElementById("day-ring").setAttribute("stroke-dashoffset", (C * (1 - pct)).toFixed(1));
+  document.getElementById("day-min").textContent = m;
+
+  var title, sub;
+  if (m === 0) {
+    title = "Сегодня ещё не начинали";
+    sub = "Час в день — весь темп, который нужен. Даже 20 минут держат серию.";
+  } else if (m < DAY_GOAL) {
+    title = "В работе: " + m + " мин";
+    sub = "До дневной цели осталось " + (DAY_GOAL - m) + " минут.";
+  } else {
+    title = "День закрыт 🔥";
+    sub = "Вложено " + m + " минут. Всё сверху — уже сверх плана.";
+  }
+  document.getElementById("day-title").textContent = title;
+  document.getElementById("day-sub").textContent = sub;
+
+  var st = S.streak.count;
+  document.getElementById("day-streak").textContent = st;
+  document.getElementById("day-streak-word").textContent =
+    plural(st, "день подряд", "дня подряд", "дней подряд");
+  var flame = document.getElementById("day-flame");
+  flame.style.display = st > 0 ? "" : "none";
+
+  /* прогноз */
+  var f = seasonForecast(S.season);
+  var el = document.getElementById("forecast");
+  if (f.mode === "done") {
+    el.innerHTML = "🏁 <span>Сезон " + S.season + " пройден полностью.</span>";
+  } else if (f.mode === "plan") {
+    el.innerHTML = "🧭 <span>Осталось <b>" + hoursWord(f.left) + "</b>. Если держать час в день — сезон " +
+                   S.season + " закроется <b>" + f.date + "</b>.</span>";
+  } else {
+    el.innerHTML = "🧭 <span>Осталось <b>" + hoursWord(f.left) + "</b>. Ваш темп — <b>" + f.perDay +
+                   " мин в день</b>, сезон " + S.season + " закроется <b>" + f.date + "</b>.</span>";
+  }
+}
+
+/* ── путь сезона по неделям ── */
+function renderPath() {
+  var s = S.season;
+  document.getElementById("path-title").textContent = "Путь сезона " + s + " — «" + SEASONS[s - 1].name + "»";
+
+  var qs = seasonQuests(s), weeks = [], map = {};
+  for (var i = 0; i < qs.length; i++) {
+    if (!map[qs[i].w]) { map[qs[i].w] = { name: qs[i].w, total: 0, done: 0, boss: false }; weeks.push(map[qs[i].w]); }
+    map[qs[i].w].total++;
+    if (isDone(qs[i].id)) map[qs[i].w].done++;
+    if (qs[i].t === "boss") map[qs[i].w].boss = true;
+  }
+
+  var activeIdx = -1;
+  for (var j = 0; j < weeks.length; j++) if (weeks[j].done < weeks[j].total) { activeIdx = j; break; }
+
+  var h = "";
+  for (var k = 0; k < weeks.length; k++) {
+    var w = weeks[k], complete = w.done === w.total, active = k === activeIdx;
+    var cls = "path-step" + (complete ? " complete" : "") + (active ? " active" : "") + (w.boss ? " boss-step" : "");
+    if (k <= activeIdx || activeIdx === -1) cls += " filled";
+    if (k < activeIdx || activeIdx === -1) cls += " filled-r";
+    var label = w.name.replace(/^Неделя \d+ — /, "").replace(/^Фоновая ветка — /, "");
+    var short = w.name.match(/^Неделя (\d+)/);
+    h += '<div class="' + cls + '">' +
+           '<div class="path-dot">' + (complete ? "✓" : w.boss ? "👑" : short ? short[1] : "★") + "</div>" +
+           '<div class="path-lbl">' + esc(label) + "<br><span style=\"opacity:.6\">" + w.done + " / " + w.total + "</span></div>" +
+         "</div>";
+  }
+  document.getElementById("season-path").innerHTML = h;
+
+  /* следующая награда */
+  var nr = null;
+  for (var a = 0; a < ACHIEVEMENTS.length; a++) {
+    var got = false;
+    try { got = ACHIEVEMENTS[a].check(); } catch (e) {}
+    if (!got) { nr = ACHIEVEMENTS[a]; break; }
+  }
+  var box = document.getElementById("next-reward");
+  if (nr) {
+    box.innerHTML = '<div class="ic">' + nr.ic + "</div><div>" +
+                    '<div class="t">Следующая награда: ' + esc(nr.name) + "</div>" +
+                    '<div class="s">' + esc(nr.desc) + "</div></div>";
+    box.style.display = "";
+  } else {
+    box.style.display = "none";
+  }
+}
+
+/* ── лента событий ── */
+function renderLog() {
+  var el = document.getElementById("log-list");
+  if (!el) return;
+  if (!S.log.length) {
+    el.innerHTML = '<div class="log-empty">Здесь появится всё, что вы сделали: закрытые квесты, уровни, достижения. Пока пусто — самое время открыть первый квест.</div>';
+    return;
+  }
+  var h = "";
+  for (var i = 0; i < Math.min(S.log.length, 8); i++) {
+    var e = S.log[i];
+    var d = e.ts.split("-");
+    h += '<div class="log-item">' +
+           '<div class="log-ic">' + e.ic + "</div>" +
+           '<div class="log-txt">' + e.text + "</div>" +
+           '<div class="log-date">' + d[2] + "." + d[1] + "</div>" +
+         "</div>";
+  }
+  el.innerHTML = h;
+}
+
+/* ── календарь активности ── */
+function renderHeat() {
+  var el = document.getElementById("heatmap");
+  if (!el) return;
+  var t = today();
+  var dt = new Date(t + "T00:00:00");
+  var shift = (dt.getDay() + 6) % 7;              // понедельник = 0
+  var lastMonday = shiftDate(t, -shift);
+  var h = "", totalDays = 0, totalMin = 0;
+
+  for (var w = 11; w >= 0; w--) {
+    h += '<div class="heat-week">';
+    for (var d = 0; d < 7; d++) {
+      var date = shiftDate(lastMonday, -w * 7 + d);
+      if (date > t) { h += '<div class="heat-cell" style="opacity:.25"></div>'; continue; }
+      var m = minutesOn(date);
+      if (m > 0) { totalDays++; totalMin += m; }
+      var lvl = m === 0 ? "" : m < 30 ? " l1" : m < 60 ? " l2" : m < 120 ? " l3" : " l4";
+      h += '<div class="heat-cell' + lvl + (date === t ? " today" : "") + '" title="' + date + " · " + m + ' мин"></div>';
+    }
+    h += "</div>";
+  }
+  el.innerHTML = h;
+  document.getElementById("heat-summary").textContent = totalDays
+    ? totalDays + " " + plural(totalDays, "активный день", "активных дня", "активных дней") + " · " + hoursWord(totalMin)
+    : "";
+}
+
 function renderHome() {
   var xp = totalXP(), L = levelOf(xp);
+  var av = document.querySelector(".hero-av");
+  if (av) av.textContent = rankIcon(L.lvl);
   document.getElementById("hero-name").textContent = S.name || "Кузнец";
   document.getElementById("hero-rank").textContent = rankName(L.lvl);
   document.getElementById("hero-level").textContent = L.lvl;
@@ -1184,6 +1705,8 @@ function renderHome() {
 
   document.getElementById("stat-quests").textContent = doneCount() + " / " + QUESTS.length;
   document.getElementById("stat-streak").textContent = S.streak.count;
+  document.getElementById("stat-streak-word").textContent =
+    plural(S.streak.count, "день подряд", "дня подряд", "дней подряд");
   document.getElementById("stat-hours").textContent = hoursWord(totalMinutes());
   var li = lastIncome();
   document.getElementById("stat-income").textContent = li ? fmt(li.rub) + " ₽" : "—";
@@ -1254,7 +1777,9 @@ function renderTree() {
 function renderSeason() {
   var s = S.season, info = SEASONS[s - 1];
   document.getElementById("season-title").textContent = "Сезон " + s + " — «" + info.name + "»";
-  document.getElementById("season-sub").textContent = info.sub + "  ·  около " + info.hours + " часов  ·  пройдено " + seasonPct(s) + "%";
+  var sh = seasonHours(s);
+  document.getElementById("season-sub").textContent =
+    info.sub + "  ·  около " + sh + " " + plural(sh, "часа", "часов", "часов") + "  ·  пройдено " + seasonPct(s) + "%";
 
   var sw = "";
   for (var i = 0; i < SEASONS.length; i++) {
@@ -1407,10 +1932,14 @@ function renderProfile() {
 
 function renderAll() {
   renderHome();
+  renderDay();
+  renderPath();
+  renderLog();
   renderTree();
   renderSeason();
   renderMoney();
   renderProfile();
+  renderHeat();
 }
 
 /* ═══════════════════════════════════════════════
@@ -1432,7 +1961,7 @@ function go(name) {
 }
 
 function setSeason(n) {
-  S.season = n; save(); renderSeason();
+  S.season = n; save(); renderSeason(); renderPath(); renderDay();
 }
 
 function goToQuest(id) {
@@ -1482,6 +2011,8 @@ function commitIncome(m, rub, usd) {
     if (S.income[i].m === m) { S.income[i] = { m: m, rub: rub, usd: usd, projects: proj }; found = true; }
   }
   if (!found) S.income.push({ m: m, rub: rub, usd: usd, projects: proj });
+  pushLog("💰", "Записан доход: " + fmt(rub) + " ₽" + (usd ? " (из них $" + fmt(usd) + ")" : "") +
+               ", средний чек " + fmt(Math.round(rub / proj)) + " ₽");
   save();
   closeModal();
   renderAll();
@@ -1551,6 +2082,7 @@ function doImport() {
   if (!S.streak) S.streak = { last: "", count: 0, best: 0 };
   if (!S.income) S.income = [];
   if (!S.seenAch) S.seenAch = [];
+  if (!S.log) S.log = [];
   save(); closeModal(); renderAll();
   toast("Прогресс загружен");
 }
@@ -1565,7 +2097,7 @@ document.getElementById("btn-reset").addEventListener("click", function () {
 });
 
 function doReset() {
-  S = { name: "", done: {}, streak: { last: "", count: 0, best: 0 }, income: [], season: 1, seenAch: [] };
+  S = { name: "", done: {}, streak: { last: "", count: 0, best: 0 }, income: [], season: 1, seenAch: [], log: [] };
   save(); closeModal(); renderAll(); go("home");
   toast("Прогресс сброшен");
 }
@@ -1583,6 +2115,16 @@ function boot() {
 
   renderAll();
   go("home");
+
+  /* мягкое возвращение после паузы — без упрёков */
+  if (S.streak.last && doneCount() > 0) {
+    var gap = daysBetween(S.streak.last, today());
+    if (gap >= 3) {
+      setTimeout(function () {
+        toast("С возвращением. " + doneCount() + " квестов никуда не делись 🔨");
+      }, 700);
+    }
+  }
 
   if (!S.name && doneCount() === 0) {
     setTimeout(function () {
