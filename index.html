@@ -61,9 +61,26 @@
   body::before {
     content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1;
     background:
-      radial-gradient(ellipse at 50% -10%, rgba(77,166,255,.10), transparent 55%),
+      radial-gradient(ellipse at 50% -10%, rgba(77,166,255,.13), transparent 58%),
+      radial-gradient(ellipse at 50% 108%, rgba(96,60,200,.10), transparent 55%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='49'%3E%3Cpath d='M28 1 L55 13 L55 36 L28 48 L1 36 L1 13 Z' fill='none' stroke='%234DA6FF' stroke-opacity='.055' stroke-width='1'/%3E%3C/svg%3E"),
       repeating-linear-gradient(0deg, rgba(77,166,255,.022) 0 1px, transparent 1px 3px);
   }
+
+  /* Частицы маны, медленно всплывающие снизу */
+  .motes { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .mote {
+    position: absolute; bottom: -12px; width: 3px; height: 3px; border-radius: 50%;
+    background: var(--fire); box-shadow: 0 0 8px 2px var(--glow);
+    animation: rise linear infinite; opacity: 0;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) scale(.6); opacity: 0; }
+    12%  { opacity: .85; }
+    78%  { opacity: .55; }
+    100% { transform: translateY(-102vh) scale(1.1); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mote { display: none; } }
   nav, .wrap, .mobile-nav, .overlay, .toast { position: relative; z-index: 2; }
 
   /* Системное окно: угловатая рамка со свечением и засечками по углам */
@@ -146,19 +163,37 @@
   h2.page-title { font-size: 24px; font-weight: 700; margin-bottom: 5px; letter-spacing: -.3px; }
   p.page-sub { color: var(--gray); font-size: 14px; margin-bottom: 22px; }
 
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 18px; }
+  .card { background: rgba(14,19,30,.82); border: 1px solid var(--border); border-radius: 4px; padding: 18px; }
   .card h3 { font-size: 16px; margin-bottom: 12px; }
 
   /* ─────────── HERO ─────────── */
   .hero {
     background:
-      linear-gradient(158deg, rgba(14,27,46,.95), rgba(8,12,20,.97));
+      linear-gradient(158deg, rgba(14,27,46,.90), rgba(8,12,20,.93));
     border: 1px solid rgba(77,166,255,.4);
     border-radius: 4px; padding: 22px; margin-bottom: 16px;
     position: relative; overflow: hidden;
     box-shadow: 0 0 34px rgba(77,166,255,.10), inset 0 0 60px rgba(77,166,255,.04);
   }
   .hero.has-art { background-size: cover; background-position: center; }
+  body.no-bg .bg-gate, body.no-bg .motes { display: none; }
+
+  /* Врата подземелья: фон всей страницы, рисуется кодом, не картинкой */
+  .bg-gate {
+    position: fixed; z-index: 0; pointer-events: none;
+    top: 20px; left: 50%; transform: translateX(-50%);
+    width: min(1460px, 132vw); height: 760px; opacity: .6;
+    -webkit-mask-image: linear-gradient(180deg, #000 52%, transparent 92%);
+    mask-image: linear-gradient(180deg, #000 52%, transparent 92%);
+  }
+  .bg-gate svg { width: 100%; height: 100%; display: block; }
+  .gate-core { animation: gatePulse 5.5s ease-in-out infinite; transform-origin: center; }
+  @keyframes gatePulse {
+    0%, 100% { opacity: .55; }
+    50%      { opacity: .95; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gate-core { animation: none; } }
+  @media (max-width: 760px) { .bg-gate { height: 460px; opacity: .38; width: 150vw; } }
   .hero.has-art::before {
     content: ""; position: absolute; inset: 0;
     background: linear-gradient(100deg, rgba(5,7,12,.94) 0%, rgba(5,7,12,.80) 45%, rgba(5,7,12,.42) 100%);
@@ -223,7 +258,7 @@
   .xpbar-labels { display: flex; justify-content: space-between; margin-top: 7px; font-size: 12px; color: var(--gray); }
 
   .hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 18px; position: relative; }
-  .hstat { background: rgba(0,0,0,.32); border: 1px solid var(--border); border-radius: 3px; padding: 11px 12px; }
+  .hstat { background: rgba(5,7,12,.78); border: 1px solid var(--border); border-radius: 3px; padding: 11px 12px; }
   .hstat .n { font-size: 19px; font-weight: 700; line-height: 1.2; }
   .hstat .l { font-size: 11px; color: var(--gray); margin-top: 1px; }
 
@@ -301,7 +336,7 @@
   }
   .week-head::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
-  .quest { border: 1px solid var(--border); border-radius: 4px; background: var(--card); margin-bottom: 9px; overflow: hidden; transition: border-color .15s; }
+  .quest { border: 1px solid var(--border); border-radius: 4px; background: rgba(14,19,30,.84); margin-bottom: 9px; overflow: hidden; transition: border-color .15s; }
   .quest:hover { border-color: var(--border2); }
   .quest.is-done { border-color: rgba(23,102,63,.35); background: #0F1A15; }
   .quest.is-lock { opacity: .5; }
@@ -871,6 +906,7 @@
         <button class="btn sm" id="btn-name">Сменить имя</button>
         <button class="btn sm" id="btn-export">Код синхронизации</button>
         <button class="btn sm" id="btn-import">Загрузить код</button>
+        <button class="btn sm" id="btn-bg">Фон: врата</button>
         <button class="btn sm danger" id="btn-reset">Сбросить всё</button>
       </div>
       <div style="color:var(--gray);font-size:12.5px;margin-top:13px;line-height:1.6">
@@ -888,6 +924,55 @@
   <button class="mnav-item" data-go="money"><span class="ic">💰</span>Деньги</button>
   <button class="mnav-item" data-go="profile"><span class="ic">🎖</span>Профиль</button>
 </div>
+
+<div class="bg-gate" aria-hidden="true">
+        <svg viewBox="0 0 300 230" preserveAspectRatio="xMaxYMax meet">
+          <defs>
+            <linearGradient id="gateGlow" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stop-color="#4DA6FF" stop-opacity=".40"/>
+              <stop offset="55%"  stop-color="#7FC4FF" stop-opacity=".16"/>
+              <stop offset="100%" stop-color="#A98BF0" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="gateEdge" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stop-color="#9FE0FF" stop-opacity=".95"/>
+              <stop offset="100%" stop-color="#4DA6FF" stop-opacity=".18"/>
+            </linearGradient>
+            <radialGradient id="gateHalo" cx="50%" cy="62%" r="55%">
+              <stop offset="0%"   stop-color="#4DA6FF" stop-opacity=".34"/>
+              <stop offset="100%" stop-color="#4DA6FF" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <ellipse cx="150" cy="150" rx="112" ry="112" fill="url(#gateHalo)"/>
+
+          <!-- проём портала -->
+          <path class="gate-core" d="M100 226 L100 130 A50 50 0 0 1 200 130 L200 226 Z" fill="url(#gateGlow)"/>
+
+          <!-- арки -->
+          <path d="M92 226 L92 128 A58 58 0 0 1 208 128 L208 226"
+                fill="none" stroke="url(#gateEdge)" stroke-width="2.6"/>
+          <path d="M76 226 L76 124 A74 74 0 0 1 224 124 L224 226"
+                fill="none" stroke="#4DA6FF" stroke-opacity=".26" stroke-width="1.4"/>
+
+          <!-- колонны -->
+          <rect x="62"  y="132" width="12" height="94" fill="#0A1622" stroke="#4DA6FF" stroke-opacity=".3"/>
+          <rect x="226" y="132" width="12" height="94" fill="#0A1622" stroke="#4DA6FF" stroke-opacity=".3"/>
+
+          <!-- руны по дуге -->
+          <g fill="#9FE0FF" opacity=".6">
+            <rect x="114" y="104" width="3.5" height="9"/>
+            <rect x="140" y="92"  width="3.5" height="9"/>
+            <rect x="158" y="92"  width="3.5" height="9"/>
+            <rect x="184" y="104" width="3.5" height="9"/>
+          </g>
+
+          <!-- ступени -->
+          <rect x="56" y="221" width="190" height="4" fill="#4DA6FF" opacity=".18"/>
+          <rect x="44" y="227" width="214" height="4" fill="#4DA6FF" opacity=".11"/>
+        </svg>
+      </div>
+
+<div class="motes" id="motes" aria-hidden="true"></div>
 
 <div class="overlay" id="overlay">
   <div class="modal" id="modal"></div>
@@ -1249,7 +1334,8 @@ var S = {
   season: 1,
   seenAch: [],
   log: [],                                   // { ts, ic, text } — последние 40 событий
-  sessions: []                               // { d:"2026-08-30", id:"1.3", m:25 } — замеры таймером
+  sessions: [],                              // { d:"2026-08-30", id:"1.3", m:25 } — замеры таймером
+  bg: 1                                      // 1 — врата на фоне, 0 — чистый фон
 };
 
 var DAY_GOAL = 60;                           // минут в день
@@ -1267,6 +1353,7 @@ function load() {
     if (Object.prototype.toString.call(p.seenAch) === "[object Array]") S.seenAch = p.seenAch;
     if (Object.prototype.toString.call(p.log) === "[object Array]") S.log = p.log;
     if (Object.prototype.toString.call(p.sessions) === "[object Array]") S.sessions = p.sessions;
+    if (typeof p.bg === "number") S.bg = p.bg;
   } catch (e) {}
 }
 
@@ -2625,9 +2712,23 @@ function doImport() {
   if (!S.seenAch) S.seenAch = [];
   if (!S.log) S.log = [];
   if (!S.sessions) S.sessions = [];
+  if (typeof S.bg !== "number") S.bg = 1;
+  applyBg();
   save(); closeModal(); renderAll();
   toast("Прогресс загружен");
 }
+
+function applyBg() {
+  document.body.className = S.bg ? "" : "no-bg";
+  var b = document.getElementById("btn-bg");
+  if (b) b.textContent = S.bg ? "Фон: врата" : "Фон: выключен";
+}
+
+document.getElementById("btn-bg").addEventListener("click", function () {
+  S.bg = S.bg ? 0 : 1;
+  save(); applyBg();
+  toast(S.bg ? "Врата зажглись" : "Фон выключен");
+});
 
 document.getElementById("btn-reset").addEventListener("click", function () {
   openModal(
@@ -2639,7 +2740,7 @@ document.getElementById("btn-reset").addEventListener("click", function () {
 });
 
 function doReset() {
-  S = { name: "", done: {}, streak: { last: "", count: 0, best: 0 }, income: [], season: 1, seenAch: [], log: [], sessions: [] };
+  S = { name: "", done: {}, streak: { last: "", count: 0, best: 0 }, income: [], season: 1, seenAch: [], log: [], sessions: [], bg: 1 };
   save(); closeModal(); renderAll(); go("home");
   toast("Прогресс сброшен");
 }
@@ -2648,8 +2749,27 @@ function doReset() {
    ОНБОРДИНГ И СТАРТ
    ═══════════════════════════════════════════════ */
 
+/* Частицы фона. Немного и медленно — фон не должен спорить с текстом */
+function spawnMotes() {
+  var box = document.getElementById("motes");
+  if (!box) return;
+  var n = window.innerWidth < 760 ? 10 : 18, h = "";
+  for (var i = 0; i < n; i++) {
+    var dur = 16 + Math.random() * 20;
+    var size = 2 + Math.random() * 2.5;
+    h += '<div class="mote" style="left:' + (Math.random() * 100).toFixed(1) + "%;" +
+         "width:" + size.toFixed(1) + "px;height:" + size.toFixed(1) + "px;" +
+         "animation-duration:" + dur.toFixed(1) + "s;" +
+         "animation-delay:-" + (Math.random() * dur).toFixed(1) + "s;" +
+         "opacity:0\"></div>";
+  }
+  box.innerHTML = h;
+}
+
 function boot() {
   load();
+  spawnMotes();
+  applyBg();
 
   var d = new Date();
   var mm = d.getMonth() + 1;
