@@ -7,28 +7,38 @@
 <title>Кузница — план развития</title>
 <style>
   :root {
-    --fire:      #FF8A3D;
-    --fire-dim:  #3A1D0B;
-    --fire-soft: #FFB07A;
+    /* «Система» — неоново-синий интерфейс на почти чёрном */
+    --fire:      #4DA6FF;      /* основной акцент Системы */
+    --fire-dim:  #0A1E33;
+    --fire-soft: #8FCBFF;
+    --glow:      rgba(77,166,255,.55);
     --gold:      #F0B429;
-    --gold-dim:  #2E2100;
-    --black:     #0B0C10;
-    --dark:      #101218;
-    --card:      #171A22;
-    --card2:     #1E222D;
-    --border:    #262B38;
-    --border2:   #333A4B;
-    --white:     #EEF1F8;
-    --gray:      #7C879E;
-    --gray2:     #A9B4C8;
+    --gold-dim:  #2A1F00;
+    --black:     #05070C;
+    --dark:      #090D15;
+    --card:      #0E131E;
+    --card2:     #141B29;
+    --border:    #1C2634;
+    --border2:   #2A3A50;
+    --white:     #E8EEF8;
+    --gray:      #6F7D96;
+    --gray2:     #9FADC4;
     --green:     #3DD68C;
-    --green-dim: #08281A;
-    --blue:      #5AA0F0;
-    --blue-dim:  #0C1A2E;
+    --green-dim: #062419;
+    --blue:      #4DA6FF;
+    --blue-dim:  #0A1E33;
     --purple:    #A98BF0;
-    --purple-dim:#1C1430;
-    --red:       #E8615A;
+    --purple-dim:#170F2B;
+    --red:       #FF4D6D;
     --nav-h:     58px;
+
+    /* цвета рангов */
+    --rank-e: #8892A6;
+    --rank-d: #3DD68C;
+    --rank-c: #4DA6FF;
+    --rank-b: #A98BF0;
+    --rank-a: #F0B429;
+    --rank-s: #FF4D6D;
   }
 
   * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
@@ -46,6 +56,54 @@
   button { cursor: pointer; border: none; background: none; }
   a { color: var(--fire); }
 
+  /* ═══════════ СИСТЕМА: базовые элементы интерфейса ═══════════ */
+
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(77,166,255,.10), transparent 55%),
+      repeating-linear-gradient(0deg, rgba(77,166,255,.022) 0 1px, transparent 1px 3px);
+  }
+  nav, .wrap, .mobile-nav, .overlay, .toast { position: relative; z-index: 2; }
+
+  /* Системное окно: угловатая рамка со свечением и засечками по углам */
+  .sys {
+    position: relative;
+    background: linear-gradient(158deg, rgba(14,27,46,.97), rgba(8,12,20,.98));
+    border: 1px solid rgba(77,166,255,.55);
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba(77,166,255,.10), 0 0 30px rgba(77,166,255,.16),
+                inset 0 0 44px rgba(77,166,255,.05);
+  }
+  .sys::before, .sys::after {
+    content: ""; position: absolute; width: 13px; height: 13px;
+    border: 2px solid var(--fire); pointer-events: none;
+  }
+  .sys::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .sys::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+  .sys-label {
+    font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase;
+    color: var(--fire); font-weight: 700; text-align: center;
+    text-shadow: 0 0 12px var(--glow);
+  }
+  .sys-rule {
+    height: 1px; margin: 11px 0;
+    background: linear-gradient(90deg, transparent, rgba(77,166,255,.45), transparent);
+  }
+
+  @keyframes sysIn {
+    0%   { opacity: 0; transform: scaleY(.02) scaleX(.85); filter: brightness(2.4); }
+    45%  { opacity: 1; transform: scaleY(1.04) scaleX(1); filter: brightness(1.5); }
+    100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+  }
+  @keyframes glitch {
+    0%, 100% { transform: translate(0); }
+    22% { transform: translate(-2px, 1px); }
+    44% { transform: translate(2px, -1px); }
+    66% { transform: translate(-1px, -1px); }
+  }
+
   /* ─────────── NAV ─────────── */
   nav {
     position: sticky; top: 0; z-index: 200;
@@ -58,13 +116,13 @@
   }
   .nav-logo { display: flex; align-items: center; gap: 9px; margin-right: 18px; flex-shrink: 0; }
   .nav-logo-icon {
-    width: 32px; height: 32px; border-radius: 9px;
-    background: linear-gradient(140deg, var(--fire), #E2571F);
+    width: 32px; height: 32px; border-radius: 3px;
+    background: linear-gradient(140deg, #4DA6FF, #12406E); box-shadow: 0 0 16px rgba(77,166,255,.35);
     display: flex; align-items: center; justify-content: center; font-size: 17px;
   }
   .nav-logo-text { font-weight: 700; font-size: 15px; letter-spacing: .2px; }
   .nav-tab {
-    padding: 8px 13px; border-radius: 9px;
+    padding: 8px 13px; border-radius: 3px;
     color: var(--gray); font-size: 14px; font-weight: 500;
     display: flex; align-items: center; gap: 7px; transition: .15s;
   }
@@ -74,7 +132,7 @@
   .nav-xp {
     display: flex; align-items: center; gap: 8px;
     background: var(--card); border: 1px solid var(--border);
-    padding: 5px 12px; border-radius: 100px; font-size: 13px;
+    padding: 5px 12px; border-radius: 3px; font-size: 13px;
   }
   .nav-xp b { color: var(--gold); }
   .nav-streak { color: var(--fire); font-size: 13px; font-weight: 600; }
@@ -88,31 +146,70 @@
   h2.page-title { font-size: 24px; font-weight: 700; margin-bottom: 5px; letter-spacing: -.3px; }
   p.page-sub { color: var(--gray); font-size: 14px; margin-bottom: 22px; }
 
-  .card { background: var(--card); border: 1px solid var(--border); border-radius: 15px; padding: 18px; }
+  .card { background: var(--card); border: 1px solid var(--border); border-radius: 4px; padding: 18px; }
   .card h3 { font-size: 16px; margin-bottom: 12px; }
 
   /* ─────────── HERO ─────────── */
   .hero {
-    background: linear-gradient(150deg, #1C1410 0%, var(--card) 55%);
-    border: 1px solid var(--border2);
-    border-radius: 18px; padding: 22px; margin-bottom: 16px;
+    background:
+      linear-gradient(158deg, rgba(14,27,46,.95), rgba(8,12,20,.97));
+    border: 1px solid rgba(77,166,255,.4);
+    border-radius: 4px; padding: 22px; margin-bottom: 16px;
     position: relative; overflow: hidden;
+    box-shadow: 0 0 34px rgba(77,166,255,.10), inset 0 0 60px rgba(77,166,255,.04);
+  }
+  .hero.has-art { background-size: cover; background-position: center; }
+  .hero.has-art::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(100deg, rgba(5,7,12,.94) 0%, rgba(5,7,12,.80) 45%, rgba(5,7,12,.42) 100%);
   }
   .hero::after {
-    content: ""; position: absolute; right: -70px; top: -70px;
-    width: 220px; height: 220px; border-radius: 50%;
-    background: radial-gradient(circle, rgba(255,138,61,.16), transparent 70%);
+    content: ""; position: absolute; right: -80px; top: -80px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(77,166,255,.14), transparent 70%);
   }
   .hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; position: relative; }
   .hero-av {
-    width: 54px; height: 54px; border-radius: 15px;
-    background: linear-gradient(140deg, var(--fire), #C7451A);
+    width: 58px; height: 58px; border-radius: 4px;
+    background: linear-gradient(150deg, #123253, #0A1622);
+    border: 1px solid rgba(77,166,255,.5);
     display: flex; align-items: center; justify-content: center;
-    font-size: 25px; flex-shrink: 0;
-    box-shadow: 0 4px 18px rgba(255,138,61,.25);
+    font-size: 25px; flex-shrink: 0; overflow: hidden; position: relative;
+    box-shadow: 0 0 22px rgba(77,166,255,.22);
   }
+  .hero-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hero-name { font-size: 19px; font-weight: 700; }
-  .hero-rank { color: var(--gold); font-size: 13px; font-weight: 600; }
+  .hero-rank { color: var(--fire); font-size: 13px; font-weight: 600; letter-spacing: .4px; }
+
+  /* Значок ранга E→S */
+  .rank-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 3px; flex-shrink: 0;
+    font-size: 15px; font-weight: 800; letter-spacing: 0;
+    border: 1.5px solid currentColor; background: rgba(0,0,0,.35);
+    text-shadow: 0 0 10px currentColor;
+  }
+  .rank-badge.sm { width: 22px; height: 22px; font-size: 12px; border-width: 1px; }
+  .rank-badge.big { width: 62px; height: 62px; font-size: 32px; border-width: 2px; }
+  .rank-e { color: var(--rank-e); }
+  .rank-d { color: var(--rank-d); }
+  .rank-c { color: var(--rank-c); }
+  .rank-b { color: var(--rank-b); }
+  .rank-a { color: var(--rank-a); }
+  .rank-s { color: var(--rank-s); box-shadow: 0 0 18px rgba(255,77,109,.45); }
+
+  /* иконка ветки: картинка поверх эмодзи-запаски */
+  .bico { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; vertical-align: middle; }
+  .bico img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 2; }
+  .bico-fb { line-height: 1; }
+
+  /* арт босса на экране победы */
+  .victory-art {
+    width: 100%; max-width: 300px; margin: 0 auto 14px; display: block;
+    border: 1px solid rgba(169,139,240,.5); border-radius: 3px;
+    box-shadow: 0 0 34px rgba(169,139,240,.3);
+  }
+  .rank-up-glow { animation: glitch .45s steps(2) 2; }
   .hero-lvl { margin-left: auto; text-align: right; flex-shrink: 0; }
   .hero-lvl .n { font-size: 30px; font-weight: 800; line-height: 1; color: var(--fire); }
   .hero-lvl .l { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: .6px; }
@@ -120,20 +217,20 @@
   .xpbar { height: 9px; background: var(--dark); border-radius: 6px; overflow: hidden; position: relative; }
   .xpbar-fill {
     height: 100%; border-radius: 6px;
-    background: linear-gradient(90deg, #E2571F, var(--fire), var(--gold));
+    background: linear-gradient(90deg, #1E5C99, var(--fire), #9FE0FF); box-shadow: 0 0 14px rgba(77,166,255,.5);
     transition: width .5s cubic-bezier(.4,0,.2,1);
   }
   .xpbar-labels { display: flex; justify-content: space-between; margin-top: 7px; font-size: 12px; color: var(--gray); }
 
   .hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 18px; position: relative; }
-  .hstat { background: rgba(0,0,0,.28); border: 1px solid var(--border); border-radius: 11px; padding: 11px 12px; }
+  .hstat { background: rgba(0,0,0,.32); border: 1px solid var(--border); border-radius: 3px; padding: 11px 12px; }
   .hstat .n { font-size: 19px; font-weight: 700; line-height: 1.2; }
   .hstat .l { font-size: 11px; color: var(--gray); margin-top: 1px; }
 
   /* ─────────── QUEST OF THE DAY ─────────── */
   .today {
     background: linear-gradient(140deg, var(--fire-dim), var(--card));
-    border: 1px solid #4A2A12; border-radius: 16px; padding: 18px; margin-bottom: 16px;
+    border: 1px solid rgba(77,166,255,.34); border-radius: 4px; padding: 18px; margin-bottom: 16px;
   }
   .today-label {
     font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
@@ -148,7 +245,7 @@
   /* ─────────── CHIPS ─────────── */
   .chip {
     display: inline-flex; align-items: center; gap: 5px;
-    padding: 3px 9px; border-radius: 7px; font-size: 12px; font-weight: 600;
+    padding: 3px 9px; border-radius: 3px; font-size: 12px; font-weight: 600;
     background: var(--card2); color: var(--gray2); border: 1px solid var(--border);
   }
   .chip.xp    { background: var(--gold-dim);   color: var(--gold);   border-color: #4A3800; }
@@ -160,12 +257,12 @@
   /* ─────────── BUTTONS ─────────── */
   .btn {
     display: inline-flex; align-items: center; justify-content: center; gap: 7px;
-    padding: 10px 18px; border-radius: 10px; font-weight: 600; font-size: 14px;
+    padding: 10px 18px; border-radius: 3px; font-weight: 600; font-size: 14px;
     background: var(--card2); border: 1px solid var(--border2); color: var(--white);
     transition: .15s;
   }
   .btn:hover { background: var(--border); }
-  .btn.primary { background: linear-gradient(135deg, var(--fire), #E2571F); border-color: transparent; color: #180C04; }
+  .btn.primary { background: linear-gradient(135deg, #4DA6FF, #1E6FBF); border-color: rgba(159,224,255,.5); color: #04121F; box-shadow: 0 0 18px rgba(77,166,255,.3); }
   .btn.primary:hover { filter: brightness(1.08); }
   .btn.ghost { background: transparent; }
   .btn.sm { padding: 7px 13px; font-size: 13px; }
@@ -173,7 +270,7 @@
   .btn.danger { color: var(--red); border-color: #4A2320; }
 
   /* ─────────── TREE ─────────── */
-  .branch-card { border: 1px solid var(--border); border-radius: 15px; padding: 16px; background: var(--card); margin-bottom: 12px; }
+  .branch-card { border: 1px solid var(--border); border-radius: 4px; padding: 16px; background: var(--card); margin-bottom: 12px; }
   .branch-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
   .branch-ic { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
   .branch-name { font-weight: 700; font-size: 16px; }
@@ -185,7 +282,7 @@
   .branch-bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
   .nodes { display: flex; flex-wrap: wrap; gap: 7px; }
   .node {
-    width: 34px; height: 34px; border-radius: 10px;
+    width: 34px; height: 34px; border-radius: 3px;
     display: flex; align-items: center; justify-content: center;
     font-size: 13px; font-weight: 700;
     background: var(--dark); border: 1px solid var(--border); color: var(--gray);
@@ -204,7 +301,7 @@
   }
   .week-head::after { content: ""; flex: 1; height: 1px; background: var(--border); }
 
-  .quest { border: 1px solid var(--border); border-radius: 13px; background: var(--card); margin-bottom: 9px; overflow: hidden; transition: border-color .15s; }
+  .quest { border: 1px solid var(--border); border-radius: 4px; background: var(--card); margin-bottom: 9px; overflow: hidden; transition: border-color .15s; }
   .quest:hover { border-color: var(--border2); }
   .quest.is-done { border-color: rgba(23,102,63,.35); background: #0F1A15; }
   .quest.is-lock { opacity: .5; }
@@ -232,7 +329,7 @@
   .quest-steps { margin-bottom: 13px; }
   .quest-steps li { list-style: none; padding-left: 20px; position: relative; color: var(--gray2); font-size: 13.5px; margin-bottom: 6px; }
   .quest-steps li::before { content: ""; position: absolute; left: 5px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--fire); }
-  .proof-box { background: var(--dark); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px; }
+  .proof-box { background: var(--dark); border: 1px solid var(--border); border-radius: 3px; padding: 12px; margin-bottom: 12px; }
   .proof-label { font-size: 12px; color: var(--gold); font-weight: 600; margin-bottom: 7px; }
   .proof-input {
     width: 100%; background: var(--black); border: 1px solid var(--border2);
@@ -254,12 +351,12 @@
   .chart { display: flex; align-items: flex-end; gap: 8px; height: 170px; margin: 18px 0 6px; }
   .chart-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 5px; min-width: 0; }
   .chart-val { font-size: 11px; color: var(--gray2); white-space: nowrap; }
-  .chart-bar { width: 100%; border-radius: 6px 6px 0 0; min-height: 3px; background: linear-gradient(180deg, var(--fire), #B33F12); transition: height .5s; }
+  .chart-bar { width: 100%; border-radius: 6px 6px 0 0; min-height: 3px; background: linear-gradient(180deg, var(--fire), #144B7D); transition: height .5s; }
   .chart-lbl { font-size: 11px; color: var(--gray); white-space: nowrap; }
   .money-empty { color: var(--gray); text-align: center; padding: 34px 0; font-size: 14px; }
 
   /* ─────────── ACHIEVEMENTS ─────────── */
-  .ach { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; border: 1px solid var(--border); background: var(--card); margin-bottom: 8px; }
+  .ach { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 3px; border: 1px solid var(--border); background: var(--card); margin-bottom: 8px; }
   .ach.got { border-color: #4A3800; background: linear-gradient(120deg, var(--gold-dim), var(--card)); }
   .ach-ic { font-size: 22px; width: 38px; text-align: center; flex-shrink: 0; filter: grayscale(1) opacity(.4); }
   .ach.got .ach-ic { filter: none; }
@@ -274,7 +371,20 @@
     display: none; align-items: center; justify-content: center; padding: 20px;
   }
   .overlay.show { display: flex; }
-  .modal { background: var(--card); border: 1px solid var(--border2); border-radius: 18px; padding: 26px; max-width: 460px; width: 100%; max-height: 86vh; overflow-y: auto; }
+  .modal {
+    background: linear-gradient(158deg, rgba(14,27,46,.98), rgba(8,12,20,.99));
+    border: 1px solid rgba(77,166,255,.55); border-radius: 3px;
+    padding: 26px; max-width: 460px; width: 100%; max-height: 86vh; overflow-y: auto;
+    position: relative; animation: sysIn .32s cubic-bezier(.2,1.1,.4,1);
+    box-shadow: 0 0 0 1px rgba(77,166,255,.10), 0 0 46px rgba(77,166,255,.22),
+                inset 0 0 60px rgba(77,166,255,.05);
+  }
+  .modal::before, .modal::after {
+    content: ""; position: absolute; width: 15px; height: 15px;
+    border: 2px solid var(--fire); pointer-events: none;
+  }
+  .modal::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .modal::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
   .modal h3 { font-size: 20px; margin-bottom: 8px; }
   .modal p { color: var(--gray2); font-size: 14px; margin-bottom: 16px; }
   .modal textarea {
@@ -291,15 +401,29 @@
   .modal-btns .btn { flex: 1; }
 
   /* ─────────── TOAST ─────────── */
+  /* Уведомление Системы */
   .toast {
-    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(20px);
-    background: var(--card2); border: 1px solid var(--border2);
-    padding: 11px 19px; border-radius: 11px; font-size: 14px; font-weight: 600;
-    z-index: 600; opacity: 0; pointer-events: none; transition: .3s;
-    box-shadow: 0 8px 30px rgba(0,0,0,.5); max-width: 90vw; text-align: center;
+    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(14px);
+    background: linear-gradient(158deg, rgba(14,27,46,.97), rgba(8,12,20,.98));
+    border: 1px solid rgba(77,166,255,.6);
+    padding: 13px 22px 12px; border-radius: 3px; font-size: 14px; font-weight: 600;
+    z-index: 600; opacity: 0; pointer-events: none; transition: .26s;
+    box-shadow: 0 0 34px rgba(77,166,255,.26), inset 0 0 34px rgba(77,166,255,.05);
+    max-width: 92vw; text-align: center;
+  }
+  .toast::before {
+    content: "[ УВЕДОМЛЕНИЕ ]"; display: block;
+    font-size: 9.5px; letter-spacing: 2.2px; font-weight: 700;
+    color: var(--fire); margin-bottom: 5px; text-shadow: 0 0 10px var(--glow);
+  }
+  .toast::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--fire), transparent);
   }
   .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
-  .toast.xp { border-color: #4A3800; color: var(--gold); }
+  .toast.xp { border-color: rgba(240,180,41,.6); color: var(--gold); box-shadow: 0 0 34px rgba(240,180,41,.22); }
+  .toast.xp::before { content: "[ НАГРАДА ]"; color: var(--gold); text-shadow: 0 0 10px rgba(240,180,41,.6); }
+  .toast.xp::after { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
 
   /* ─────────── КОЛЬЦО ДНЯ ─────────── */
   .day-card { display: flex; align-items: center; gap: 18px; }
@@ -321,9 +445,9 @@
   .day-sub { color: var(--gray); font-size: 13px; line-height: 1.5; }
   .day-flame {
     display: inline-flex; align-items: center; gap: 6px;
-    background: var(--fire-dim); border: 1px solid #4A2A12;
-    color: var(--fire); font-weight: 700; font-size: 13px;
-    padding: 4px 11px; border-radius: 100px; margin-top: 9px;
+    background: var(--fire-dim); border: 1px solid rgba(77,166,255,.4);
+    color: var(--fire-soft); font-weight: 700; font-size: 13px;
+    padding: 4px 11px; border-radius: 3px; margin-top: 9px;
   }
 
   /* ─────────── КАРТА СЕЗОНА ─────────── */
@@ -356,7 +480,7 @@
   .path-step.complete .path-lbl { color: var(--gray2); }
 
   /* ─────────── ГРАФ ДЕРЕВА ─────────── */
-  .tree-wrap { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 15px; background: var(--card); overflow: hidden; }
+  .tree-wrap { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--card); overflow: hidden; }
   .tree-labels { flex-shrink: 0; width: 132px; border-right: 1px solid var(--border); background: var(--dark); }
   .tree-lane-lbl {
     height: 78px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
@@ -370,7 +494,7 @@
   .tree-lane-bg { position: absolute; left: 0; right: 0; height: 78px; border-bottom: 1px solid var(--border); }
   .tree-links { position: absolute; inset: 0; pointer-events: none; }
   .tnode {
-    position: absolute; width: 44px; height: 44px; border-radius: 13px;
+    position: absolute; width: 44px; height: 44px; border-radius: 4px;
     display: flex; align-items: center; justify-content: center;
     font-size: 12px; font-weight: 700; z-index: 2;
     background: var(--dark); border: 2px solid var(--border); color: var(--gray);
@@ -392,7 +516,7 @@
   .timer-box {
     display: flex; align-items: center; gap: 11px;
     background: var(--dark); border: 1px solid var(--border);
-    border-radius: 10px; padding: 10px 12px; margin-bottom: 12px;
+    border-radius: 3px; padding: 10px 12px; margin-bottom: 12px;
   }
   .timer-box.running { border-color: var(--fire); background: var(--fire-dim); }
   .timer-val { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 62px; }
@@ -403,7 +527,7 @@
   /* ─────────── ФИЛЬТРЫ ─────────── */
   .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
   .fchip {
-    padding: 6px 12px; border-radius: 100px; font-size: 12.5px; font-weight: 600;
+    padding: 6px 12px; border-radius: 3px; font-size: 12.5px; font-weight: 600;
     background: var(--card); border: 1px solid var(--border); color: var(--gray2); transition: .15s;
   }
   .fchip:hover { border-color: var(--border2); }
@@ -413,9 +537,9 @@
   .heat { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
   .heat-week { display: flex; flex-direction: column; gap: 3px; }
   .heat-cell { width: 13px; height: 13px; border-radius: 3px; background: var(--dark); border: 1px solid transparent; }
-  .heat-cell.l1 { background: #3A2410; }
-  .heat-cell.l2 { background: #6B3C13; }
-  .heat-cell.l3 { background: #B3601C; }
+  .heat-cell.l1 { background: #12314F; }
+  .heat-cell.l2 { background: #1D5488; }
+  .heat-cell.l3 { background: #2E80C9; }
   .heat-cell.l4 { background: var(--fire); }
   .heat-cell.today { border-color: var(--gold); }
   .heat-legend { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--gray); margin-top: 10px; }
@@ -432,7 +556,7 @@
   .victory { text-align: center; }
   .victory-crown { font-size: 56px; line-height: 1; margin-bottom: 12px; animation: pop .5s cubic-bezier(.2,1.4,.5,1); }
   @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
-  .victory h3 { font-size: 24px; background: linear-gradient(90deg, var(--fire), var(--gold));
+  .victory h3 { font-size: 24px; background: linear-gradient(90deg, var(--fire), #9FE0FF);
                 -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 6px; }
   .victory-xp { font-size: 34px; font-weight: 800; color: var(--gold); margin: 14px 0 4px; }
   .victory-stats { display: flex; gap: 10px; margin-top: 18px; }
@@ -465,7 +589,7 @@
   .forecast {
     display: flex; align-items: center; gap: 10px;
     background: var(--dark); border: 1px solid var(--border);
-    border-radius: 11px; padding: 11px 13px; margin-top: 14px;
+    border-radius: 3px; padding: 11px 13px; margin-top: 14px;
     font-size: 13px; color: var(--gray2);
   }
   .forecast b { color: var(--white); }
@@ -473,7 +597,7 @@
   /* ─────────── СЛЕДУЮЩАЯ НАГРАДА ─────────── */
   .next-reward {
     display: flex; align-items: center; gap: 11px;
-    padding: 11px 13px; border-radius: 11px; margin-top: 12px;
+    padding: 11px 13px; border-radius: 3px; margin-top: 12px;
     background: linear-gradient(120deg, var(--gold-dim), var(--card));
     border: 1px solid #4A3800;
   }
@@ -526,7 +650,7 @@
 
 <nav>
   <div class="nav-logo">
-    <div class="nav-logo-icon">🔥</div>
+    <div class="nav-logo-icon">⬢</div>
     <div class="nav-logo-text">Кузница</div>
   </div>
   <button class="nav-tab active" data-go="home"><span class="ic">🏠</span>Кузница</button>
@@ -576,9 +700,9 @@
             <svg width="92" height="92" viewBox="0 0 92 92">
               <defs>
                 <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
-                  <stop offset="0%" stop-color="#E2571F"/>
-                  <stop offset="60%" stop-color="#FF8A3D"/>
-                  <stop offset="100%" stop-color="#F0B429"/>
+                  <stop offset="0%" stop-color="#1E6FBF"/>
+                  <stop offset="60%" stop-color="#4DA6FF"/>
+                  <stop offset="100%" stop-color="#9FE0FF"/>
                 </linearGradient>
               </defs>
               <circle class="ring-bg" cx="46" cy="46" r="38"/>
@@ -1100,10 +1224,10 @@ var ACHIEVEMENTS = [
   { id:"boss1",      ic:"👑", name:"Первый агент",        desc:"Босс сезона 1 повержен",                        check:function(){ return isDone("4.1"); } },
   { id:"money_ready",ic:"🏦", name:"Касса открыта",       desc:"Приём валютных платежей настроен и проверен",    check:function(){ return isDone("G.3"); } },
   { id:"first_usd",  ic:"💵", name:"Первый доллар",       desc:"Оплата от зарубежного клиента дошла до счёта",   check:function(){ return isDone("S3.7"); } },
-  { id:"streak7",    ic:"🔥", name:"Неделя в кузнице",    desc:"7 дней подряд",                                  check:function(){ return S.streak.best >= 7; } },
-  { id:"streak30",   ic:"🌋", name:"Месяц у горна",       desc:"30 дней подряд",                                 check:function(){ return S.streak.best >= 30; } },
-  { id:"lvl5",       ic:"🛠", name:"Ремесленник",         desc:"5-й уровень",                                    check:function(){ return levelOf(totalXP()).lvl >= 5; } },
-  { id:"lvl10",      ic:"⚒", name:"Мастер",              desc:"10-й уровень",                                   check:function(){ return levelOf(totalXP()).lvl >= 10; } },
+  { id:"streak7",    ic:"🔥", name:"Неделя без пропуска",  desc:"7 дней подряд",                                  check:function(){ return S.streak.best >= 7; } },
+  { id:"streak30",   ic:"🌋", name:"Месяц без пропуска",   desc:"30 дней подряд",                                 check:function(){ return S.streak.best >= 30; } },
+  { id:"lvl5",       ic:"🅲", name:"Ранг C",               desc:"Пятый уровень — ранг C, «Ветеран»",                                    check:function(){ return levelOf(totalXP()).lvl >= 5; } },
+  { id:"lvl10",      ic:"🅱", name:"Ранг B",               desc:"Десятый уровень — ранг B, «Элита»",                                   check:function(){ return levelOf(totalXP()).lvl >= 10; } },
   { id:"check100",   ic:"💎", name:"Чек 100 000",         desc:"Средний чек перевалил за 100 000 ₽",             check:function(){ return maxCheck() >= 100000; } },
   { id:"check300",   ic:"👑", name:"Чек 300 000",         desc:"Средний чек перевалил за 300 000 ₽",             check:function(){ return maxCheck() >= 300000; } },
   { id:"income_x2",  ic:"📈", name:"Доход ×2",            desc:"Месячный доход вырос вдвое от первого записанного", check:function(){ return incomeGrowth() >= 2; } },
@@ -1190,13 +1314,63 @@ function levelOf(xp) {
   return { lvl: lvl, cur: left, need: need, pct: Math.round(left / need * 100) };
 }
 
-function rankName(lvl) {
-  if (lvl >= 17) return "Легенда кузницы";
-  if (lvl >= 12) return "Архитектор";
-  if (lvl >= 8)  return "Инженер";
-  if (lvl >= 5)  return "Мастер";
-  if (lvl >= 3)  return "Ремесленник";
-  return "Подмастерье";
+/* ═══════════ РАНГИ E→S ═══════════ */
+
+var RANKS = [
+  { letter: "E", min: 1,  title: "Пробуждённый",  desc: "Система вас заметила" },
+  { letter: "D", min: 3,  title: "Охотник",       desc: "Первые инструменты в руках" },
+  { letter: "C", min: 5,  title: "Ветеран",       desc: "Работает то, за что платят" },
+  { letter: "B", min: 8,  title: "Элита",         desc: "Заказы приходят к вам" },
+  { letter: "A", min: 12, title: "Мастер",        desc: "Цену называете вы" },
+  { letter: "S", min: 17, title: "Монарх",        desc: "Уровень, с которого не возвращаются" }
+];
+
+function rankOf(lvl) {
+  var r = RANKS[0];
+  for (var i = 0; i < RANKS.length; i++) if (lvl >= RANKS[i].min) r = RANKS[i];
+  return r;
+}
+
+function rankName(lvl) { return "Ранг " + rankOf(lvl).letter; }
+function rankClass(lvl) { return "rank-" + rankOf(lvl).letter.toLowerCase(); }
+
+function rankBadge(lvl, size) {
+  var r = rankOf(lvl);
+  return '<span class="rank-badge ' + (size ? size + " " : "") + rankClass(lvl) + '">' + r.letter + "</span>";
+}
+
+/* Следующий ранг и сколько уровней до него */
+function nextRank(lvl) {
+  for (var i = 0; i < RANKS.length; i++) if (RANKS[i].min > lvl) return RANKS[i];
+  return null;
+}
+
+/* ═══════════ АРТ ═══════════
+   Картинки лежат в папке art/ рядом с index.html.
+   Если файла нет — молча показывается запасной вариант, игра не ломается. */
+
+var ART_ON = false;                          /* включается, если папка art/ реально заполнена */
+
+function artAvatar(lvl) { return "art/rank-" + rankOf(lvl).letter.toLowerCase() + ".png"; }
+function artBoss(season) { return "art/boss-" + season + ".png"; }
+function artBranch(key) { return "art/branch-" + key + ".png"; }
+
+/* Один пробный запрос вместо тридцати: если маркерной картинки нет — режим арта не включается */
+function detectArt(done) {
+  var probe = new Image();
+  probe.onload = function () { ART_ON = true; done(); };
+  probe.onerror = function () { ART_ON = false; };
+  probe.src = "art/rank-e.png";
+}
+
+/* Иконка ветки: рисунок, если он есть, иначе эмодзи */
+function branchIcon(key, px) {
+  var b = BRANCHES[key];
+  px = px || 18;
+  return '<span class="bico" style="width:' + px + "px;height:" + px + 'px">' +
+           (ART_ON ? '<img src="' + artBranch(key) + '" alt="" onerror="this.remove()">' : "") +
+           '<span class="bico-fb" style="font-size:' + Math.round(px * .86) + 'px">' + b.icon + "</span>" +
+         "</span>";
 }
 
 function seasonQuests(s) {
@@ -1430,7 +1604,7 @@ function toast(msg, gold) {
    ЭФФЕКТЫ
    ═══════════════════════════════════════════════ */
 
-var CONFETTI_COLORS = ["#FF8A3D", "#F0B429", "#3DD68C", "#5AA0F0", "#A98BF0", "#EEF1F8"];
+var CONFETTI_COLORS = ["#4DA6FF", "#9FE0FF", "#A98BF0", "#F0B429", "#3DD68C", "#E8EEF8"];
 
 function confetti(count) {
   count = count || 70;
@@ -1620,38 +1794,72 @@ function toggleQuest(id) {
   var dayBefore = todayMinutes() - (sessionMinutes(id) ? 0 : q.min);
   renderAll();
 
+  var rankBefore = rankOf(before).letter, rankAfter = rankOf(after).letter;
+
   if (q.t === "boss") {
     confetti(110);
     openModal(
       '<div class="victory">' +
+        '<div class="sys-label">[ Особый квест завершён ]</div>' +
+        '<div class="sys-rule"></div>' +
+        (ART_ON ? '<img class="victory-art" src="' + artBoss(q.s) + '" alt="" onerror="this.remove()">' : "") +
         '<div class="victory-crown">👑</div>' +
-        "<h3>Босс повержен</h3>" +
-        '<p style="margin-bottom:0">' + esc(q.title.replace(/^БОСС:\s*/, "")) + "</p>" +
+        "<h3>" + esc(q.title.replace(/^БОСС:\s*/, "")) + "</h3>" +
         '<div class="victory-xp">+' + q.xp + " XP</div>" +
-        '<div style="color:var(--gray);font-size:13px">Это не учебное задание — это то, что можно показывать клиенту.</div>' +
+        '<div style="color:var(--gray);font-size:13px">Это не учебное задание. Это то, что можно показывать клиенту.</div>' +
+        '<div class="victory-stats">' +
+          "<div><div class=\"n\">" + rankBadge(after, "sm") + '</div><div class="l">ранг</div></div>' +
+          '<div><div class="n">' + doneCount() + '</div><div class="l">квестов</div></div>' +
+          '<div><div class="n">' + hoursWord(totalMinutes()) + '</div><div class="l">вложено</div></div>' +
+        "</div>" +
+        '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Принять</button></div>' +
+      "</div>"
+    );
+  } else if (rankAfter !== rankBefore) {
+    /* повышение ранга — событие реже уровня, подаём отдельно */
+    confetti(90);
+    var R2 = rankOf(after);
+    pushLog(R2.letter, "Повышение ранга: " + rankBefore + " → " + R2.letter + " · " + R2.title);
+    save();
+    openModal(
+      '<div class="victory rank-up-glow">' +
+        '<div class="sys-label">[ Повышение ранга ]</div>' +
+        '<div class="sys-rule"></div>' +
+        '<div style="display:flex;align-items:center;justify-content:center;gap:18px;margin:16px 0">' +
+          rankBadge(before, "big") +
+          '<span style="color:var(--fire);font-size:24px">→</span>' +
+          rankBadge(after, "big") +
+        "</div>" +
+        "<h3>Ранг " + R2.letter + " · " + esc(R2.title) + "</h3>" +
+        '<p style="margin-bottom:0">' + esc(R2.desc) + "</p>" +
         '<div class="victory-stats">' +
           '<div><div class="n">' + after + '</div><div class="l">уровень</div></div>' +
           '<div><div class="n">' + doneCount() + '</div><div class="l">квестов</div></div>' +
           '<div><div class="n">' + hoursWord(totalMinutes()) + '</div><div class="l">вложено</div></div>' +
         "</div>" +
-        '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Дальше</button></div>' +
+        '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Принять</button></div>' +
       "</div>"
     );
   } else if (after > before) {
     confetti(50);
-    pushLog("⭐", "Уровень " + after + " — " + rankName(after));
+    pushLog("⬆", "Уровень " + after);
     save();
     openModal(
       '<div class="victory">' +
-        '<div class="victory-crown">' + rankIcon(after) + "</div>" +
+        '<div class="sys-label">[ Повышение уровня ]</div>' +
+        '<div class="sys-rule"></div>' +
+        '<div class="victory-crown">' + rankBadge(after, "big") + "</div>" +
         "<h3>Уровень " + after + "</h3>" +
-        "<p>" + rankName(after) + "</p>" +
+        "<p>" + esc(rankOf(after).title) + " · до ранга " +
+          (nextRank(after) ? nextRank(after).letter + " осталось " + (nextRank(after).min - after) + " ур." : "S — вершина") +
+        "</p>" +
         '<div class="victory-stats">' +
           '<div><div class="n">' + doneCount() + '</div><div class="l">квестов</div></div>' +
           '<div><div class="n">' + hoursWord(totalMinutes()) + '</div><div class="l">вложено</div></div>' +
-          '<div><div class="n">' + S.streak.count + '</div><div class="l">дней подряд</div></div>' +
+          '<div><div class="n">' + S.streak.count + '</div><div class="l">' +
+            plural(S.streak.count, "день подряд", "дня подряд", "дней подряд") + "</div></div>" +
         "</div>" +
-        '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Дальше</button></div>' +
+        '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Принять</button></div>' +
       "</div>"
     );
   } else if (dayBefore < DAY_GOAL && todayMinutes() >= DAY_GOAL) {
@@ -1846,11 +2054,30 @@ function renderHeat() {
 }
 
 function renderHome() {
-  var xp = totalXP(), L = levelOf(xp);
+  var xp = totalXP(), L = levelOf(xp), R = rankOf(L.lvl);
+
+  /* аватар: рисунок из art/, если он есть — иначе значок ранга */
   var av = document.querySelector(".hero-av");
-  if (av) av.textContent = rankIcon(L.lvl);
-  document.getElementById("hero-name").textContent = S.name || "Кузнец";
-  document.getElementById("hero-rank").textContent = rankName(L.lvl);
+  if (av) {
+    av.innerHTML = rankBadge(L.lvl) +
+      (ART_ON ? '<img src="' + artAvatar(L.lvl) + '" alt="" onerror="this.remove()">' : "");
+  }
+
+  /* фон панели статуса */
+  var hero = document.querySelector(".hero");
+  if (ART_ON && hero && !hero.getAttribute("data-bg-tried")) {
+    hero.setAttribute("data-bg-tried", "1");
+    var probe = new Image();
+    probe.onload = function () {
+      hero.className = "hero has-art";
+      hero.style.backgroundImage = "url('art/hero-bg.png')";
+    };
+    probe.src = "art/hero-bg.png";
+  }
+
+  document.getElementById("hero-name").textContent = S.name || "Игрок";
+  document.getElementById("hero-rank").innerHTML =
+    '<span class="' + rankClass(L.lvl) + '">Ранг ' + R.letter + "</span> · " + esc(R.title);
   document.getElementById("hero-level").textContent = L.lvl;
   document.getElementById("hero-xpbar").style.width = L.pct + "%";
   document.getElementById("hero-xp-now").textContent = fmt(xp) + " XP всего";
@@ -1881,7 +2108,7 @@ function renderHome() {
       '<div class="today-meta">' + typeChip(q.t) +
         '<span class="chip time">⏱ ' + timeLabel(q.min) + "</span>" +
         '<span class="chip xp">💎 ' + q.xp + " XP</span>" +
-        '<span class="chip">' + BRANCHES[q.b].icon + " " + esc(BRANCHES[q.b].name) + "</span>" +
+        '<span class="chip">' + branchIcon(q.b, 14) + " " + esc(BRANCHES[q.b].name) + "</span>" +
       "</div>" +
       '<button class="btn primary" onclick="goToQuest(&quot;' + q.id + '&quot;)">Открыть квест →</button>';
   }
@@ -1892,7 +2119,7 @@ function renderHome() {
     var b = BRANCHES[key], st = branchStats(key);
     h += '<div style="margin-bottom:11px">' +
          '<div style="display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:5px">' +
-           "<span>" + b.icon + "</span><span>" + esc(b.name) + "</span>" +
+           branchIcon(key, 17) + "<span>" + esc(b.name) + "</span>" +
            '<span style="margin-left:auto;color:var(--gray);font-size:12px">' + st.done + " / " + st.total + "</span>" +
          "</div>" +
          '<div class="branch-bar"><div class="branch-bar-fill" style="width:' + st.pct + "%;background:" + b.color + '"></div></div>' +
@@ -1983,7 +2210,7 @@ function renderTreeGraph() {
       tot++; if (isDone(L.quests[k].id)) dn++;
     }
     lh += '<div class="tree-lane-lbl" style="color:' + b.color + '">' +
-            '<span class="ic">' + b.icon + "</span>" +
+            '<span class="ic">' + branchIcon(L.lanes[i], 17) + "</span>" +
             "<span>" + esc(b.name) + "</span>" +
             '<span class="pc">' + dn + "/" + tot + "</span>" +
           "</div>";
@@ -2042,7 +2269,7 @@ function renderTree() {
     var b = BRANCHES[key], st = branchStats(key);
     h += '<div class="branch-card">' +
       '<div class="branch-head">' +
-        '<div class="branch-ic" style="background:' + b.bg + ";color:" + b.color + '">' + b.icon + "</div>" +
+        '<div class="branch-ic" style="background:' + b.bg + ";color:" + b.color + '">' + branchIcon(key, 21) + "</div>" +
         "<div><div class=\"branch-name\">" + esc(b.name) + "</div>" +
         '<div class="branch-why">' + esc(b.why) + "</div></div>" +
         '<div class="branch-pct"><div class="n" style="color:' + b.color + '">' + st.pct + "%</div>" +
@@ -2083,7 +2310,7 @@ function renderSeason() {
     var bb = BRANCHES[used[f]], cnt = 0;
     for (var g = 0; g < all.length; g++) if (all[g].b === used[f]) cnt++;
     fh += '<button class="fchip' + (FILTER === used[f] ? " on" : "") + '" onclick="setFilter(&quot;' + used[f] + '&quot;)">' +
-          bb.icon + " " + esc(bb.name) + " · " + cnt + "</button>";
+          branchIcon(used[f], 14) + " " + esc(bb.name) + " · " + cnt + "</button>";
   }
   document.getElementById("quest-filters").innerHTML = fh;
 
@@ -2114,7 +2341,7 @@ function renderSeason() {
              '<div class="quest-meta">' + typeChip(q.t) +
                '<span class="chip time">⏱ ' + timeLabel(q.min) + "</span>" +
                '<span class="chip xp">💎 ' + q.xp + "</span>" +
-               '<span class="chip" style="color:' + BRANCHES[q.b].color + '">' + BRANCHES[q.b].icon + "</span>" +
+               '<span class="chip" style="color:' + BRANCHES[q.b].color + '">' + branchIcon(q.b, 13) + "</span>" +
                (!un2 && !done ? '<span class="chip lock">🔒 закрыт</span>' : "") +
              "</div>" +
            "</div>" +
@@ -2198,7 +2425,7 @@ function renderMoney() {
     goal = '<div style="font-size:13.5px;color:var(--gray2);margin-bottom:12px">Цель сезона 6 — доход ×3 от первого записанного месяца, и чтобы половина была повторяющейся.</div>' +
            '<div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:6px">' +
              "<span>" + fmt(last.rub) + " ₽</span><span style=\"color:var(--gold)\">" + fmt(target) + " ₽</span></div>" +
-           '<div class="branch-bar" style="height:9px"><div class="branch-bar-fill" style="width:' + pct2 + '%;background:linear-gradient(90deg,var(--fire),var(--gold))"></div></div>' +
+           '<div class="branch-bar" style="height:9px"><div class="branch-bar-fill" style="width:' + pct2 + '%;background:linear-gradient(90deg,var(--fire),#9FE0FF)"></div></div>' +
            '<div style="text-align:right;font-size:12px;color:var(--gray);margin-top:6px">' + pct2 + "%</div>";
   } else {
     goal = '<div style="color:var(--gray);font-size:13.5px">Запишите первый месяц — он станет точкой отсчёта для цели ×3.</div>';
@@ -2430,6 +2657,7 @@ function boot() {
 
   renderAll();
   go("home");
+  detectArt(function () { renderAll(); });   /* если папка art/ заполнена — перерисовать с картинками */
 
   /* мягкое возвращение после паузы — без упрёков */
   if (S.streak.last && doneCount() > 0) {
@@ -2444,8 +2672,9 @@ function boot() {
   if (!S.name && doneCount() === 0) {
     setTimeout(function () {
       openModal(
-        "<h3>🔥 Кузница</h3>" +
-        "<p>План развития в виде игры: шесть сезонов, пять веток навыков, боссы — реальные проекты. XP даётся за сделанное, а не за прочитанное.<br><br>Как к вам обращаться?</p>" +
+        '<div class="sys-label">[ Система активирована ]</div><div class="sys-rule"></div>' +
+        '<h3 style="text-align:center">Вы получили ранг E</h3>' +
+        '<p style="text-align:center">Шесть сезонов, пять веток, боссы — реальные проекты.<br>XP даётся за сделанное, не за прочитанное.<br><br>Как к вам обращаться?</p>' +
         '<input class="big" id="nm" maxlength="24" placeholder="Имя">' +
         '<div class="modal-btns"><button class="btn" onclick="closeModal()">Потом</button>' +
         '<button class="btn primary" onclick="saveName()">Начать</button></div>'
