@@ -377,6 +377,27 @@
   .quest-steps { margin-bottom: 13px; }
   .quest-steps li { list-style: none; padding-left: 20px; position: relative; color: var(--gray2); font-size: 13.5px; margin-bottom: 6px; }
   .quest-steps li::before { content: ""; position: absolute; left: 5px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--fire); }
+  .danger-zone {
+    margin-top: 16px; padding: 13px; border-radius: 3px;
+    border: 1px solid rgba(255,77,109,.28); background: rgba(255,77,109,.04);
+  }
+  .danger-zone-t {
+    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--red); font-weight: 700; margin-bottom: 10px; opacity: .85;
+  }
+
+  /* сворачиваемый блок */
+  .fold summary {
+    cursor: pointer; list-style: none; font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .fold summary::-webkit-details-marker { display: none; }
+  .fold summary::before {
+    content: "▶"; font-size: 10px; color: var(--fire); transition: transform .2s;
+  }
+  .fold[open] summary::before { transform: rotate(90deg); }
+  .fold[open] summary { margin-bottom: 13px; }
+
   .qlinks { background: rgba(77,166,255,.05); border: 1px solid rgba(77,166,255,.22);
             border-radius: 3px; padding: 11px 13px; margin-bottom: 12px; }
   .qlinks-t { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
@@ -449,13 +470,39 @@
   .mq-go { font-size: 12px; color: var(--fire); flex-shrink: 0; }
 
   /* ─────────── ACHIEVEMENTS ─────────── */
-  .ach { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 3px; border: 1px solid var(--border); background: var(--card); margin-bottom: 8px; }
-  .ach.got { border-color: #4A3800; background: linear-gradient(120deg, var(--gold-dim), var(--card)); }
-  .ach-ic { font-size: 22px; width: 38px; text-align: center; flex-shrink: 0; filter: grayscale(1) opacity(.4); }
-  .ach.got .ach-ic { filter: none; }
-  .ach-name { font-weight: 650; font-size: 14px; }
+  .ach-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .ach-count { font-size: 22px; font-weight: 800; color: var(--gold); }
+  .ach-of { font-size: 13px; color: var(--gray); }
+  .ach-bar { flex: 1; height: 5px; background: var(--dark); border-radius: 3px; overflow: hidden; margin-left: 6px; }
+  .ach-bar i { display: block; height: 100%; background: linear-gradient(90deg, #8A6A12, var(--gold));
+               box-shadow: 0 0 10px rgba(240,180,41,.5); transition: width .5s; }
+
+  .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; }
+  .ach {
+    position: relative; text-align: center; padding: 16px 11px 13px;
+    border-radius: 3px; border: 1px solid var(--border); background: var(--card2);
+    transition: transform .15s, border-color .15s;
+  }
+  .ach:hover { transform: translateY(-2px); border-color: var(--border2); }
+  .ach.got {
+    border-color: rgba(240,180,41,.45);
+    background: linear-gradient(160deg, rgba(240,180,41,.10), rgba(20,27,41,.9));
+    box-shadow: 0 0 22px rgba(240,180,41,.10), inset 0 0 30px rgba(240,180,41,.04);
+  }
+  .ach.got::before, .ach.got::after {
+    content: ""; position: absolute; width: 10px; height: 10px; border: 2px solid var(--gold);
+  }
+  .ach.got::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .ach.got::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+  .ach-ic {
+    font-size: 30px; line-height: 1; margin-bottom: 9px;
+    filter: grayscale(1) opacity(.28); transition: filter .3s;
+  }
+  .ach.got .ach-ic { filter: none; text-shadow: 0 0 16px rgba(240,180,41,.55); }
+  .ach-name { font-weight: 700; font-size: 13.5px; line-height: 1.25; color: var(--gray2); }
   .ach.got .ach-name { color: var(--gold); }
-  .ach-desc { font-size: 12.5px; color: var(--gray); }
+  .ach-desc { font-size: 11.5px; color: var(--gray); line-height: 1.35; margin-top: 5px; }
+  .ach-lock { position: absolute; top: 7px; right: 8px; font-size: 10px; color: var(--gray); opacity: .55; }
 
   /* ─────────── MODAL ─────────── */
   .overlay {
@@ -628,13 +675,25 @@
 
   /* ─────────── КАЛЕНДАРЬ АКТИВНОСТИ ─────────── */
   .heat { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
-  .heat-week { display: flex; flex-direction: column; gap: 3px; }
-  .heat-cell { width: 13px; height: 13px; border-radius: 3px; background: var(--dark); border: 1px solid transparent; }
+  .heat-week { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; flex: 0 0 auto; }
+  .heat-cell {
+    width: 13px; height: 13px; min-height: 13px; max-height: 13px;
+    flex: 0 0 13px; box-sizing: border-box;
+    border-radius: 2px; background: #121A26; border: 1px solid rgba(77,166,255,.07);
+  }
   .heat-cell.l1 { background: #12314F; }
   .heat-cell.l2 { background: #1D5488; }
   .heat-cell.l3 { background: #2E80C9; }
   .heat-cell.l4 { background: var(--fire); }
-  .heat-cell.today { border-color: var(--gold); }
+  .heat-cell.is-today { border-color: var(--gold); box-shadow: 0 0 7px rgba(240,180,41,.5); }
+  .heat-cell.l4 { box-shadow: 0 0 8px rgba(77,166,255,.5); }
+  .heat-wrap { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; }
+  .heat-stats { flex: 1; min-width: 210px; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .hs { background: rgba(5,7,12,.5); border: 1px solid var(--border); border-radius: 3px; padding: 11px 13px; }
+  .hs .n { font-size: 19px; font-weight: 800; line-height: 1.15; }
+  .hs .l { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .heat-months { display: flex; gap: 3px; margin-bottom: 5px; font-size: 10.5px; color: var(--gray); }
+  .heat-month { width: 13px; flex-shrink: 0; white-space: nowrap; }
   .heat-legend { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--gray); margin-top: 10px; }
 
   /* ─────────── ЛЕНТА СОБЫТИЙ ─────────── */
@@ -735,7 +794,6 @@
     .ring-wrap { width: 80px; height: 80px; }
     .day-card { gap: 14px; }
     .victory-stats { flex-direction: column; }
-    .heat-cell { width: 12px; height: 12px; }
   }
 </style>
 </head>
@@ -945,7 +1003,13 @@
       <div style="color:var(--gray);font-size:13px;margin-bottom:14px">
         Последние 12 недель. Чем ярче клетка — тем больше вложено в тот день.
       </div>
-      <div class="heat" id="heatmap"></div>
+      <div class="heat-wrap">
+        <div>
+          <div class="heat-months" id="heat-months"></div>
+          <div class="heat" id="heatmap"></div>
+        </div>
+        <div class="heat-stats" id="heat-stats"></div>
+      </div>
       <div class="heat-legend">
         <span>пусто</span>
         <span class="heat-cell"></span>
@@ -963,15 +1027,15 @@
       <div id="ach-list"></div>
     </div>
 
-    <div class="card" style="margin-bottom:14px">
-      <h3>Правила игры</h3>
+    <details class="card fold" style="margin-bottom:14px">
+      <summary>Правила игры</summary>
       <div style="color:var(--gray2);font-size:13.5px;line-height:1.65">
         <p style="margin-bottom:10px"><b style="color:var(--white)">XP — только за сделанное.</b> Квест 🔨 засчитывается, когда есть пруф: ссылка на коммит, деплой или скриншот. Галочка «прочитал» денег не приносит.</p>
         <p style="margin-bottom:10px"><b style="color:var(--white)">Час в день.</b> Квесты нарезаны по 30–90 минут. Если игра начала давить — сломана игра, а не вы.</p>
         <p style="margin-bottom:10px"><b style="color:var(--white)">Всё на своих проектах.</b> RAG — на ваших доках Salebot. Инструменты — над базой «Туров». Агент — поверх Car monitor.</p>
         <p><b style="color:var(--white)">Деньги — часть игры.</b> Ветка 💰 весит столько же, сколько технические. Можно выучить всё и остаться на 40 тысячах.</p>
       </div>
-    </div>
+    </details>
 
     <div class="card" style="margin-bottom:14px">
       <h3>Доказательства работы</h3>
@@ -989,8 +1053,13 @@
         <button class="btn sm" id="btn-import">Загрузить код</button>
         <button class="btn sm" id="btn-proofs">Пруфы для портфолио</button>
         <button class="btn sm" id="btn-bg">Фон: врата</button>
-        <button class="btn sm" id="btn-restore">Откатить сохранение</button>
-        <button class="btn sm danger" id="btn-reset">Сбросить всё</button>
+      </div>
+      <div class="danger-zone">
+        <div class="danger-zone-t">Опасная зона</div>
+        <div style="display:flex;gap:9px;flex-wrap:wrap">
+          <button class="btn sm" id="btn-restore">Откатить сохранение</button>
+          <button class="btn sm danger" id="btn-reset">Сбросить всё</button>
+        </div>
       </div>
       <div style="color:var(--gray);font-size:12.5px;margin-top:13px;line-height:1.6">
         Прогресс хранится в браузере этого устройства. Чтобы продолжить на телефоне — нажмите «Код синхронизации», скопируйте текст, откройте игру на телефоне и вставьте через «Загрузить код».
@@ -2756,6 +2825,16 @@ function renderHeat() {
   var lastMonday = shiftDate(t, -shift);
   var h = "", totalDays = 0, totalMin = 0;
 
+  /* подписи месяцев: ставим там, где неделя начинает новый месяц */
+  var months = "", prevMonth = "";
+  for (var mw = 11; mw >= 0; mw--) {
+    var wd = shiftDate(lastMonday, -mw * 7);
+    var mm = wd.split("-")[1];
+    months += '<div class="heat-month">' + (mm !== prevMonth ? MONTHS_SHORT[parseInt(mm, 10) - 1] : "") + "</div>";
+    prevMonth = mm;
+  }
+  h += "";
+
   for (var w = 11; w >= 0; w--) {
     h += '<div class="heat-week">';
     for (var d = 0; d < 7; d++) {
@@ -2764,14 +2843,30 @@ function renderHeat() {
       var m = minutesOn(date);
       if (m > 0) { totalDays++; totalMin += m; }
       var lvl = m === 0 ? "" : m < 30 ? " l1" : m < 60 ? " l2" : m < 120 ? " l3" : " l4";
-      h += '<div class="heat-cell' + lvl + (date === t ? " today" : "") + '" title="' + date + " · " + m + ' мин"></div>';
+      h += '<div class="heat-cell' + lvl + (date === t ? " is-today" : "") + '" title="' + date + " · " + m + ' мин"></div>';
     }
     h += "</div>";
   }
   el.innerHTML = h;
+  var mrow = document.getElementById("heat-months");
+  if (mrow) mrow.innerHTML = months;
   document.getElementById("heat-summary").textContent = totalDays
     ? totalDays + " " + plural(totalDays, "активный день", "активных дня", "активных дней") + " · " + hoursWord(totalMin)
     : "";
+
+  var hs = document.getElementById("heat-stats");
+  if (hs) {
+    var avg = totalDays ? Math.round(totalMin / totalDays) : 0;
+    hs.innerHTML =
+      '<div class="hs"><div class="n" style="color:var(--fire)">' + S.streak.count +
+        '</div><div class="l">' + plural(S.streak.count, "день подряд", "дня подряд", "дней подряд") + "</div></div>" +
+      '<div class="hs"><div class="n">' + S.streak.best +
+        '</div><div class="l">лучшая серия</div></div>' +
+      '<div class="hs"><div class="n">' + totalDays +
+        '</div><div class="l">' + plural(totalDays, "активный день", "активных дня", "активных дней") + "</div></div>" +
+      '<div class="hs"><div class="n">' + (avg ? avg + " мин" : "—") +
+        '</div><div class="l">в среднем за день</div></div>';
+  }
 }
 
 function renderHome() {
@@ -3249,16 +3344,25 @@ function renderMoney() {
 }
 
 function renderProfile() {
-  var h = "";
-  for (var i = 0; i < ACHIEVEMENTS.length; i++) {
+  var h = "", gotN = 0, i;
+  var cards = "";
+  for (i = 0; i < ACHIEVEMENTS.length; i++) {
     var a = ACHIEVEMENTS[i], got = false;
     try { got = a.check(); } catch (e) {}
-    h += '<div class="ach' + (got ? " got" : "") + '">' +
-           '<div class="ach-ic">' + a.ic + "</div>" +
-           '<div><div class="ach-name">' + esc(a.name) + "</div>" +
-           '<div class="ach-desc">' + esc(a.desc) + "</div></div>" +
-         "</div>";
+    if (got) gotN++;
+    cards += '<div class="ach' + (got ? " got" : "") + '">' +
+               (got ? "" : '<div class="ach-lock">🔒</div>') +
+               '<div class="ach-ic">' + a.ic + "</div>" +
+               '<div class="ach-name">' + esc(a.name) + "</div>" +
+               '<div class="ach-desc">' + esc(a.desc) + "</div>" +
+             "</div>";
   }
+  h = '<div class="ach-head">' +
+        '<span class="ach-count">' + gotN + "</span>" +
+        '<span class="ach-of">из ' + ACHIEVEMENTS.length + "</span>" +
+        '<span class="ach-bar"><i style="width:' + Math.round(gotN / ACHIEVEMENTS.length * 100) + '%"></i></span>' +
+      "</div>" +
+      '<div class="ach-grid">' + cards + "</div>";
   document.getElementById("ach-list").innerHTML = h;
 
   var p = "", any = false;
