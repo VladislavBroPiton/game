@@ -294,6 +294,8 @@
     background: var(--card2); color: var(--gray2); border: 1px solid var(--border);
   }
   .chip.xp    { background: var(--gold-dim);   color: var(--gold);   border-color: #4A3800; }
+  .chip.xp.big { font-size: 13.5px; padding: 4px 11px; font-weight: 800;
+                 box-shadow: 0 0 12px rgba(240,180,41,.18); }
   .chip.read  { background: var(--blue-dim);   color: var(--blue);   border-color: #17304F; }
   .chip.do    { background: var(--green-dim);  color: var(--green);  border-color: #0F4429; }
   .chip.boss  { background: var(--purple-dim); color: var(--purple); border-color: #33255C; }
@@ -351,9 +353,54 @@
 
   .quest { border: 1px solid var(--border); border-radius: 4px; background: rgba(14,19,30,.84); margin-bottom: 9px; overflow: hidden; transition: border-color .15s; }
   .quest:hover { border-color: var(--border2); }
-  .quest.is-done { border-color: rgba(23,102,63,.35); background: #0F1A15; }
-  .quest.is-lock { opacity: .5; }
-  .quest.is-boss { border-color: #33255C; background: linear-gradient(140deg, #16112A, var(--card)); }
+  .quest.is-done { border-color: rgba(23,102,63,.35); background: rgba(15,26,21,.85); }
+
+  /* доступные — с подсвеченной кромкой слева */
+  .quest.is-open { border-left: 3px solid var(--fire); background: rgba(14,25,40,.88); }
+
+  /* тот, за который браться сейчас */
+  .quest.is-next {
+    border-color: rgba(77,166,255,.55);
+    box-shadow: 0 0 0 1px rgba(77,166,255,.12), 0 0 26px rgba(77,166,255,.16);
+  }
+  .quest-now {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; font-weight: 700;
+    color: var(--fire); margin-bottom: 6px; text-shadow: 0 0 10px var(--glow);
+  }
+  .quest-now::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--fire); box-shadow: 0 0 8px var(--fire);
+    animation: pulseDot 1.8s ease-in-out infinite;
+  }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* закрытые — компактнее, чтобы не занимать пол-экрана */
+  .quest.is-lock { opacity: .42; }
+  .quest.is-lock .quest-head { padding: 9px 15px; }
+  .quest.is-lock .quest-title { font-size: 13.5px; margin-bottom: 0; }
+  .quest.is-lock .quest-meta { display: none; }
+  .quest.is-lock .quest-check { width: 18px; height: 18px; border-width: 1px; margin-top: 0; }
+  .quest-lockmeta { font-size: 11.5px; color: var(--gray); display: flex; gap: 9px; align-items: center; }
+
+  /* босс — кульминация сезона, а не рядовая карточка */
+  .quest.is-boss {
+    border-color: rgba(169,139,240,.5);
+    background: linear-gradient(140deg, rgba(35,22,66,.9), rgba(14,19,30,.92));
+    box-shadow: 0 0 30px rgba(169,139,240,.12), inset 0 0 50px rgba(169,139,240,.05);
+  }
+  .quest.is-boss .quest-head { padding: 20px 18px; }
+  .quest.is-boss .quest-title { font-size: 18px; letter-spacing: -.2px; }
+  .quest.is-boss.is-lock { opacity: .55; }
+  .quest.is-boss.is-lock .quest-title { font-size: 16px; }
+  .boss-crown {
+    font-size: 26px; line-height: 1; margin-right: 3px; flex-shrink: 0;
+    filter: drop-shadow(0 0 10px rgba(169,139,240,.7));
+  }
+  .boss-xp {
+    font-size: 15px; font-weight: 800; color: var(--purple);
+    text-shadow: 0 0 12px rgba(169,139,240,.5);
+  }
 
   .quest-head { display: flex; align-items: flex-start; gap: 12px; padding: 14px 15px; }
   .quest-check {
@@ -665,6 +712,7 @@
   .timer-spent { font-size: 12px; color: var(--green); font-weight: 600; }
 
   /* ─────────── ФИЛЬТРЫ ─────────── */
+  .switch-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
   .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
   .fchip {
     padding: 6px 12px; border-radius: 3px; font-size: 12.5px; font-weight: 600;
@@ -788,6 +836,17 @@
     .hero-lvl .n { font-size: 26px; }
     .toast { bottom: 100px; }
 
+    /* переключатели — одной прокручиваемой строкой, а не шестью рядами */
+    #season-switch, #quest-filters, #tree-seasons {
+      flex-wrap: nowrap; overflow-x: auto; padding-bottom: 7px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+      margin-left: -13px; margin-right: -13px; padding-left: 13px; padding-right: 13px;
+    }
+    #season-switch::-webkit-scrollbar,
+    #quest-filters::-webkit-scrollbar,
+    #tree-seasons::-webkit-scrollbar { display: none; }
+    #season-switch > *, #quest-filters > *, #tree-seasons > * { flex: 0 0 auto; }
+
     .path { overflow-x: auto; padding-bottom: 6px; }
     .path-step { min-width: 84px; }
     .path-lbl { font-size: 11px; }
@@ -900,7 +959,7 @@
   <section class="section" id="section-tree">
     <h2 class="page-title">Дерево навыков</h2>
     <p class="page-sub">Пять веток-дорожек. Линии — зависимости: пока не закрыт квест слева, следующий не откроется.</p>
-    <div id="tree-seasons" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:16px"></div>
+    <div id="tree-seasons" class="switch-row"></div>
     <div class="tree-wrap">
       <div class="tree-labels" id="tree-labels"></div>
       <div class="tree-scroll"><div class="tree-inner" id="tree-inner"></div></div>
@@ -919,7 +978,7 @@
   <section class="section" id="section-season">
     <h2 class="page-title" id="season-title">Сезон 1 — «Первый агент»</h2>
     <p class="page-sub" id="season-sub"></p>
-    <div id="season-switch" style="display:flex;gap:7px;flex-wrap:wrap;margin-bottom:14px"></div>
+    <div id="season-switch" class="switch-row"></div>
     <div class="filters" id="quest-filters"></div>
     <div id="quest-list"></div>
   </section>
@@ -2548,7 +2607,7 @@ function toggleQuest(id) {
     var val = inp ? inp.value.trim() : "";
     if (!val) {
       var el = document.getElementById("q-" + id);
-      if (el && el.className.indexOf("open") === -1) el.className += " open";
+      if (el) el.classList.add("open");
       if (inp) { inp.focus(); inp.style.borderColor = "var(--fire)"; }
       toast("Нужен пруф: ссылка на коммит, деплой или скриншот");
       return;
@@ -2670,8 +2729,7 @@ function saveProof(id, val) {
 function toggleOpen(id) {
   var el = document.getElementById("q-" + id);
   if (!el) return;
-  if (el.className.indexOf("open") > -1) el.className = el.className.replace(" open", "");
-  else el.className += " open";
+  el.classList.toggle("open");
 }
 
 function checkAchievements() {
@@ -3138,7 +3196,7 @@ function renderSeason() {
     else if (qf.b === FILTER) qs.push(qf);
   }
 
-  var h = "", curWeek = "";
+  var h = "", curWeek = "", firstOpenId = null;
   if (!qs.length) h = '<div class="card" style="text-align:center;color:var(--gray)">Здесь пусто — всё пройдено.</div>';
   for (var j = 0; j < qs.length; j++) {
     var q = qs[j];
@@ -3158,21 +3216,32 @@ function renderSeason() {
     }
 
     var done = isDone(q.id), un2 = isUnlocked(q);
-    var cls = "quest" + (done ? " is-done" : "") + (!un2 && !done ? " is-lock" : "") + (q.t === "boss" ? " is-boss" : "");
+    var isOpen = un2 && !done;
+    if (isOpen && !firstOpenId) firstOpenId = q.id;          /* первый доступный — «сейчас» */
+    var cls = "quest" +
+      (done ? " is-done" : "") +
+      (!un2 && !done ? " is-lock" : "") +
+      (isOpen ? " is-open" : "") +
+      (isOpen && q.id === firstOpenId ? " is-next" : "") +
+      (q.t === "boss" ? " is-boss" : "");
     var rec = S.done[q.id];
 
     h += '<div class="' + cls + '" id="q-' + q.id + '">';
 
+    var isLocked = !un2 && !done;
     h += '<div class="quest-head">' +
            '<button class="quest-check" onclick="toggleQuest(&quot;' + q.id + '&quot;)">✓</button>' +
+           (q.t === "boss" && !isLocked ? '<span class="boss-crown">👑</span>' : "") +
            '<div class="quest-body" onclick="toggleOpen(&quot;' + q.id + '&quot;)">' +
+             (q.id === firstOpenId ? '<div class="quest-now">браться сейчас</div>' : "") +
              '<div class="quest-title">' + esc(q.title) + "</div>" +
-             '<div class="quest-meta">' + typeChip(q.t) +
-               '<span class="chip time">⏱ ' + timeLabel(q.min) + "</span>" +
-               '<span class="chip xp">💎 ' + q.xp + "</span>" +
-               '<span class="chip" style="color:' + BRANCHES[q.b].color + '">' + branchIcon(q.b, 13) + "</span>" +
-               (!un2 && !done ? '<span class="chip lock">🔒 закрыт</span>' : "") +
-             "</div>" +
+             (isLocked
+               ? '<div class="quest-lockmeta">🔒 откроется позже · ⏱ ' + timeLabel(q.min) + " · 💎 " + q.xp + "</div>"
+               : '<div class="quest-meta">' + typeChip(q.t) +
+                   '<span class="chip time">⏱ ' + timeLabel(q.min) + "</span>" +
+                   '<span class="chip xp' + (q.xp >= 400 ? " big" : "") + '">💎 ' + q.xp + "</span>" +
+                   '<span class="chip" style="color:' + BRANCHES[q.b].color + '">' + branchIcon(q.b, 13) + "</span>" +
+                 "</div>") +
            "</div>" +
            '<div class="quest-arrow" onclick="toggleOpen(&quot;' + q.id + '&quot;)">▶</div>' +
          "</div>";
@@ -3433,7 +3502,7 @@ function goToQuest(id) {
   setTimeout(function () {
     var el = document.getElementById("q-" + id);
     if (!el) return;
-    if (el.className.indexOf("open") === -1) el.className += " open";
+    el.classList.add("open");
     el.scrollIntoView({ behavior: "smooth", block: "center" });
   }, 60);
 }
