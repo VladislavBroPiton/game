@@ -215,12 +215,18 @@
   }
   .hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; position: relative; }
   .hero-av {
-    width: 58px; height: 58px; border-radius: 4px;
+    width: 68px; height: 68px; border-radius: 4px;
     background: linear-gradient(150deg, #123253, #0A1622);
-    border: 1px solid rgba(77,166,255,.5);
+    border: 2px solid currentColor;
     display: flex; align-items: center; justify-content: center;
-    font-size: 25px; flex-shrink: 0; overflow: hidden; position: relative;
-    box-shadow: 0 0 22px rgba(77,166,255,.22);
+    flex-shrink: 0; overflow: hidden; position: relative;
+    box-shadow: 0 0 26px rgba(77,166,255,.2), inset 0 0 22px rgba(0,0,0,.5);
+  }
+  .hero-av .rank-badge { border: none; background: none; box-shadow: none; width: auto; height: auto; font-size: 32px; }
+  .hero-av::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,.07), transparent 55%);
+    pointer-events: none;
   }
   .hero-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
   .hero-name { font-size: 19px; font-weight: 700; }
@@ -259,13 +265,22 @@
   .hero-lvl .n { font-size: 30px; font-weight: 800; line-height: 1; color: var(--fire); }
   .hero-lvl .l { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: .6px; }
 
-  .xpbar { height: 9px; background: var(--dark); border-radius: 6px; overflow: hidden; position: relative; }
+  .xpbar {
+    height: 13px; background: rgba(5,7,12,.7); border-radius: 2px; overflow: hidden;
+    position: relative; border: 1px solid var(--border);
+  }
+  .xpbar::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(90deg, transparent 0 9.9%, rgba(5,7,12,.55) 9.9% 10%);
+  }
   .xpbar-fill {
-    height: 100%; border-radius: 6px;
+    height: 100%; border-radius: 1px;
     background: linear-gradient(90deg, #1E5C99, var(--fire), #9FE0FF); box-shadow: 0 0 14px rgba(77,166,255,.5);
     transition: width .5s cubic-bezier(.4,0,.2,1);
   }
-  .xpbar-labels { display: flex; justify-content: space-between; margin-top: 7px; font-size: 12px; color: var(--gray); }
+  .xpbar-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--gray); flex-wrap: wrap; gap: 6px; }
+  .hero-nextrank { color: var(--gray); }
+  .hero-nextrank b { font-weight: 800; text-shadow: 0 0 10px currentColor; }
 
   .hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 18px; position: relative; }
   .hstat { background: rgba(5,7,12,.78); border: 1px solid var(--border); border-radius: 3px; padding: 11px 12px; }
@@ -317,6 +332,22 @@
   .btn.danger { color: var(--red); border-color: #4A2320; }
 
   /* ─────────── TREE ─────────── */
+  .bline {
+    display: block; width: 100%; text-align: left; padding: 9px 10px; margin-bottom: 6px;
+    border-radius: 3px; border: 1px solid transparent; background: transparent; transition: .15s;
+  }
+  .bline:hover { background: var(--card2); border-color: var(--border); }
+  .bline-top { display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin-bottom: 6px; }
+  .bline-name { color: var(--white); }
+  .bline-avail {
+    margin-left: auto; font-size: 11px; font-weight: 700; color: var(--fire);
+    background: var(--fire-dim); border: 1px solid rgba(77,166,255,.3);
+    padding: 2px 7px; border-radius: 3px;
+  }
+  .bline-num { color: var(--gray); font-size: 12px; }
+  .bline-avail + .bline-num { margin-left: 0; }
+  .bline-top .bline-num:first-of-type:not(.bline-avail + .bline-num) { margin-left: auto; }
+
   .branch-card { border: 1px solid var(--border); border-radius: 4px; padding: 16px; background: var(--card); margin-bottom: 12px; }
   .branch-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
   .branch-ic { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
@@ -2933,6 +2964,7 @@ function renderHome() {
   /* аватар: рисунок из art/, если он есть — иначе значок ранга */
   var av = document.querySelector(".hero-av");
   if (av) {
+    av.className = "hero-av " + rankClass(L.lvl);      /* рамка по цвету ранга */
     av.innerHTML = rankBadge(L.lvl) +
       (ART_ON ? '<img src="' + artAvatar(L.lvl) + '" alt="" onerror="this.remove()">' : "");
   }
@@ -2955,7 +2987,13 @@ function renderHome() {
   document.getElementById("hero-level").textContent = L.lvl;
   document.getElementById("hero-xpbar").style.width = L.pct + "%";
   document.getElementById("hero-xp-now").textContent = fmt(xp) + " XP всего";
-  document.getElementById("hero-xp-next").textContent = "до " + (L.lvl + 1) + " уровня: " + fmt(L.need - L.cur) + " XP";
+  var nr = nextRank(L.lvl);
+  document.getElementById("hero-xp-next").innerHTML =
+    "до " + (L.lvl + 1) + " уровня: " + fmt(L.need - L.cur) + " XP" +
+    (nr ? '<span class="hero-nextrank"> · до ранга <b class="' + ("rank-" + nr.letter.toLowerCase()) + '">' +
+          nr.letter + "</b> " + (nr.min - L.lvl) + " " +
+          plural(nr.min - L.lvl, "уровень", "уровня", "уровней") + "</span>"
+        : '<span class="hero-nextrank"> · ранг S — вершина</span>');
 
   document.getElementById("nav-xp").textContent = fmt(xp);
   document.getElementById("nav-streak").textContent = S.streak.count > 0 ? "🔥 " + S.streak.count : "";
@@ -2987,17 +3025,23 @@ function renderHome() {
       '<button class="btn primary" onclick="goToQuest(&quot;' + q.id + '&quot;)">Открыть квест →</button>';
   }
 
-  /* мини-ветки */
+  /* мини-ветки: сколько пройдено и сколько можно взять прямо сейчас */
   var h = "";
   for (var key in BRANCHES) {
-    var b = BRANCHES[key], st = branchStats(key);
-    h += '<div style="margin-bottom:11px">' +
-         '<div style="display:flex;align-items:center;gap:8px;font-size:13.5px;margin-bottom:5px">' +
-           branchIcon(key, 17) + "<span>" + esc(b.name) + "</span>" +
-           '<span style="margin-left:auto;color:var(--gray);font-size:12px">' + st.done + " / " + st.total + "</span>" +
-         "</div>" +
-         '<div class="branch-bar"><div class="branch-bar-fill" style="width:' + st.pct + "%;background:" + b.color + '"></div></div>' +
-         "</div>";
+    var b = BRANCHES[key], st = branchStats(key), avail = 0;
+    for (var bi = 0; bi < QUESTS.length; bi++) {
+      var bq = QUESTS[bi];
+      if (bq.b === key && !isDone(bq.id) && isUnlocked(bq)) avail++;
+    }
+    h += '<button class="bline" onclick="goToBranch(&quot;' + key + '&quot;)">' +
+           '<div class="bline-top">' +
+             branchIcon(key, 17) + '<span class="bline-name">' + esc(b.name) + "</span>" +
+             (avail ? '<span class="bline-avail">' + avail + " доступно</span>" : "") +
+             '<span class="bline-num">' + st.done + " / " + st.total + "</span>" +
+           "</div>" +
+           '<div class="branch-bar"><div class="branch-bar-fill" style="width:' + st.pct +
+             "%;background:" + b.color + '"></div></div>' +
+         "</button>";
   }
   document.getElementById("home-branches").innerHTML = h;
 }
@@ -3486,6 +3530,26 @@ function go(name) {
 var FILTER = "all";
 
 function setFilter(f) { FILTER = f; renderSeason(); }
+
+/* С главной — сразу к квестам нужной ветки */
+function goToBranch(key) {
+  /* если в текущем сезоне ветки нет — переключаемся туда, где она есть и открыта */
+  var has = false, i;
+  for (i = 0; i < QUESTS.length; i++) if (QUESTS[i].s === S.season && QUESTS[i].b === key) { has = true; break; }
+  if (!has) {
+    for (var sn = 1; sn <= 6; sn++) {
+      if (!seasonUnlocked(sn)) continue;
+      for (i = 0; i < QUESTS.length; i++) {
+        if (QUESTS[i].s === sn && QUESTS[i].b === key) { S.season = sn; has = true; break; }
+      }
+      if (has) break;
+    }
+  }
+  FILTER = key;
+  save();
+  renderSeason(); renderPath(); renderDay(); renderTreeGraph();
+  go("season");
+}
 
 function setSeason(n) {
   S.season = n; save(); renderSeason(); renderPath(); renderDay(); renderTreeGraph();
