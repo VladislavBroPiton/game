@@ -484,6 +484,11 @@
            padding: 4px 0 4px 16px; position: relative; line-height: 1.4; }
   .qlink::before { content: "→"; position: absolute; left: 0; color: var(--fire); }
   .qlink:hover { color: #fff; text-decoration: underline; }
+  .qlink-vpn {
+    display: inline-block; margin-left: 7px; padding: 1px 5px; border-radius: 2px;
+    font-size: 9.5px; font-weight: 700; letter-spacing: .6px; vertical-align: middle;
+    color: var(--gold); background: var(--gold-dim); border: 1px solid rgba(240,180,41,.35);
+  }
 
   .proof-box { background: var(--dark); border: 1px solid var(--border); border-radius: 3px; padding: 12px; margin-bottom: 12px; }
   .proof-label { font-size: 12px; color: var(--gold); font-weight: 600; margin-bottom: 7px; }
@@ -1268,7 +1273,7 @@ var QUESTS = [
     "Открыть страницу цен и посчитать, сколько стоит один диалог из 10 сообщений"
   ],
   links:[["Обзор моделей и их возможностей","https://platform.claude.com/docs/en/models/overview"],
-         ["Цены за миллион токенов","https://platform.claude.com/docs/en/pricing"],
+         ["Цены за миллион токенов","https://platform.claude.com/docs/en/about-claude/pricing"],
          ["Подсчёт токенов до отправки","https://platform.claude.com/docs/en/build-with-claude/token-counting"]],
   proof:"" },
 
@@ -3303,8 +3308,12 @@ function renderSeason() {
     if (q.links && q.links.length) {
       h += '<div class="qlinks"><div class="qlinks-t">Материалы</div>';
       for (var li = 0; li < q.links.length; li++) {
-        h += '<a class="qlink" href="' + esc(q.links[li][1]) + '" target="_blank" rel="noopener">' +
-             esc(q.links[li][0]) + "</a>";
+        var lurl = q.links[li][1];
+        var needVpn = /platform\.claude\.com|modelcontextprotocol\.io/.test(lurl);
+        h += '<a class="qlink" href="' + esc(lurl) + '" target="_blank" rel="noopener">' +
+             esc(q.links[li][0]) +
+             (needVpn ? '<span class="qlink-vpn" title="Из России открывается через VPN">VPN</span>' : "") +
+             "</a>";
       }
       h += "</div>";
     }
