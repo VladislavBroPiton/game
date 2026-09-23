@@ -1,0 +1,17 @@
+{
+  "name": "Кузница — ежедневные тренировки",
+  "short_name": "Кузница",
+  "description": "Домашние тренировки с гантелями в виде игры: группа мышц на каждый день, подходы, рекорды, ранги E→S.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#05070C",
+  "theme_color": "#05070C",
+  "lang": "ru",
+  "icons": [
+    { "src": "./icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "./icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

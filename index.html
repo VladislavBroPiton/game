@@ -1,0 +1,3088 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#05070C">
+<title>Кузница — ежедневные тренировки</title>
+
+<!-- установка на домашний экран -->
+<link rel="manifest" href="./manifest.json">
+<link rel="icon" type="image/png" sizes="192x192" href="./icon-192.png">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Кузница">
+<meta name="description" content="Домашние тренировки с гантелями в виде игры: группа мышц на каждый день, подходы, рекорды, ранги E→S.">
+<style>
+  :root {
+    /* «Система» — неоново-синий интерфейс на почти чёрном */
+    --fire:      #4DA6FF;      /* основной акцент Системы */
+    --fire-dim:  #0A1E33;
+    --fire-soft: #8FCBFF;
+    --glow:      rgba(77,166,255,.55);
+    --gold:      #F0B429;
+    --gold-dim:  #2A1F00;
+    --black:     #05070C;
+    --dark:      #090D15;
+    --card:      #0E131E;
+    --card2:     #141B29;
+    --border:    #1C2634;
+    --border2:   #2A3A50;
+    --white:     #E8EEF8;
+    --gray:      #7C89A3;   /* подняли: на тёмной карточке #6F7D96 давал 4.14 при норме 4.5 */
+    --gray2:     #9FADC4;
+    --green:     #3DD68C;
+    --green-dim: #062419;
+    --blue:      #4DA6FF;
+    --blue-dim:  #0A1E33;
+    --purple:    #A98BF0;
+    --purple-dim:#170F2B;
+    --red:       #FF4D6D;
+    --nav-h:     58px;
+
+    /* цвета рангов */
+    --rank-e: #8892A6;
+    --rank-d: #3DD68C;
+    --rank-c: #4DA6FF;
+    --rank-b: #A98BF0;
+    --rank-a: #F0B429;
+    --rank-s: #FF4D6D;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    background: var(--black);
+    color: var(--white);
+    line-height: 1.55;
+    font-size: 15px;
+    overflow-x: hidden;
+  }
+
+  button, input, textarea, select { font-family: inherit; font-size: inherit; color: inherit; }
+  button { cursor: pointer; border: none; background: none; }
+  a { color: var(--fire); }
+
+  /* ═══════════ СИСТЕМА: базовые элементы интерфейса ═══════════ */
+
+  body::before {
+    content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 1;
+    background:
+      radial-gradient(ellipse at 50% -10%, rgba(77,166,255,.13), transparent 58%),
+      radial-gradient(ellipse at 50% 108%, rgba(96,60,200,.10), transparent 55%),
+      url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='49'%3E%3Cpath d='M28 1 L55 13 L55 36 L28 48 L1 36 L1 13 Z' fill='none' stroke='%234DA6FF' stroke-opacity='.055' stroke-width='1'/%3E%3C/svg%3E"),
+      repeating-linear-gradient(0deg, rgba(77,166,255,.022) 0 1px, transparent 1px 3px);
+  }
+
+  /* Частицы маны, медленно всплывающие снизу */
+  .motes { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  .mote {
+    position: absolute; bottom: -12px; width: 3px; height: 3px; border-radius: 50%;
+    background: var(--fire); box-shadow: 0 0 8px 2px var(--glow);
+    animation: rise linear infinite; opacity: 0;
+  }
+  @keyframes rise {
+    0%   { transform: translateY(0) scale(.6); opacity: 0; }
+    12%  { opacity: .85; }
+    78%  { opacity: .55; }
+    100% { transform: translateY(-102vh) scale(1.1); opacity: 0; }
+  }
+  @media (prefers-reduced-motion: reduce) { .mote { display: none; } }
+  nav, .wrap, .mobile-nav, .overlay, .toast { position: relative; z-index: 2; }
+
+  /* Системное окно: угловатая рамка со свечением и засечками по углам */
+  .sys {
+    position: relative;
+    background: linear-gradient(158deg, rgba(14,27,46,.97), rgba(8,12,20,.98));
+    border: 1px solid rgba(77,166,255,.55);
+    border-radius: 3px;
+    box-shadow: 0 0 0 1px rgba(77,166,255,.10), 0 0 30px rgba(77,166,255,.16),
+                inset 0 0 44px rgba(77,166,255,.05);
+  }
+  .sys::before, .sys::after {
+    content: ""; position: absolute; width: 13px; height: 13px;
+    border: 2px solid var(--fire); pointer-events: none;
+  }
+  .sys::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .sys::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+
+  .sys-label {
+    font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase;
+    color: var(--fire); font-weight: 700; text-align: center;
+    text-shadow: 0 0 12px var(--glow);
+  }
+  .sys-rule {
+    height: 1px; margin: 11px 0;
+    background: linear-gradient(90deg, transparent, rgba(77,166,255,.45), transparent);
+  }
+
+  @keyframes sysIn {
+    0%   { opacity: 0; transform: scaleY(.02) scaleX(.85); filter: brightness(2.4); }
+    45%  { opacity: 1; transform: scaleY(1.04) scaleX(1); filter: brightness(1.5); }
+    100% { opacity: 1; transform: scale(1); filter: brightness(1); }
+  }
+  @keyframes glitch {
+    0%, 100% { transform: translate(0); }
+    22% { transform: translate(-2px, 1px); }
+    44% { transform: translate(2px, -1px); }
+    66% { transform: translate(-1px, -1px); }
+  }
+
+  /* ─────────── NAV ─────────── */
+  nav {
+    position: sticky; top: 0; z-index: 200;
+    height: var(--nav-h);
+    background: rgba(11,12,16,0.94);
+    backdrop-filter: blur(14px);
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 4px;
+    padding: 0 16px;
+  }
+  .nav-logo { display: flex; align-items: center; gap: 9px; margin-right: 18px; flex-shrink: 0; }
+  .nav-logo-icon {
+    width: 32px; height: 32px; border-radius: 3px;
+    background: linear-gradient(140deg, #4DA6FF, #12406E); box-shadow: 0 0 16px rgba(77,166,255,.35);
+    display: flex; align-items: center; justify-content: center; font-size: 17px;
+  }
+  .nav-logo-text { font-weight: 700; font-size: 15px; letter-spacing: .2px; }
+  .nav-tab {
+    padding: 8px 13px; border-radius: 3px;
+    color: var(--gray); font-size: 14px; font-weight: 500;
+    display: flex; align-items: center; gap: 7px; transition: .15s;
+  }
+  .nav-tab:hover { color: var(--white); background: var(--card); }
+  .nav-tab.active { color: var(--fire); background: var(--fire-dim); }
+  .nav-right { margin-left: auto; display: flex; align-items: center; gap: 12px; }
+  .nav-xp {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--card); border: 1px solid var(--border);
+    padding: 5px 12px; border-radius: 3px; font-size: 13px;
+  }
+  .nav-xp b { color: var(--gold); }
+  .nav-streak { color: var(--fire); font-size: 13px; font-weight: 600; }
+
+  /* ─────────── LAYOUT ─────────── */
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 26px 16px 60px; }
+  .section { display: none; }
+  .section.active { display: block; animation: fade .22s ease; }
+  @keyframes fade { from { opacity:0; transform: translateY(6px); } to { opacity:1; transform:none; } }
+
+  h2.page-title { font-size: 24px; font-weight: 700; margin-bottom: 5px; letter-spacing: -.3px; }
+  p.page-sub { color: var(--gray); font-size: 14px; margin-bottom: 22px; }
+
+  .card { background: rgba(14,19,30,.82); border: 1px solid var(--border); border-radius: 4px; padding: 18px; }
+  .card h3 { font-size: 16px; margin-bottom: 12px; }
+
+  /* ─────────── HERO ─────────── */
+  .hero {
+    background:
+      linear-gradient(158deg, rgba(14,27,46,.90), rgba(8,12,20,.93));
+    border: 1px solid rgba(77,166,255,.4);
+    border-radius: 4px; padding: 22px; margin-bottom: 16px;
+    position: relative; overflow: hidden;
+    box-shadow: 0 0 34px rgba(77,166,255,.10), inset 0 0 60px rgba(77,166,255,.04);
+  }
+  .hero.has-art { background-size: cover; background-position: center; }
+  body.no-bg .bg-gate, body.no-bg .motes { display: none; }
+
+  /* Врата подземелья: фон всей страницы, рисуется кодом, не картинкой */
+  .bg-gate {
+    position: fixed; z-index: 0; pointer-events: none;
+    top: 20px; left: 50%; transform: translateX(-50%);
+    width: min(1460px, 132vw); height: 760px; opacity: .6;
+    -webkit-mask-image: linear-gradient(180deg, #000 52%, transparent 92%);
+    mask-image: linear-gradient(180deg, #000 52%, transparent 92%);
+  }
+  .bg-gate svg { width: 100%; height: 100%; display: block; }
+  .gate-core { animation: gatePulse 5.5s ease-in-out infinite; transform-origin: center; }
+  @keyframes gatePulse {
+    0%, 100% { opacity: .55; }
+    50%      { opacity: .95; }
+  }
+  @media (prefers-reduced-motion: reduce) { .gate-core { animation: none; } }
+  @media (max-width: 760px) { .bg-gate { height: 460px; opacity: .38; width: 150vw; } }
+  .hero.has-art::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(100deg, rgba(5,7,12,.94) 0%, rgba(5,7,12,.80) 45%, rgba(5,7,12,.42) 100%);
+  }
+  .hero::after {
+    content: ""; position: absolute; right: -80px; top: -80px;
+    width: 260px; height: 260px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(77,166,255,.14), transparent 70%);
+  }
+  .hero-top { display: flex; align-items: center; gap: 14px; margin-bottom: 16px; position: relative; }
+  .hero-av {
+    width: 68px; height: 68px; border-radius: 4px;
+    background: linear-gradient(150deg, #123253, #0A1622);
+    border: 2px solid currentColor;
+    display: flex; align-items: center; justify-content: center;
+    flex-shrink: 0; overflow: hidden; position: relative;
+    box-shadow: 0 0 26px rgba(77,166,255,.2), inset 0 0 22px rgba(0,0,0,.5);
+  }
+  .hero-av .rank-badge { border: none; background: none; box-shadow: none; width: auto; height: auto; font-size: 32px; }
+  .hero-av::after {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,.07), transparent 55%);
+    pointer-events: none;
+  }
+  .hero-av img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .hero-name { font-size: 19px; font-weight: 700; }
+  .hero-rank { color: var(--fire); font-size: 13px; font-weight: 600; letter-spacing: .4px; }
+
+  /* Значок ранга E→S */
+  .rank-badge {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 30px; height: 30px; border-radius: 3px; flex-shrink: 0;
+    font-size: 15px; font-weight: 800; letter-spacing: 0;
+    border: 1.5px solid currentColor; background: rgba(0,0,0,.35);
+    text-shadow: 0 0 10px currentColor;
+  }
+  .rank-badge.sm { width: 22px; height: 22px; font-size: 12px; border-width: 1px; }
+  .rank-badge.big { width: 62px; height: 62px; font-size: 32px; border-width: 2px; }
+  .rank-e { color: var(--rank-e); }
+  .rank-d { color: var(--rank-d); }
+  .rank-c { color: var(--rank-c); }
+  .rank-b { color: var(--rank-b); }
+  .rank-a { color: var(--rank-a); }
+  .rank-s { color: var(--rank-s); box-shadow: 0 0 18px rgba(255,77,109,.45); }
+
+  /* иконка ветки: картинка поверх эмодзи-запаски */
+  .bico { position: relative; display: inline-flex; align-items: center; justify-content: center; flex-shrink: 0; vertical-align: middle; }
+  .bico img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: contain; z-index: 2; }
+  .bico-fb { line-height: 1; }
+
+  /* арт босса на экране победы */
+  .victory-art {
+    width: 100%; max-width: 300px; margin: 0 auto 14px; display: block;
+    border: 1px solid rgba(169,139,240,.5); border-radius: 3px;
+    box-shadow: 0 0 34px rgba(169,139,240,.3);
+  }
+  .rank-up-glow { animation: glitch .45s steps(2) 2; }
+  .hero-lvl { margin-left: auto; text-align: right; flex-shrink: 0; }
+  .hero-lvl .n { font-size: 30px; font-weight: 800; line-height: 1; color: var(--fire); }
+  .hero-lvl .l { font-size: 11px; color: var(--gray); text-transform: uppercase; letter-spacing: .6px; }
+
+  .xpbar {
+    height: 13px; background: rgba(5,7,12,.7); border-radius: 2px; overflow: hidden;
+    position: relative; border: 1px solid var(--border);
+  }
+  .xpbar::after {
+    content: ""; position: absolute; inset: 0; pointer-events: none;
+    background: repeating-linear-gradient(90deg, transparent 0 9.9%, rgba(5,7,12,.55) 9.9% 10%);
+  }
+  .xpbar-fill {
+    height: 100%; border-radius: 1px;
+    background: linear-gradient(90deg, #1E5C99, var(--fire), #9FE0FF); box-shadow: 0 0 14px rgba(77,166,255,.5);
+    transition: width .5s cubic-bezier(.4,0,.2,1);
+  }
+  .xpbar-labels { display: flex; justify-content: space-between; margin-top: 8px; font-size: 12px; color: var(--gray); flex-wrap: wrap; gap: 6px; }
+  .hero-nextrank { color: var(--gray); }
+  .hero-nextrank b { font-weight: 800; text-shadow: 0 0 10px currentColor; }
+
+  .hero-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 10px; margin-top: 18px; position: relative; }
+  .hstat { background: rgba(5,7,12,.78); border: 1px solid var(--border); border-radius: 3px; padding: 11px 12px; }
+  .hstat .n { font-size: 19px; font-weight: 700; line-height: 1.2; }
+  .hstat .l { font-size: 11px; color: var(--gray); margin-top: 1px; }
+
+  /* ─────────── QUEST OF THE DAY ─────────── */
+  .today {
+    background: linear-gradient(140deg, var(--fire-dim), var(--card));
+    border: 1px solid rgba(77,166,255,.34); border-radius: 4px; padding: 18px; margin-bottom: 16px;
+  }
+  .today-label {
+    font-size: 11px; letter-spacing: 1.2px; text-transform: uppercase;
+    color: var(--fire); font-weight: 700; margin-bottom: 9px;
+  }
+  .today-title { font-size: 17px; font-weight: 700; margin-bottom: 5px; }
+  .today-desc { color: var(--gray2); font-size: 14px; margin-bottom: 14px; }
+  .today-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+
+  /* ─────────── CHIPS ─────────── */
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px;
+    padding: 3px 9px; border-radius: 3px; font-size: 12px; font-weight: 600;
+    background: var(--card2); color: var(--gray2); border: 1px solid var(--border);
+  }
+  .chip.xp    { background: var(--gold-dim);   color: var(--gold);   border-color: #4A3800; }
+  .chip.xp.big { font-size: 13.5px; padding: 4px 11px; font-weight: 800;
+                 box-shadow: 0 0 12px rgba(240,180,41,.18); }
+  .chip.read  { background: var(--blue-dim);   color: var(--blue);   border-color: #17304F; }
+  .chip.do    { background: var(--green-dim);  color: var(--green);  border-color: #0F4429; }
+  .chip.boss  { background: var(--purple-dim); color: var(--purple); border-color: #33255C; }
+  .chip.lock  { background: var(--card2);      color: var(--gray); }
+
+  /* ─────────── BUTTONS ─────────── */
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 7px;
+    padding: 10px 18px; border-radius: 3px; font-weight: 600; font-size: 14px;
+    background: var(--card2); border: 1px solid var(--border2); color: var(--white);
+    transition: .15s;
+  }
+  .btn:hover { background: var(--border); }
+  .btn.primary { background: linear-gradient(135deg, #4DA6FF, #1E6FBF); border-color: rgba(159,224,255,.5); color: #04121F; box-shadow: 0 0 18px rgba(77,166,255,.3); }
+  .btn.primary:hover { filter: brightness(1.08); }
+  .btn.ghost { background: transparent; }
+  .btn.sm { padding: 7px 13px; font-size: 13px; }
+  .btn:disabled { opacity: .45; cursor: not-allowed; }
+  .btn.danger { color: var(--red); border-color: #4A2320; }
+
+  /* ─────────── TREE ─────────── */
+  .bline {
+    display: block; width: 100%; text-align: left; padding: 9px 10px; margin-bottom: 6px;
+    border-radius: 3px; border: 1px solid transparent; background: transparent; transition: .15s;
+  }
+  .bline:hover { background: var(--card2); border-color: var(--border); }
+  .bline-top { display: flex; align-items: center; gap: 8px; font-size: 13.5px; margin-bottom: 6px; }
+  .bline-name { color: var(--white); }
+  .bline-avail {
+    margin-left: auto; font-size: 11px; font-weight: 700; color: var(--fire);
+    background: var(--fire-dim); border: 1px solid rgba(77,166,255,.3);
+    padding: 2px 7px; border-radius: 3px;
+  }
+  .bline-num { color: var(--gray); font-size: 12px; }
+  .bline-avail + .bline-num { margin-left: 0; }
+  .bline-top .bline-num:first-of-type:not(.bline-avail + .bline-num) { margin-left: auto; }
+
+  .branch-card { border: 1px solid var(--border); border-radius: 4px; padding: 16px; background: var(--card); margin-bottom: 12px; }
+  .branch-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+  .branch-ic { width: 42px; height: 42px; border-radius: 12px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+  .branch-name { font-weight: 700; font-size: 16px; }
+  .branch-why { color: var(--gray); font-size: 12.5px; line-height: 1.4; }
+  .branch-pct { margin-left: auto; text-align: right; flex-shrink: 0; }
+  .branch-pct .n { font-size: 18px; font-weight: 700; }
+  .branch-pct .l { font-size: 11px; color: var(--gray); }
+  .branch-bar { height: 6px; background: var(--dark); border-radius: 4px; overflow: hidden; margin-bottom: 12px; }
+  .branch-bar-fill { height: 100%; border-radius: 4px; transition: width .5s; }
+  .nodes { display: flex; flex-wrap: wrap; gap: 7px; }
+  .node {
+    width: 34px; height: 34px; border-radius: 3px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; font-weight: 700;
+    background: var(--dark); border: 1px solid var(--border); color: var(--gray);
+    transition: .15s;
+  }
+  .node:hover { transform: translateY(-2px); border-color: var(--border2); }
+  .node.done { background: var(--green-dim); border-color: #17663F; color: var(--green); }
+  .node.open { border-color: var(--fire); color: var(--fire-soft); background: var(--fire-dim); }
+  .node.boss { border-radius: 50%; }
+
+  /* ─────────── QUEST LIST ─────────── */
+  .week-head {
+    display: flex; align-items: center; gap: 10px;
+    margin: 22px 0 11px; font-size: 13px; font-weight: 700;
+    color: var(--gray2); text-transform: uppercase; letter-spacing: .8px;
+  }
+  .week-head::after { content: ""; order: 9; flex: 1; height: 1px; background: var(--border); min-width: 20px; }
+  .week-meta { font-size: 11.5px; font-weight: 600; color: var(--gray); text-transform: none; letter-spacing: 0; }
+  .week-bar { width: 74px; height: 4px; background: var(--dark); border-radius: 2px; overflow: hidden; flex-shrink: 0; }
+  .week-bar i { display: block; height: 100%; background: var(--fire); box-shadow: 0 0 8px var(--glow); transition: width .4s; }
+
+  .quest { border: 1px solid var(--border); border-radius: 4px; background: rgba(14,19,30,.84); margin-bottom: 9px; overflow: hidden; transition: border-color .15s; }
+  .quest:hover { border-color: var(--border2); }
+  .quest.is-done { border-color: rgba(23,102,63,.35); background: rgba(15,26,21,.85); }
+
+  /* доступные — с подсвеченной кромкой слева */
+  .quest.is-open { border-left: 3px solid var(--fire); background: rgba(14,25,40,.88); }
+
+  /* тот, за который браться сейчас */
+  .quest.is-next {
+    border-color: rgba(77,166,255,.55);
+    box-shadow: 0 0 0 1px rgba(77,166,255,.12), 0 0 26px rgba(77,166,255,.16);
+  }
+  .quest-now {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 10px; letter-spacing: 1.6px; text-transform: uppercase; font-weight: 700;
+    color: var(--fire); margin-bottom: 6px; text-shadow: 0 0 10px var(--glow);
+  }
+  .quest-now::before {
+    content: ""; width: 6px; height: 6px; border-radius: 50%;
+    background: var(--fire); box-shadow: 0 0 8px var(--fire);
+    animation: pulseDot 1.8s ease-in-out infinite;
+  }
+  @keyframes pulseDot { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+
+  /* закрытые — компактнее, чтобы не занимать пол-экрана */
+  .quest.is-lock { opacity: .42; }
+  .quest.is-lock .quest-head { padding: 9px 15px; }
+  .quest.is-lock .quest-title { font-size: 13.5px; margin-bottom: 0; }
+  .quest.is-lock .quest-meta { display: none; }
+  .quest.is-lock .quest-check { width: 18px; height: 18px; border-width: 1px; margin-top: 0; }
+  .quest-lockmeta { font-size: 11.5px; color: var(--gray); display: flex; gap: 9px; align-items: center; }
+
+  /* босс — кульминация сезона, а не рядовая карточка */
+  .quest.is-boss {
+    border-color: rgba(169,139,240,.5);
+    background: linear-gradient(140deg, rgba(35,22,66,.9), rgba(14,19,30,.92));
+    box-shadow: 0 0 30px rgba(169,139,240,.12), inset 0 0 50px rgba(169,139,240,.05);
+  }
+  .quest.is-boss .quest-head { padding: 20px 18px; }
+  .quest.is-boss .quest-title { font-size: 18px; letter-spacing: -.2px; }
+  .quest.is-boss.is-lock { opacity: .55; }
+  .quest.is-boss.is-lock .quest-title { font-size: 16px; }
+  .boss-crown {
+    font-size: 26px; line-height: 1; margin-right: 3px; flex-shrink: 0;
+    filter: drop-shadow(0 0 10px rgba(169,139,240,.7));
+  }
+  .boss-xp {
+    font-size: 15px; font-weight: 800; color: var(--purple);
+    text-shadow: 0 0 12px rgba(169,139,240,.5);
+  }
+
+  .quest-head { display: flex; align-items: flex-start; gap: 12px; padding: 14px 15px; }
+  .quest-check {
+    width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0; margin-top: 1px;
+    border: 2px solid var(--border2); background: var(--dark);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px; color: transparent; transition: .15s;
+  }
+  .quest-check:hover { border-color: var(--fire); }
+  .quest.is-done .quest-check { background: var(--green); border-color: var(--green); color: #062015; }
+  .quest-body { flex: 1; min-width: 0; }
+  .quest-title { font-weight: 650; font-size: 15px; margin-bottom: 5px; }
+  .quest.is-done .quest-title { color: var(--gray2); }
+  .quest-meta { display: flex; gap: 6px; flex-wrap: wrap; }
+  .quest-arrow { color: var(--gray); font-size: 12px; flex-shrink: 0; margin-top: 5px; transition: transform .2s; }
+  .quest.open .quest-arrow { transform: rotate(90deg); }
+
+  .quest-detail { display: none; padding: 0 15px 15px 51px; }
+  .quest.open .quest-detail { display: block; }
+  .quest-desc { color: var(--gray2); font-size: 14px; margin-bottom: 13px; }
+  .quest-steps { margin-bottom: 13px; }
+  .quest-steps li { list-style: none; padding-left: 20px; position: relative; color: var(--gray2); font-size: 13.5px; margin-bottom: 6px; }
+  .quest-steps li::before { content: ""; position: absolute; left: 5px; top: 9px; width: 5px; height: 5px; border-radius: 50%; background: var(--fire); }
+  .danger-zone {
+    margin-top: 16px; padding: 13px; border-radius: 3px;
+    border: 1px solid rgba(255,77,109,.28); background: rgba(255,77,109,.04);
+  }
+  .danger-zone-t {
+    font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase;
+    color: var(--red); font-weight: 700; margin-bottom: 10px; opacity: .85;
+  }
+
+  /* сворачиваемый блок */
+  .fold summary {
+    cursor: pointer; list-style: none; font-size: 16px; font-weight: 700;
+    display: flex; align-items: center; gap: 9px;
+  }
+  .fold summary::-webkit-details-marker { display: none; }
+  .fold summary::before {
+    content: "▶"; font-size: 10px; color: var(--fire); transition: transform .2s;
+  }
+  .fold[open] summary::before { transform: rotate(90deg); }
+  .fold[open] summary { margin-bottom: 13px; }
+
+  .qlinks { background: rgba(77,166,255,.05); border: 1px solid rgba(77,166,255,.22);
+            border-radius: 3px; padding: 11px 13px; margin-bottom: 12px; }
+  .qlinks-t { font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase;
+              color: var(--fire); font-weight: 700; margin-bottom: 8px; }
+  .qlink { display: block; font-size: 13.5px; color: var(--fire-soft); text-decoration: none;
+           padding: 4px 0 4px 16px; position: relative; line-height: 1.4; }
+  .qlink::before { content: "→"; position: absolute; left: 0; color: var(--fire); }
+  .qlink:hover { color: #fff; text-decoration: underline; }
+  .qlink-vpn {
+    display: inline-block; margin-left: 7px; padding: 1px 5px; border-radius: 2px;
+    font-size: 9.5px; font-weight: 700; letter-spacing: .6px; vertical-align: middle;
+    color: var(--gold); background: var(--gold-dim); border: 1px solid rgba(240,180,41,.35);
+  }
+
+  .proof-box { background: var(--dark); border: 1px solid var(--border); border-radius: 3px; padding: 12px; margin-bottom: 12px; }
+  .proof-label { font-size: 12px; color: var(--gold); font-weight: 600; margin-bottom: 7px; }
+  .proof-input {
+    width: 100%; background: var(--black); border: 1px solid var(--border2);
+    border-radius: 8px; padding: 9px 11px; font-size: 13.5px; color: var(--white);
+  }
+  .proof-input:focus { outline: none; border-color: var(--fire); }
+  .proof-input::placeholder { color: #4E566B; }
+  .quest-done-line { font-size: 12.5px; color: var(--green); margin-top: 9px; }
+
+  /* ─────────── MONEY ─────────── */
+  .money-form { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; align-items: end; }
+  .field label { display: block; font-size: 12px; color: var(--gray); margin-bottom: 5px; }
+  .field input, .field select {
+    width: 100%; background: var(--dark); border: 1px solid var(--border2);
+    border-radius: 9px; padding: 9px 11px; font-size: 14px;
+  }
+  .field input:focus, .field select:focus { outline: none; border-color: var(--fire); }
+
+  .chart { display: flex; align-items: stretch; gap: 8px; height: 190px; margin: 18px 0 6px; }
+  .chart-col { flex: 1; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; gap: 5px; min-width: 0; height: 100%; }
+  .chart-barwrap { flex: none; height: calc(100% - 40px); width: 100%; display: flex; flex-direction: column; justify-content: flex-end; }
+  .chart-val { font-size: 11px; color: var(--gray2); white-space: nowrap; }
+  .chart-bar { width: 100%; border-radius: 6px 6px 0 0; min-height: 3px; background: linear-gradient(180deg, var(--fire), #144B7D); transition: height .5s; }
+  .chart-lbl { font-size: 11px; color: var(--gray); white-space: nowrap; }
+  .money-empty { color: var(--gray); text-align: center; padding: 34px 0; font-size: 14px; }
+
+  /* маркер валютных поступлений поверх столбца */
+  .chart-bar.has-usd { box-shadow: inset 0 4px 0 var(--gold), 0 0 14px rgba(240,180,41,.35); }
+  .chart-legend { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; color: var(--gray); margin-top: 12px; }
+  .chart-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .lg { width: 11px; height: 11px; border-radius: 2px; display: inline-block; }
+  .lg-rub { background: linear-gradient(180deg, var(--fire), #144B7D); }
+  .lg-usd { background: var(--gold); }
+
+  /* статус дохода */
+  .mstatus { display: flex; align-items: center; gap: 18px; flex-wrap: wrap; }
+  .mstatus-main { flex: 1; min-width: 190px; }
+  .mstatus-sum { font-size: 30px; font-weight: 800; line-height: 1.1; }
+  .mstatus-sub { color: var(--gray); font-size: 13px; margin-top: 3px; }
+  .mstatus-side { display: flex; gap: 10px; flex-wrap: wrap; }
+  .mstat-box { background: rgba(5,7,12,.6); border: 1px solid var(--border); border-radius: 3px; padding: 10px 13px; min-width: 92px; }
+  .mstat-box .n { font-size: 17px; font-weight: 700; }
+  .mstat-box .l { font-size: 11px; color: var(--gray); margin-top: 1px; }
+
+  /* история */
+  .mrow { display: flex; align-items: center; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .mrow:last-child { border-bottom: none; }
+  .mrow-m { font-weight: 650; font-size: 14px; min-width: 92px; }
+  .mrow-v { color: var(--gray2); font-size: 13.5px; }
+  .mrow-usd { color: var(--gold); font-size: 12.5px; }
+  .mrow-act { margin-left: auto; display: flex; gap: 6px; }
+  .mrow-btn { padding: 4px 9px; border-radius: 3px; border: 1px solid var(--border2); font-size: 12px; color: var(--gray2); }
+  .mrow-btn:hover { border-color: var(--fire); color: var(--fire); }
+  .mrow-btn.del:hover { border-color: var(--red); color: var(--red); }
+
+  /* квесты дохода */
+  .mq { display: flex; align-items: center; gap: 11px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .mq:last-child { border-bottom: none; }
+  .mq-t { flex: 1; min-width: 0; font-size: 13.5px; }
+  .mq-go { font-size: 12px; color: var(--fire); flex-shrink: 0; }
+
+  /* ─────────── ACHIEVEMENTS ─────────── */
+  .ach-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 14px; }
+  .ach-count { font-size: 22px; font-weight: 800; color: var(--gold); }
+  .ach-of { font-size: 13px; color: var(--gray); }
+  .ach-bar { flex: 1; height: 5px; background: var(--dark); border-radius: 3px; overflow: hidden; margin-left: 6px; }
+  .ach-bar i { display: block; height: 100%; background: linear-gradient(90deg, #8A6A12, var(--gold));
+               box-shadow: 0 0 10px rgba(240,180,41,.5); transition: width .5s; }
+
+  .ach-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(158px, 1fr)); gap: 10px; }
+  .ach {
+    position: relative; text-align: center; padding: 16px 11px 13px;
+    border-radius: 3px; border: 1px solid var(--border); background: var(--card2);
+    transition: transform .15s, border-color .15s;
+  }
+  .ach:hover { transform: translateY(-2px); border-color: var(--border2); }
+  .ach.got {
+    border-color: rgba(240,180,41,.45);
+    background: linear-gradient(160deg, rgba(240,180,41,.10), rgba(20,27,41,.9));
+    box-shadow: 0 0 22px rgba(240,180,41,.10), inset 0 0 30px rgba(240,180,41,.04);
+  }
+  .ach.got::before, .ach.got::after {
+    content: ""; position: absolute; width: 10px; height: 10px; border: 2px solid var(--gold);
+  }
+  .ach.got::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .ach.got::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+  .ach-ic {
+    font-size: 30px; line-height: 1; margin-bottom: 9px;
+    filter: grayscale(1) opacity(.28); transition: filter .3s;
+  }
+  .ach.got .ach-ic { filter: none; text-shadow: 0 0 16px rgba(240,180,41,.55); }
+  .ach-name { font-weight: 700; font-size: 13.5px; line-height: 1.25; color: var(--gray2); }
+  .ach.got .ach-name { color: var(--gold); }
+  .ach-desc { font-size: 11.5px; color: var(--gray); line-height: 1.35; margin-top: 5px; }
+  .ach-lock { position: absolute; top: 7px; right: 8px; font-size: 10px; color: var(--gray); opacity: .55; }
+
+  /* ─────────── MODAL ─────────── */
+  .overlay {
+    position: fixed; inset: 0; z-index: 500;
+    background: rgba(5,6,9,.86); backdrop-filter: blur(6px);
+    display: none; align-items: center; justify-content: center; padding: 20px;
+  }
+  .overlay.show { display: flex; }
+  .modal {
+    background: linear-gradient(158deg, rgba(14,27,46,.98), rgba(8,12,20,.99));
+    border: 1px solid rgba(77,166,255,.55); border-radius: 3px;
+    padding: 26px; max-width: 460px; width: 100%; max-height: 86vh; overflow-y: auto;
+    position: relative; animation: sysIn .32s cubic-bezier(.2,1.1,.4,1);
+    box-shadow: 0 0 0 1px rgba(77,166,255,.10), 0 0 46px rgba(77,166,255,.22),
+                inset 0 0 60px rgba(77,166,255,.05);
+  }
+  .modal::before, .modal::after {
+    content: ""; position: absolute; width: 15px; height: 15px;
+    border: 2px solid var(--fire); pointer-events: none;
+  }
+  .modal::before { top: -1px; left: -1px; border-right: none; border-bottom: none; }
+  .modal::after { bottom: -1px; right: -1px; border-left: none; border-top: none; }
+  .modal h3 { font-size: 20px; margin-bottom: 8px; }
+  .modal p { color: var(--gray2); font-size: 14px; margin-bottom: 16px; }
+  .modal textarea {
+    width: 100%; height: 130px; resize: vertical;
+    background: var(--dark); border: 1px solid var(--border2); border-radius: 10px;
+    padding: 11px; font-size: 12px; font-family: ui-monospace, Consolas, monospace; color: var(--gray2);
+  }
+  .modal input.big {
+    width: 100%; background: var(--dark); border: 1px solid var(--border2);
+    border-radius: 10px; padding: 12px 14px; font-size: 15px; color: var(--white);
+  }
+  .modal input.big:focus { outline: none; border-color: var(--fire); }
+  .modal-btns { display: flex; gap: 9px; margin-top: 16px; }
+  .modal-btns .btn { flex: 1; }
+
+  /* ─────────── TOAST ─────────── */
+  /* Уведомление Системы */
+  .toast {
+    position: fixed; left: 50%; bottom: 90px; transform: translateX(-50%) translateY(14px);
+    background: linear-gradient(158deg, rgba(14,27,46,.97), rgba(8,12,20,.98));
+    border: 1px solid rgba(77,166,255,.6);
+    padding: 13px 22px 12px; border-radius: 3px; font-size: 14px; font-weight: 600;
+    z-index: 600; opacity: 0; pointer-events: none; transition: .26s;
+    box-shadow: 0 0 34px rgba(77,166,255,.26), inset 0 0 34px rgba(77,166,255,.05);
+    max-width: 92vw; text-align: center;
+  }
+  .toast::before {
+    content: "[ УВЕДОМЛЕНИЕ ]"; display: block;
+    font-size: 9.5px; letter-spacing: 2.2px; font-weight: 700;
+    color: var(--fire); margin-bottom: 5px; text-shadow: 0 0 10px var(--glow);
+  }
+  .toast::after {
+    content: ""; position: absolute; left: 0; right: 0; top: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--fire), transparent);
+  }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .toast.xp { border-color: rgba(240,180,41,.6); color: var(--gold); box-shadow: 0 0 34px rgba(240,180,41,.22); }
+  .toast.xp::before { content: "[ НАГРАДА ]"; color: var(--gold); text-shadow: 0 0 10px rgba(240,180,41,.6); }
+  .toast.xp::after { background: linear-gradient(90deg, transparent, var(--gold), transparent); }
+
+  /* ─────────── КОЛЬЦО ДНЯ ─────────── */
+  .day-card { display: flex; align-items: center; gap: 18px; }
+  .ring-wrap { position: relative; width: 92px; height: 92px; flex-shrink: 0; }
+  .ring-wrap svg { transform: rotate(-90deg); }
+  .ring-bg { fill: none; stroke: var(--dark); stroke-width: 9; }
+  .ring-fg {
+    fill: none; stroke: url(#ringGrad); stroke-width: 9; stroke-linecap: round;
+    transition: stroke-dashoffset .7s cubic-bezier(.4,0,.2,1);
+  }
+  .ring-txt {
+    position: absolute; inset: 0; display: flex; flex-direction: column;
+    align-items: center; justify-content: center; gap: 0;
+  }
+  .ring-txt .n { font-size: 21px; font-weight: 800; line-height: 1; }
+  .ring-txt .l { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .day-info { flex: 1; min-width: 0; }
+  .day-title { font-weight: 700; font-size: 15px; margin-bottom: 4px; }
+  .day-sub { color: var(--gray); font-size: 13px; line-height: 1.5; }
+  .day-flame {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: var(--fire-dim); border: 1px solid rgba(77,166,255,.4);
+    color: var(--fire-soft); font-weight: 700; font-size: 13px;
+    padding: 4px 11px; border-radius: 3px; margin-top: 9px;
+  }
+
+  /* ─────────── КАРТА СЕЗОНА ─────────── */
+  .path { display: flex; align-items: stretch; gap: 0; margin-top: 4px; }
+  .path-step { flex: 1; position: relative; text-align: center; min-width: 0; }
+  .path-step::before {
+    content: ""; position: absolute; top: 17px; left: 0; right: 50%;
+    height: 3px; background: var(--border);
+  }
+  .path-step::after {
+    content: ""; position: absolute; top: 17px; left: 50%; right: 0;
+    height: 3px; background: var(--border);
+  }
+  .path-step:first-child::before, .path-step:last-child::after { display: none; }
+  .path-step.filled::before, .path-step.filled-r::after { background: var(--fire); }
+  .path-dot {
+    position: relative; z-index: 2; width: 36px; height: 36px; margin: 0 auto 8px;
+    border-radius: 50%; background: var(--dark); border: 3px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; font-weight: 700; color: var(--gray); transition: .3s;
+  }
+  .path-step.active .path-dot {
+    border-color: var(--fire); color: var(--fire); background: var(--fire-dim);
+    box-shadow: 0 0 0 5px rgba(255,138,61,.12);
+  }
+  .path-step.complete .path-dot { border-color: var(--green); background: var(--green-dim); color: var(--green); }
+  .path-step.boss-step .path-dot { border-radius: 12px; }
+  .path-lbl { font-size: 11.5px; color: var(--gray); line-height: 1.35; padding: 0 4px; }
+  .path-step.active .path-lbl { color: var(--white); font-weight: 600; }
+  .path-step.complete .path-lbl { color: var(--gray2); }
+
+  /* ─────────── ГРАФ ДЕРЕВА ─────────── */
+  .tree-wrap { display: flex; gap: 0; border: 1px solid var(--border); border-radius: 4px; background: var(--card); overflow: hidden; }
+  .tree-labels { flex-shrink: 0; width: 132px; border-right: 1px solid var(--border); background: var(--dark); }
+  .tree-lane-lbl {
+    height: 78px; display: flex; align-items: center; gap: 8px; padding: 0 12px;
+    border-bottom: 1px solid var(--border); font-size: 12.5px; font-weight: 600; line-height: 1.25;
+  }
+  .tree-lane-lbl:last-child { border-bottom: none; }
+  .tree-lane-lbl .ic { font-size: 16px; flex-shrink: 0; }
+  .tree-lane-lbl .pc { margin-left: auto; font-size: 11px; color: var(--gray); }
+  .tree-scroll { flex: 1; overflow-x: auto; overflow-y: hidden; }
+  .tree-inner { position: relative; height: 100%; }
+  .tree-lane-bg { position: absolute; left: 0; right: 0; height: 78px; border-bottom: 1px solid var(--border); }
+  .tree-links { position: absolute; inset: 0; pointer-events: none; }
+  .tnode {
+    position: absolute; width: 44px; height: 44px; border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; font-weight: 700; z-index: 2;
+    background: var(--dark); border: 2px solid var(--border); color: var(--gray);
+    transition: transform .15s, box-shadow .15s;
+  }
+  .tnode:hover { transform: scale(1.12); z-index: 5; }
+  .tnode.done { background: var(--green-dim); border-color: #17663F; color: var(--green); }
+  .tnode.open { border-color: var(--fire); color: var(--fire-soft); background: var(--fire-dim);
+                box-shadow: 0 0 0 4px rgba(255,138,61,.12); }
+  .tnode.boss { border-radius: 50%; width: 50px; height: 50px; font-size: 18px; }
+  .tnode.boss.open { box-shadow: 0 0 0 5px rgba(169,139,240,.18); border-color: var(--purple); color: var(--purple); }
+  .tree-legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12px; color: var(--gray); margin-top: 12px; }
+  .tree-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .tree-dot { width: 12px; height: 12px; border-radius: 4px; border: 2px solid var(--border); background: var(--dark); }
+  .tree-dot.done { background: var(--green-dim); border-color: #17663F; }
+  .tree-dot.open { background: var(--fire-dim); border-color: var(--fire); }
+
+  /* ─────────── ТАЙМЕР ─────────── */
+  .timer-box {
+    display: flex; align-items: center; gap: 11px;
+    background: var(--dark); border: 1px solid var(--border);
+    border-radius: 3px; padding: 10px 12px; margin-bottom: 12px;
+  }
+  .timer-box.running { border-color: var(--fire); background: var(--fire-dim); }
+  .timer-val { font-size: 19px; font-weight: 800; font-variant-numeric: tabular-nums; min-width: 62px; }
+  .timer-box.running .timer-val { color: var(--fire); }
+  .timer-hint { font-size: 12.5px; color: var(--gray); flex: 1; line-height: 1.4; }
+  .timer-spent { font-size: 12px; color: var(--green); font-weight: 600; }
+
+  /* ─────────── ФИЛЬТРЫ ─────────── */
+  .switch-row { display: flex; gap: 7px; flex-wrap: wrap; margin-bottom: 14px; }
+  .filters { display: flex; gap: 6px; flex-wrap: wrap; margin-bottom: 16px; }
+  .fchip {
+    padding: 6px 12px; border-radius: 3px; font-size: 12.5px; font-weight: 600;
+    background: var(--card); border: 1px solid var(--border); color: var(--gray2); transition: .15s;
+  }
+  .fchip:hover { border-color: var(--border2); }
+  .fchip.on { background: var(--fire-dim); border-color: var(--fire); color: var(--fire); }
+
+  /* ─────────── КАЛЕНДАРЬ АКТИВНОСТИ ─────────── */
+  .heat { display: flex; gap: 3px; overflow-x: auto; padding-bottom: 4px; }
+  .heat-week { display: flex; flex-direction: column; gap: 3px; align-items: flex-start; flex: 0 0 auto; }
+  .heat-cell {
+    width: 13px; height: 13px; min-height: 13px; max-height: 13px;
+    flex: 0 0 13px; box-sizing: border-box;
+    border-radius: 2px; background: #121A26; border: 1px solid rgba(77,166,255,.07);
+  }
+  .heat-cell.l1 { background: #12314F; }
+  .heat-cell.l2 { background: #1D5488; }
+  .heat-cell.l3 { background: #2E80C9; }
+  .heat-cell.l4 { background: var(--fire); }
+  .heat-cell.is-today { border-color: var(--gold); box-shadow: 0 0 7px rgba(240,180,41,.5); }
+  .heat-cell.l4 { box-shadow: 0 0 8px rgba(77,166,255,.5); }
+  .heat-wrap { display: flex; gap: 26px; align-items: flex-start; flex-wrap: wrap; }
+  .heat-stats { flex: 1; min-width: 210px; display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+  .hs { background: rgba(5,7,12,.5); border: 1px solid var(--border); border-radius: 3px; padding: 11px 13px; }
+  .hs .n { font-size: 19px; font-weight: 800; line-height: 1.15; }
+  .hs .l { font-size: 11px; color: var(--gray); margin-top: 2px; }
+  .heat-months { display: flex; gap: 3px; margin-bottom: 5px; font-size: 11px; color: var(--gray); }
+  .heat-month { width: 13px; flex-shrink: 0; white-space: nowrap; }
+  .heat-legend { display: flex; align-items: center; gap: 5px; font-size: 11.5px; color: var(--gray); margin-top: 10px; }
+
+  /* ─────────── ЛЕНТА СОБЫТИЙ ─────────── */
+  .log-item { display: flex; gap: 11px; padding: 9px 0; border-bottom: 1px solid var(--border); }
+  .log-item:last-child { border-bottom: none; }
+  .log-ic { font-size: 16px; width: 22px; text-align: center; flex-shrink: 0; }
+  .log-txt { flex: 1; min-width: 0; font-size: 13.5px; line-height: 1.4; }
+  .log-date { font-size: 11.5px; color: var(--gray); flex-shrink: 0; }
+  .log-empty { color: var(--gray); font-size: 13.5px; padding: 10px 0; }
+
+  /* ─────────── ЭКРАН ПОБЕДЫ ─────────── */
+  .victory { text-align: center; }
+  .victory-crown { font-size: 56px; line-height: 1; margin-bottom: 12px; animation: pop .5s cubic-bezier(.2,1.4,.5,1); }
+  @keyframes pop { from { transform: scale(.3); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+  .victory h3 { font-size: 24px; background: linear-gradient(90deg, var(--fire), #9FE0FF);
+                -webkit-background-clip: text; background-clip: text; color: transparent; margin-bottom: 6px; }
+  .victory-xp { font-size: 34px; font-weight: 800; color: var(--gold); margin: 14px 0 4px; }
+  .victory-stats { display: flex; gap: 10px; margin-top: 18px; }
+  .victory-stats > div { flex: 1; background: var(--dark); border: 1px solid var(--border); border-radius: 11px; padding: 11px 8px; }
+  .victory-stats .n { font-size: 18px; font-weight: 700; }
+  .victory-stats .l { font-size: 11px; color: var(--gray); }
+
+  .confetti-piece {
+    position: fixed; width: 9px; height: 14px; top: -20px; z-index: 700;
+    pointer-events: none; opacity: .95;
+  }
+  @keyframes fall {
+    to { transform: translateY(105vh) rotate(720deg); opacity: 0; }
+  }
+
+  /* ─────────── ВСПЛЫВАЮЩИЙ XP ─────────── */
+  .xp-pop {
+    position: fixed; z-index: 650; pointer-events: none;
+    font-weight: 800; font-size: 20px; color: var(--gold);
+    text-shadow: 0 2px 10px rgba(0,0,0,.6);
+    animation: xpfly 1.1s ease-out forwards;
+  }
+  @keyframes xpfly {
+    0%   { transform: translateY(0) scale(.7); opacity: 0; }
+    18%  { transform: translateY(-8px) scale(1.15); opacity: 1; }
+    100% { transform: translateY(-64px) scale(1); opacity: 0; }
+  }
+
+  /* ─────────── ПРОГНОЗ ─────────── */
+  .forecast {
+    display: flex; align-items: center; gap: 10px;
+    background: var(--dark); border: 1px solid var(--border);
+    border-radius: 3px; padding: 11px 13px; margin-top: 14px;
+    font-size: 13px; color: var(--gray2);
+  }
+  .forecast b { color: var(--white); }
+
+  /* ─────────── СЛЕДУЮЩАЯ НАГРАДА ─────────── */
+  .next-reward {
+    display: flex; align-items: center; gap: 11px;
+    padding: 11px 13px; border-radius: 3px; margin-top: 12px;
+    background: linear-gradient(120deg, var(--gold-dim), var(--card));
+    border: 1px solid #4A3800;
+  }
+  .next-reward .ic { font-size: 21px; filter: grayscale(1) opacity(.5); }
+  .next-reward .t { font-size: 13px; font-weight: 650; color: var(--gold); }
+  .next-reward .s { font-size: 12px; color: var(--gray); }
+
+  /* ─────────── MOBILE ─────────── */
+  .mobile-nav { display: none; }
+
+  @media (max-width: 760px) {
+    .wrap { padding: 18px 13px 90px; }
+    nav { padding: 0 13px; }
+    .nav-tab { display: none; }
+    .nav-right { gap: 9px; }
+    .nav-xp { padding: 4px 10px; font-size: 12px; }
+
+    .mobile-nav {
+      display: flex; position: fixed; bottom: 0; left: 0; right: 0; z-index: 300;
+      background: rgba(11,12,16,.97); backdrop-filter: blur(14px);
+      border-top: 1px solid var(--border);
+      padding: 7px 4px calc(7px + env(safe-area-inset-bottom));
+    }
+    .mnav-item {
+      flex: 1; display: flex; flex-direction: column; align-items: center; gap: 3px;
+      padding: 5px 2px; color: var(--gray); font-size: 11px; font-weight: 600; border-radius: 10px; white-space: nowrap;
+    }
+    .mnav-item .ic { font-size: 19px; line-height: 1; }
+    .mnav-item.active { color: var(--fire); }
+
+    .hero-stats { grid-template-columns: 1fr 1fr; }
+    .grid2 { grid-template-columns: 1fr; }
+    .money-form { grid-template-columns: 1fr 1fr; }
+    .quest-detail { padding-left: 15px; }
+    h2.page-title { font-size: 21px; }
+    .hero-lvl .n { font-size: 26px; }
+    .toast { bottom: 100px; }
+
+    /* переключатели — одной прокручиваемой строкой, а не шестью рядами */
+    #season-switch, #quest-filters, #tree-seasons {
+      flex-wrap: nowrap; overflow-x: auto; padding-bottom: 7px;
+      scrollbar-width: none; -webkit-overflow-scrolling: touch;
+      margin-left: -13px; margin-right: -13px; padding-left: 13px; padding-right: 13px;
+    }
+    #season-switch::-webkit-scrollbar,
+    #quest-filters::-webkit-scrollbar,
+    #tree-seasons::-webkit-scrollbar { display: none; }
+    #season-switch > *, #quest-filters > *, #tree-seasons > * { flex: 0 0 auto; }
+
+    .path { overflow-x: auto; padding-bottom: 6px; }
+    .path-step { min-width: 84px; }
+    .path-lbl { font-size: 11px; }
+    .ring-wrap { width: 80px; height: 80px; }
+    .day-card { gap: 14px; }
+    .victory-stats { flex-direction: column; }
+  }
+
+/* ═══════════════ ТРЕНИРОВКИ: группа дня, неделя, подходы ═══════════════ */
+
+/* Карточка «группа дня» на главной */
+.gday { display: flex; align-items: center; gap: 16px; }
+.gday-ic {
+  width: 64px; height: 64px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 30px; background: var(--card2); border: 1px solid var(--border2);
+  clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px);
+  box-shadow: inset 0 0 22px rgba(77,166,255,.13);
+}
+.gday-t { font-size: 11px; letter-spacing: 2.4px; text-transform: uppercase; color: var(--fire); margin-bottom: 4px; }
+.gday-n { font-family: inherit; font-size: 23px; font-weight: 800; letter-spacing: .4px; }
+.gday-s { color: var(--gray); font-size: 13px; margin-top: 3px; line-height: 1.5; }
+
+/* Полоса недели: семь дней сплита */
+.wsplit { display: flex; gap: 6px; margin-top: 4px; }
+.wday {
+  flex: 1; min-width: 0; text-align: center; padding: 9px 3px 10px;
+  background: var(--card2); border: 1px solid var(--border); border-radius: 3px;
+}
+.wday .d { font-size: 11px; letter-spacing: 1.4px; text-transform: uppercase; color: var(--gray); }
+.wday .g { font-size: 11.5px; color: var(--gray2); margin-top: 5px; line-height: 1.25; word-break: normal; overflow-wrap: normal; }
+.wday .m { font-size: 15px; margin-top: 6px; line-height: 1; }
+.wday.is-done { border-color: rgba(61,214,140,.45); background: linear-gradient(180deg, var(--green-dim), var(--card2)); }
+.wday.is-done .g { color: var(--green); }
+.wday.is-now { border-color: var(--fire); box-shadow: 0 0 16px rgba(77,166,255,.25); }
+.wday.is-now .g { color: var(--fire-soft); }
+.wday.is-now .d { color: var(--fire); }
+
+/* Выбор упражнения */
+.exgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }
+.exchip {
+  text-align: left; padding: 13px 14px; background: var(--card2); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--white); cursor: pointer; transition: .15s; font: inherit;
+}
+.exchip:hover { border-color: var(--fire); background: var(--fire-dim); }
+.exchip .n { font-weight: 650; font-size: 14.5px; }
+.exchip .h { color: var(--gray); font-size: 12px; margin-top: 4px; line-height: 1.45; }
+.exchip .last { color: var(--fire-soft); font-size: 11.5px; margin-top: 6px; }
+.exchip.own { border-style: dashed; }
+.exchip.own .n { color: var(--fire); }
+
+/* Экран активной тренировки */
+.wo-head { display: flex; align-items: flex-start; gap: 14px; flex-wrap: wrap; }
+.wo-ex { flex: 1; min-width: 200px; }
+.wo-ex .n { font-size: 20px; font-weight: 800; }
+.wo-ex .g { color: var(--fire); font-size: 11.5px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 5px; }
+.wo-prev { color: var(--gray2); font-size: 13px; margin-top: 8px; line-height: 1.55; }
+.wo-prev b { color: var(--white); }
+
+/* Ввод подхода */
+.setform { display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-top: 4px; }
+.numf { flex: 1; min-width: 132px; }
+.numf-l { font-size: 11px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--gray); margin-bottom: 7px; }
+.numf-in { display: flex; align-items: stretch; gap: 0; border: 1px solid var(--border2); border-radius: 3px; overflow: hidden; }
+.numf-in button {
+  width: 44px; flex-shrink: 0; background: var(--card2); border: none; color: var(--white);
+  font-size: 20px; font-weight: 700; cursor: pointer; transition: .15s; font-family: inherit;
+}
+.numf-in button:hover { background: var(--fire-dim); color: var(--fire); }
+.numf-in input {
+  flex: 1; min-width: 0; text-align: center; background: var(--black); border: none; color: var(--white);
+  font: 700 19px/1 inherit; padding: 13px 4px; -moz-appearance: textfield;
+}
+.numf-in input::-webkit-outer-spin-button, .numf-in input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.numf-in input:focus { outline: none; box-shadow: inset 0 0 0 1px var(--fire); }
+
+/* Список подходов */
+.sets { margin-top: 16px; }
+.setrow {
+  display: flex; align-items: center; gap: 12px; padding: 11px 13px; margin-bottom: 7px;
+  background: var(--card2); border: 1px solid var(--border); border-radius: 3px;
+}
+.setrow.is-rec { border-color: rgba(240,180,41,.5); background: linear-gradient(90deg, var(--gold-dim), var(--card2)); }
+.setrow .no {
+  width: 26px; height: 26px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  background: var(--fire-dim); border: 1px solid var(--border2); color: var(--fire); font-size: 12px; font-weight: 700;
+}
+.setrow .v { flex: 1; font-size: 15px; font-weight: 650; }
+.setrow .v span { color: var(--gray); font-weight: 400; font-size: 13px; }
+.setrow .rec { color: var(--gold); font-size: 11.5px; letter-spacing: 1.2px; text-transform: uppercase; }
+.setrow .x {
+  background: none; border: none; color: var(--gray); font-size: 17px; cursor: pointer; padding: 2px 6px; line-height: 1;
+}
+.setrow .x:hover { color: var(--red); }
+.sets-empty { color: var(--gray); font-size: 13px; padding: 14px 0 4px; }
+
+/* Отдых между подходами */
+.rest {
+  display: flex; align-items: center; gap: 13px; margin-top: 14px; padding: 12px 14px;
+  background: var(--fire-dim); border: 1px solid var(--border2); border-radius: 3px;
+}
+.rest-n { font-size: 22px; font-weight: 800; color: var(--fire); min-width: 62px; font-variant-numeric: tabular-nums; }
+.rest-l { flex: 1; color: var(--gray2); font-size: 13px; line-height: 1.45; }
+.rest-bar { height: 3px; background: var(--border); margin-top: 7px; border-radius: 2px; overflow: hidden; }
+.rest-bar i { display: block; height: 100%; background: var(--fire); transition: width .9s linear; }
+
+/* Итоги тренировки и рекорды */
+.sum { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 16px 0; }
+.sum > div { background: var(--card2); border: 1px solid var(--border); padding: 13px 8px; text-align: center; border-radius: 3px; }
+.sum .n { font-size: 20px; font-weight: 800; }
+.sum .l { color: var(--gray); font-size: 11.5px; margin-top: 3px; }
+.rec-line { color: var(--gold); font-size: 13.5px; margin-top: 4px; }
+
+/* Кнопка на всю ширину */
+.btn.wide { width: 100%; justify-content: center; }
+
+@media (max-width: 720px) {
+  .exgrid { grid-template-columns: 1fr; }
+  .gday-ic { width: 54px; height: 54px; font-size: 25px; }
+  .gday-n { font-size: 20px; }
+  /* На узком экране семь названий в строку не помещаются: делаем прокрутку,
+     как у переключателей, и подкручиваем сегодняшний день в центр */
+  .wsplit { overflow-x: auto; scrollbar-width: none; margin: 0 -13px; padding: 0 13px 5px; }
+  .wsplit::-webkit-scrollbar { display: none; }
+  .wday { flex: 0 0 68px; padding: 8px 4px 9px; }
+  .wday .g { font-size: 11.5px; }
+  .numf { min-width: 100%; }
+  .numf-in button { width: 52px; }
+}
+
+
+/* ═══════════════ Журнал ═══════════════ */
+.jday { margin-bottom: 12px; }
+.jday-head { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.jday-ic {
+  width: 40px; height: 40px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 19px; background: var(--card2); border: 1px solid var(--border2);
+}
+.jday-d { font-weight: 700; font-size: 15px; }
+.jday-g { color: var(--fire); font-size: 11.5px; letter-spacing: 1.8px; text-transform: uppercase; margin-top: 2px; }
+.jday .x { background: none; border: none; color: var(--gray); font-size: 16px; cursor: pointer; padding: 4px 6px; line-height: 1; }
+.jday .x:hover { color: var(--red); }
+.jitem { padding: 10px 0; border-top: 1px solid var(--border); }
+.jitem-n { font-weight: 600; font-size: 14px; margin-bottom: 7px; }
+.jsets { display: flex; gap: 6px; flex-wrap: wrap; }
+.jset {
+  padding: 4px 9px; background: var(--card2); border: 1px solid var(--border);
+  border-radius: 3px; font-size: 12.5px; color: var(--gray2); white-space: nowrap;
+}
+.jset.is-rec { border-color: rgba(240,180,41,.5); color: var(--gold); }
+.jday-sum {
+  display: flex; gap: 14px; flex-wrap: wrap; margin-top: 12px; padding-top: 11px;
+  border-top: 1px solid var(--border); font-size: 13px; color: var(--gray2);
+}
+
+/* ═══════════════ Сила: рекорды ═══════════════ */
+.pgroup { margin-top: 16px; }
+.pgroup-h {
+  font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--fire);
+  padding-bottom: 8px; border-bottom: 1px solid var(--border); margin-bottom: 8px;
+}
+.prow { display: flex; align-items: center; gap: 12px; padding: 9px 0; }
+.prow + .prow { border-top: 1px solid rgba(28,38,52,.6); }
+.prow-n { flex: 1; min-width: 0; font-size: 14px; font-weight: 600; }
+.prow-b { text-align: right; font-size: 15px; font-weight: 700; color: var(--gold); white-space: nowrap; }
+.prow-s { color: var(--gray); font-size: 11.5px; font-weight: 400; margin-top: 3px; }
+
+/* ═══════════════ Профиль: расписание и настройки ═══════════════ */
+.srow { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.srow + .srow { border-top: 1px solid rgba(28,38,52,.6); }
+.srow-d { flex: 1; font-size: 14px; }
+.srow-s {
+  background: var(--card2); border: 1px solid var(--border2); color: var(--white);
+  font: inherit; font-size: 13.5px; padding: 8px 11px; border-radius: 3px; min-width: 150px; cursor: pointer;
+}
+.srow-s:focus { outline: none; border-color: var(--fire); }
+.set-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid rgba(28,38,52,.6); }
+.set-row > div:first-child { flex: 1; min-width: 0; font-size: 14px; }
+.set-s { color: var(--gray); font-size: 12.5px; margin-top: 3px; }
+
+@media (max-width: 720px) {
+  .srow-s { min-width: 128px; }
+  .prow-b { font-size: 14px; }
+  .sum[style*="repeat(4"] { grid-template-columns: 1fr 1fr !important; }
+}
+
+
+/* ═══════════════ Хроники Системы ═══════════════ */
+.lg-ic { font-size: 46px; text-align: center; line-height: 1; margin: 6px 0 10px; }
+.lg-tag {
+  text-align: center; color: var(--fire); font-size: 11px; letter-spacing: 2px;
+  text-transform: uppercase; margin-bottom: 14px;
+}
+.lg-text { color: var(--gray2); font-size: 14px; line-height: 1.7; text-align: left; }
+.lg-line {
+  margin-top: 14px; padding: 12px 14px; background: var(--fire-dim);
+  border-left: 2px solid var(--fire); color: var(--white); font-size: 13.5px; line-height: 1.6;
+}
+
+.lg-row { display: flex; gap: 13px; align-items: flex-start; cursor: pointer; padding: 4px 0; }
+.lg-row-ic {
+  width: 46px; height: 46px; flex-shrink: 0; display: flex; align-items: center; justify-content: center;
+  font-size: 22px; background: var(--card2); border: 1px solid var(--border2);
+  clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+}
+.lg-row:hover .lg-row-ic { border-color: var(--fire); box-shadow: 0 0 14px rgba(77,166,255,.25); }
+.lg-row-n { font-weight: 700; font-size: 15px; }
+.lg-row-t { color: var(--fire); font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; margin-top: 2px; }
+.lg-row-l { color: var(--gray2); font-size: 13px; line-height: 1.55; margin-top: 6px; }
+
+.lggrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+.lgcard {
+  background: var(--card2); border: 1px solid var(--border); border-radius: 3px;
+  padding: 14px 12px; text-align: center; cursor: pointer; transition: .15s;
+}
+.lgcard:hover { border-color: var(--fire); }
+.lgcard.lock { opacity: .55; cursor: default; }
+.lgcard.lock:hover { border-color: var(--border); }
+.lgcard-ic { font-size: 26px; line-height: 1; margin-bottom: 8px; }
+.lgcard-n { font-size: 13.5px; font-weight: 650; }
+.lgcard-t { color: var(--gray); font-size: 11.5px; margin-top: 4px; line-height: 1.4; }
+
+/* ═══════════════ Вызов недели ═══════════════ */
+.wgoal { margin-top: 14px; }
+.wgoal-t { font-size: 13.5px; color: var(--gray2); margin-bottom: 9px; line-height: 1.5; }
+.wgoal-bar { height: 5px; background: var(--card2); border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
+.wgoal-bar i {
+  display: block; height: 100%; background: linear-gradient(90deg, var(--fire), var(--fire-soft));
+  transition: width .5s; box-shadow: 0 0 10px var(--glow);
+}
+
+/* Подсказка Системы в карточке упражнения */
+.hint {
+  margin-top: 11px; padding: 11px 13px; background: var(--gold-dim);
+  border-left: 2px solid var(--gold); color: var(--white); font-size: 13px; line-height: 1.55;
+}
+
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">
+    <div class="nav-logo-icon">⬢</div>
+    <div class="nav-logo-text">Кузница</div>
+  </div>
+  <button class="nav-tab active" data-go="home"><span class="ic">🏠</span>Статус</button>
+  <button class="nav-tab" data-go="train"><span class="ic">⚔️</span>Тренировка</button>
+  <button class="nav-tab" data-go="log"><span class="ic">📜</span>Журнал</button>
+  <button class="nav-tab" data-go="power"><span class="ic">📈</span>Сила</button>
+  <button class="nav-tab" data-go="profile"><span class="ic">🎖</span>Профиль</button>
+  <div class="nav-right">
+    <div class="nav-streak" id="nav-streak"></div>
+    <div class="nav-xp">💎 <b id="nav-xp">0</b></div>
+  </div>
+</nav>
+
+<div class="wrap">
+
+  <!-- ══════════ ГЛАВНАЯ ══════════ -->
+  <section class="section active" id="section-home">
+    <div class="hero">
+      <div class="hero-top">
+        <div class="hero-av" id="hero-av">💪</div>
+        <div>
+          <div class="hero-name" id="hero-name">Охотник</div>
+          <div class="hero-rank" id="hero-rank">Пробуждённый</div>
+        </div>
+        <div class="hero-lvl">
+          <div class="n" id="hero-level">1</div>
+          <div class="l">уровень</div>
+        </div>
+      </div>
+      <div class="xpbar"><div class="xpbar-fill" id="hero-xpbar" style="width:0%"></div></div>
+      <div class="xpbar-labels">
+        <span id="hero-xp-now">0 XP</span>
+        <span id="hero-xp-next"></span>
+      </div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="n" id="stat-workouts">0</div><div class="l">тренировок</div></div>
+        <div class="hstat"><div class="n" id="stat-streak">0</div><div class="l" id="stat-streak-word">дней подряд</div></div>
+        <div class="hstat"><div class="n" id="stat-tonnage">0</div><div class="l">всего поднято</div></div>
+        <div class="hstat"><div class="n" id="stat-records">0</div><div class="l">рекордов</div></div>
+      </div>
+    </div>
+
+    <div class="grid2" style="margin-bottom:16px">
+      <div class="card">
+        <div class="day-card">
+          <div class="ring-wrap">
+            <svg width="92" height="92" viewBox="0 0 92 92">
+              <defs>
+                <linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1">
+                  <stop offset="0%" stop-color="#1E6FBF"/>
+                  <stop offset="60%" stop-color="#4DA6FF"/>
+                  <stop offset="100%" stop-color="#9FE0FF"/>
+                </linearGradient>
+              </defs>
+              <circle class="ring-bg" cx="46" cy="46" r="38"/>
+              <circle class="ring-fg" id="day-ring" cx="46" cy="46" r="38"
+                      stroke-dasharray="238.8" stroke-dashoffset="238.8"/>
+            </svg>
+            <div class="ring-txt">
+              <div class="n" id="day-sets">0</div>
+              <div class="l" id="day-sets-goal">из 5 подходов</div>
+            </div>
+          </div>
+          <div class="day-info">
+            <div class="day-title" id="day-title">Сегодня ещё не тренировались</div>
+            <div class="day-sub" id="day-sub"></div>
+            <div class="day-flame" id="day-flame">🔥 <span id="day-streak">0</span> <span id="day-streak-word">дней подряд</span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="gday">
+          <div class="gday-ic" id="gday-ic">🛡</div>
+          <div style="min-width:0">
+            <div class="gday-t">[ Задание дня ]</div>
+            <div class="gday-n" id="gday-name">Плечи</div>
+            <div class="gday-s" id="gday-sub">Одно упражнение, 20–30 минут.</div>
+          </div>
+        </div>
+        <button class="btn primary wide" id="btn-start" style="margin-top:16px">Начать тренировку →</button>
+      </div>
+    </div>
+
+    <div class="card" style="margin-bottom:16px">
+      <h3>Неделя</h3>
+      <div class="wsplit" id="week-split"></div>
+      <div class="wgoal" id="week-goal"></div>
+      <div style="color:var(--gray);font-size:12.5px;margin-top:11px">
+        Каждый день — своя группа мышц. Порядок можно поменять в профиле.
+      </div>
+    </div>
+
+    <div class="card" id="legend-card" style="margin-bottom:16px"></div>
+
+    <div class="card">
+      <h3>Что происходило</h3>
+      <div id="log-list"></div>
+    </div>
+  </section>
+
+  <!-- ══════════ ТРЕНИРОВКА ══════════ -->
+  <section class="section" id="section-train">
+    <h2 class="page-title" id="train-title">Тренировка</h2>
+    <p class="page-sub" id="train-sub"></p>
+    <div id="train-body"></div>
+  </section>
+
+  <!-- ══════════ ЖУРНАЛ ══════════ -->
+  <section class="section" id="section-log">
+    <h2 class="page-title">Журнал</h2>
+    <p class="page-sub">Все тренировки по дням: что делали, с каким весом и сколько подняли.</p>
+    <div id="journal"></div>
+  </section>
+
+  <!-- ══════════ СИЛА ══════════ -->
+  <section class="section" id="section-power">
+    <h2 class="page-title">Сила</h2>
+    <p class="page-sub">Рекорды по упражнениям и объём работы по группам мышц.</p>
+    <div id="power-body"></div>
+  </section>
+
+  <!-- ══════════ ПРОФИЛЬ ══════════ -->
+  <section class="section" id="section-profile">
+    <h2 class="page-title">Профиль</h2>
+    <p class="page-sub">Достижения, расписание недели и перенос прогресса между устройствами.</p>
+    <div id="profile-body"></div>
+  </section>
+
+</div>
+
+<div class="mobile-nav">
+  <button class="mnav-item active" data-go="home"><span class="ic">🏠</span>Статус</button>
+  <button class="mnav-item" data-go="train"><span class="ic">⚔️</span>Тренировка</button>
+  <button class="mnav-item" data-go="log"><span class="ic">📜</span>Журнал</button>
+  <button class="mnav-item" data-go="power"><span class="ic">📈</span>Сила</button>
+  <button class="mnav-item" data-go="profile"><span class="ic">🎖</span>Профиль</button>
+</div>
+
+
+<div class="bg-gate" aria-hidden="true">
+        <svg viewBox="0 0 300 230" preserveAspectRatio="xMaxYMax meet">
+          <defs>
+            <linearGradient id="gateGlow" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stop-color="#4DA6FF" stop-opacity=".40"/>
+              <stop offset="55%"  stop-color="#7FC4FF" stop-opacity=".16"/>
+              <stop offset="100%" stop-color="#A98BF0" stop-opacity="0"/>
+            </linearGradient>
+            <linearGradient id="gateEdge" x1="0" y1="1" x2="0" y2="0">
+              <stop offset="0%"   stop-color="#9FE0FF" stop-opacity=".95"/>
+              <stop offset="100%" stop-color="#4DA6FF" stop-opacity=".18"/>
+            </linearGradient>
+            <radialGradient id="gateHalo" cx="50%" cy="62%" r="55%">
+              <stop offset="0%"   stop-color="#4DA6FF" stop-opacity=".34"/>
+              <stop offset="100%" stop-color="#4DA6FF" stop-opacity="0"/>
+            </radialGradient>
+          </defs>
+
+          <ellipse cx="150" cy="150" rx="112" ry="112" fill="url(#gateHalo)"/>
+
+          <!-- проём портала -->
+          <path class="gate-core" d="M100 226 L100 130 A50 50 0 0 1 200 130 L200 226 Z" fill="url(#gateGlow)"/>
+
+          <!-- арки -->
+          <path d="M92 226 L92 128 A58 58 0 0 1 208 128 L208 226"
+                fill="none" stroke="url(#gateEdge)" stroke-width="2.6"/>
+          <path d="M76 226 L76 124 A74 74 0 0 1 224 124 L224 226"
+                fill="none" stroke="#4DA6FF" stroke-opacity=".26" stroke-width="1.4"/>
+
+          <!-- колонны -->
+          <rect x="62"  y="132" width="12" height="94" fill="#0A1622" stroke="#4DA6FF" stroke-opacity=".3"/>
+          <rect x="226" y="132" width="12" height="94" fill="#0A1622" stroke="#4DA6FF" stroke-opacity=".3"/>
+
+          <!-- руны по дуге -->
+          <g fill="#9FE0FF" opacity=".6">
+            <rect x="114" y="104" width="3.5" height="9"/>
+            <rect x="140" y="92"  width="3.5" height="9"/>
+            <rect x="158" y="92"  width="3.5" height="9"/>
+            <rect x="184" y="104" width="3.5" height="9"/>
+          </g>
+
+          <!-- ступени -->
+          <rect x="56" y="221" width="190" height="4" fill="#4DA6FF" opacity=".18"/>
+          <rect x="44" y="227" width="214" height="4" fill="#4DA6FF" opacity=".11"/>
+        </svg>
+      </div>
+
+<div class="motes" id="motes" aria-hidden="true"></div>
+
+<div class="overlay" id="overlay">
+  <div class="modal" id="modal"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+
+<script>
+/* ═══════════════════════════════════════════════
+   ДАННЫЕ: группы мышц, расписание недели, упражнения
+   ═══════════════════════════════════════════════ */
+
+var GROUPS = {
+  shoulders: { name: "Плечи",      short: "Плечи",   ic: "🛡" },
+  legs:      { name: "Ноги",       short: "Ноги",    ic: "🦿" },
+  triceps:   { name: "Трицепс",    short: "Трицепс", ic: "🔺" },
+  chest:     { name: "Грудь",      short: "Грудь",   ic: "🏔" },
+  forearms:  { name: "Предплечья", short: "Предпл.", ic: "✊" },
+  biceps:    { name: "Бицепс",     short: "Бицепс",  ic: "💪" },
+  back:      { name: "Спина",      short: "Спина",   ic: "🗡" }
+};
+
+/* Индекс = день недели как его отдаёт JS: 0 — воскресенье */
+var DEFAULT_SPLIT = ["forearms", "biceps", "back", "shoulders", "legs", "triceps", "chest"];
+var DAYS_SHORT = ["вс", "пн", "вт", "ср", "чт", "пт", "сб"];
+
+/* Подсказки, а не программа: список можно игнорировать и вписать своё */
+var EXERCISES = {
+  shoulders: [
+    { n: "Жим гантелей сидя",      h: "Спина прижата, локти чуть вперёд" },
+    { n: "Махи в стороны",         h: "Локти чуть согнуты, вес не забрасывать" },
+    { n: "Махи в наклоне",         h: "Задняя дельта, корпус почти горизонтально" },
+    { n: "Жим Арнольда",           h: "Разворот кистей по ходу движения" },
+    { n: "Подъёмы перед собой",    h: "До уровня глаз, без раскачки" },
+    { n: "Шраги",                  h: "Плечи вверх, без вращений" }
+  ],
+  legs: [
+    { n: "Гоблет-приседания",      h: "Гантель у груди, колени по носкам" },
+    { n: "Выпады с гантелями",     h: "Шаг длинный, колено не заваливать внутрь" },
+    { n: "Болгарские приседы",     h: "Задняя нога на диване или стуле" },
+    { n: "Румынская тяга",         h: "Таз назад, спина прямая, гантели у ног" },
+    { n: "Подъёмы на носки",       h: "Полная амплитуда, пауза вверху" },
+    { n: "Зашагивания на стул",    h: "Толчок рабочей ногой, не прыжком" }
+  ],
+  triceps: [
+    { n: "Французский жим лёжа",   h: "Локти смотрят в потолок и не разъезжаются" },
+    { n: "Разгибание из-за головы", h: "Одной рукой или двумя, локоть у уха" },
+    { n: "Кикбэк в наклоне",       h: "Плечо прижато к корпусу, работает предплечье" },
+    { n: "Узкий жим лёжа",         h: "Гантели рядом, локти вдоль тела" },
+    { n: "Обратные отжимания",     h: "От стула, таз ближе к опоре" }
+  ],
+  chest: [
+    { n: "Жим гантелей лёжа",      h: "На полу или скамье, лопатки сведены" },
+    { n: "Разводка лёжа",          h: "Локти чуть согнуты, вниз до растяжения" },
+    { n: "Жим под углом",          h: "Верх груди, угол 30–45°" },
+    { n: "Пуловер",                h: "Гантель за голову, рёбра не задирать" },
+    { n: "Отжимания с гантелями",  h: "Упор на гантели, глубже амплитуда" }
+  ],
+  forearms: [
+    { n: "Сгибания в запястьях",   h: "Предплечья на коленях, кисти свисают" },
+    { n: "Разгибания в запястьях", h: "Хват сверху, движение только кистью" },
+    { n: "Обратные сгибания",      h: "Хват сверху, подъём к груди" },
+    { n: "Прогулка фермера",       h: "Держать и идти, отсчёт по секундам" },
+    { n: "Удержание гантелей",     h: "Статика на время, пальцы не разжимать" }
+  ],
+  biceps: [
+    { n: "Подъём гантелей стоя",   h: "Локти у корпуса, без раскачки" },
+    { n: "Молот",                  h: "Хват нейтральный, кисть не вращается" },
+    { n: "Сгибания сидя",          h: "С разворотом кисти в верхней точке" },
+    { n: "Концентрированный подъём", h: "Локоть в бедро, одна рука" },
+    { n: "Сгибания с паузой",      h: "Секунда в верхней точке каждого повтора" }
+  ],
+  back: [
+    { n: "Тяга гантели в наклоне", h: "Одной рукой, упор коленом, тянуть к поясу" },
+    { n: "Тяга двух гантелей",     h: "Корпус под 45°, локти вдоль тела" },
+    { n: "Румынская тяга",         h: "Спина прямая, работают бёдра и низ спины" },
+    { n: "Пуловер",                h: "Растяжение широчайших, руки почти прямые" },
+    { n: "Тяга лёжа на животе",    h: "Лёжа на кровати или полу, без инерции" },
+    { n: "Шраги",                  h: "Трапеция, пауза вверху" }
+  ]
+};
+
+</script>
+<script>
+/* ═══════════════════════════════════════════════
+   СОСТОЯНИЕ
+   Ключ новый: прогресс старой игры-плана лежит рядом
+   под forge_progress_v1 и не трогается.
+   ═══════════════════════════════════════════════ */
+
+var KEY = "forge_body_v1";
+
+var S = {
+  name: "",
+  days: {},          // "2026-09-23": { g:"shoulders", items:[{ex, sets:[{w,r}]}], xp:0, sec:0 }
+  cur: null,         // незаконченная тренировка: { d, g, ex, sets:[], t0 }
+  custom: {},        // свои упражнения: группа -> [названия]
+  split: null,       // расписание недели, индекс = день недели JS
+  goalSets: 5,       // цель дня в подходах — кольцо на главной
+  rest: 90,          // отдых между подходами, секунд
+  streak: { last: "", count: 0, best: 0 },
+  seenAch: [],
+  log: [],           // { ts, ic, text } — последние 40 событий
+  bg: 1              // 1 — врата на фоне
+};
+
+var LOAD_BROKEN = false;   /* сохранение не прочиталось — беречь его от перезаписи */
+
+function load() {
+  var raw = null;
+  try { raw = localStorage.getItem(KEY); } catch (e) { return; }
+  if (!raw) return;
+
+  var p;
+  try {
+    p = JSON.parse(raw);
+  } catch (e) {
+    LOAD_BROKEN = true;
+    try { localStorage.setItem(KEY + "_broken", raw); } catch (e2) {}
+    try {
+      var prev = localStorage.getItem(KEY + "_prev");
+      if (prev) { p = JSON.parse(prev); LOAD_BROKEN = "recovered"; }
+    } catch (e3) {}
+    if (!p) return;
+  }
+
+  try {
+    if (typeof p.name === "string") S.name = p.name;
+    if (p.days && typeof p.days === "object") S.days = p.days;
+    if (p.cur && typeof p.cur === "object") S.cur = p.cur;
+    if (p.custom && typeof p.custom === "object") S.custom = p.custom;
+    if (isArr(p.split)) S.split = p.split;
+    if (typeof p.goalSets === "number") S.goalSets = p.goalSets;
+    if (typeof p.rest === "number") S.rest = p.rest;
+    if (p.streak && typeof p.streak === "object") S.streak = p.streak;
+    if (isArr(p.seenAch)) S.seenAch = p.seenAch;
+    if (isArr(p.log)) S.log = p.log;
+    if (typeof p.bg === "number") S.bg = p.bg;
+  } catch (e) {}
+}
+
+function isArr(x) { return Object.prototype.toString.call(x) === "[object Array]"; }
+
+function save() {
+  if (LOAD_BROKEN === true) return;           /* не перезаписываем то, что не смогли прочитать */
+  try {
+    var cur = localStorage.getItem(KEY);
+    if (cur) localStorage.setItem(KEY + "_prev", cur);   /* одна версия назад — на случай сбоя */
+    localStorage.setItem(KEY, JSON.stringify(S));
+  } catch (e) {
+    toast("Браузер не дал сохранить прогресс. Возьмите код синхронизации в профиле.");
+  }
+}
+
+function restorePrev() {
+  var prev = null;
+  try { prev = localStorage.getItem(KEY + "_prev"); } catch (e) {}
+  if (!prev) { toast("Предыдущей версии нет"); return; }
+  var p = decodeMaybe(prev);
+  if (!p) { toast("Предыдущая версия тоже повреждена"); return; }
+  S = p;
+  normalizeState();
+  LOAD_BROKEN = false;
+  save(); closeModal(); renderAll(); applyBg();
+  toast("Откатились на предыдущее сохранение");
+}
+
+function decodeMaybe(str) {
+  try { return JSON.parse(str); } catch (e) { return null; }
+}
+
+/* Достроить недостающие поля после импорта, отката или обновления игры */
+function normalizeState() {
+  if (!S.days) S.days = {};
+  if (!S.custom) S.custom = {};
+  if (!isArr(S.split) || S.split.length !== 7) S.split = DEFAULT_SPLIT.slice();
+  if (typeof S.goalSets !== "number" || S.goalSets < 1) S.goalSets = 5;
+  if (typeof S.rest !== "number" || S.rest < 10) S.rest = 90;
+  if (!S.streak) S.streak = { last: "", count: 0, best: 0 };
+  if (!S.seenAch) S.seenAch = [];
+  if (!S.log) S.log = [];
+  if (typeof S.bg !== "number") S.bg = 1;
+}
+
+/* ═══════════════════════════════════════════════
+   ВЫЧИСЛЕНИЯ
+   ═══════════════════════════════════════════════ */
+
+/* Какая группа мышц назначена на дату */
+function groupOn(date) {
+  var d = new Date(date + "T00:00:00");
+  return S.split[d.getDay()] || DEFAULT_SPLIT[d.getDay()];
+}
+function groupToday() { return groupOn(today()); }
+function gname(key) { return (GROUPS[key] || { name: key }).name; }
+function gshort(key) { var g = GROUPS[key]; return g ? (g.short || g.name) : key; }
+function gicon(key) { return (GROUPS[key] || { ic: "⚔️" }).ic; }
+
+/* Упражнения группы: библиотека плюс добавленные вручную */
+function exercisesOf(key) {
+  var lib = (EXERCISES[key] || []).slice();
+  var own = S.custom[key] || [];
+  for (var i = 0; i < own.length; i++) {
+    var dup = false;
+    for (var j = 0; j < lib.length; j++) if (lib[j].n === own[i]) dup = true;
+    if (!dup) lib.push({ n: own[i], h: "", own: true });
+  }
+  return lib;
+}
+
+function tonnage(sets) {
+  var t = 0;
+  for (var i = 0; i < (sets || []).length; i++) t += (sets[i].w || 0) * (sets[i].r || 0);
+  return t;
+}
+
+function dayTonnage(rec) {
+  if (!rec) return 0;
+  var t = 0;
+  for (var i = 0; i < rec.items.length; i++) t += tonnage(rec.items[i].sets);
+  return t;
+}
+
+function daySets(rec) {
+  if (!rec) return 0;
+  var n = 0;
+  for (var i = 0; i < rec.items.length; i++) n += rec.items[i].sets.length;
+  return n;
+}
+
+/* Подходы сегодня: записанные плюс те, что уже внесены в незаконченной тренировке */
+function setsToday() {
+  var n = daySets(S.days[today()]);
+  if (S.cur && S.cur.d === today()) n += S.cur.sets.length;
+  return n;
+}
+
+function allDates() {
+  var a = [];
+  for (var k in S.days) if (S.days.hasOwnProperty(k)) a.push(k);
+  a.sort();
+  return a;
+}
+
+function workoutCount() { return allDates().length; }
+
+function totalTonnage() {
+  var t = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) t += dayTonnage(S.days[a[i]]);
+  return t;
+}
+
+function totalXP() {
+  var x = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) x += S.days[a[i]].xp || 0;
+  return x;
+}
+
+/* История одного упражнения, от старых к новым */
+function exHistory(ex) {
+  var out = [], a = allDates();
+  for (var i = 0; i < a.length; i++) {
+    var rec = S.days[a[i]];
+    for (var j = 0; j < rec.items.length; j++) {
+      if (rec.items[j].ex === ex) out.push({ d: a[i], sets: rec.items[j].sets });
+    }
+  }
+  return out;
+}
+
+function lastTime(ex) {
+  var h = exHistory(ex);
+  return h.length ? h[h.length - 1] : null;
+}
+
+/* Лучший подход в упражнении: сначала вес, при равном весе — повторы.
+   Считаем и подходы текущей тренировки, иначе внутри одного занятия
+   рекордом становился каждый подход, даже более слабый. */
+function maxSet(best, s) {
+  return (!best || s.w > best.w || (s.w === best.w && s.r > best.r)) ? { w: s.w, r: s.r } : best;
+}
+
+function bestSet(ex) {
+  var h = exHistory(ex), best = null, i, j;
+  for (i = 0; i < h.length; i++) for (j = 0; j < h[i].sets.length; j++) best = maxSet(best, h[i].sets[j]);
+  if (S.cur && S.cur.ex === ex) for (j = 0; j < S.cur.sets.length; j++) best = maxSet(best, S.cur.sets[j]);
+  return best;
+}
+
+function isRecord(ex, w, r) {
+  var b = bestSet(ex);
+  if (!b) return true;
+  return w > b.w || (w === b.w && r > b.r);
+}
+
+function recordsCount() {
+  var seen = {}, n = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) n += (S.days[a[i]].recs || 0);
+  return n;
+}
+
+/* ═══════════ ОПЫТ, УРОВНИ, РАНГИ ═══════════ */
+
+/* Опыт за тренировку: явка, объём, рекорды и серия дней */
+function workoutXP(sets, recs, streak) {
+  var xp = 60;                                  // сам факт тренировки
+  xp += Math.round(tonnage(sets) / 40);         // объём работы
+  xp += recs * 25;                              // личные рекорды
+  xp += Math.min(streak, 10) * 4;               // держится серия
+  return xp;
+}
+
+function xpForLevel(n) { return 400 + (n - 1) * 250; }
+
+function levelOf(xp) {
+  var lvl = 1, need = xpForLevel(1), left = xp;
+  while (left >= need) { left -= need; lvl++; need = xpForLevel(lvl); }
+  return { lvl: lvl, into: left, need: need };
+}
+
+var RANKS = [
+  { letter: "E", min: 1,  title: "Пробуждённый", desc: "Система вас заметила" },
+  { letter: "D", min: 3,  title: "Охотник",      desc: "Тело начало отвечать" },
+  { letter: "C", min: 5,  title: "Ветеран",      desc: "Вес растёт, техника держится" },
+  { letter: "B", min: 8,  title: "Элита",        desc: "Тренировка стала частью дня" },
+  { letter: "A", min: 12, title: "Мастер",       desc: "Силу видно со стороны" },
+  { letter: "S", min: 17, title: "Монарх",       desc: "Уровень, до которого доходят единицы" }
+];
+
+function rankOf(lvl) {
+  var r = RANKS[0];
+  for (var i = 0; i < RANKS.length; i++) if (lvl >= RANKS[i].min) r = RANKS[i];
+  return r;
+}
+function rankName(lvl) { return "Ранг " + rankOf(lvl).letter; }
+function rankClass(lvl) { return "rank-" + rankOf(lvl).letter.toLowerCase(); }
+function rankBadge(lvl, size) {
+  var r = rankOf(lvl);
+  return '<span class="rank-badge ' + (size ? size + " " : "") + rankClass(lvl) + '">' + r.letter + "</span>";
+}
+function nextRank(lvl) {
+  for (var i = 0; i < RANKS.length; i++) if (RANKS[i].min > lvl) return RANKS[i];
+  return null;
+}
+
+/* ═══════════════════════════════════════════════
+   УТИЛИТЫ
+   ═══════════════════════════════════════════════ */
+
+function esc(s) {
+  return String(s == null ? "" : s)
+    .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+}
+
+function today() {
+  var d = new Date();
+  var m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+}
+
+function daysBetween(a, b) {
+  var da = new Date(a + "T00:00:00"), db = new Date(b + "T00:00:00");
+  return Math.round((db - da) / 86400000);
+}
+
+function shiftDate(d, delta) {
+  var dt = new Date(d + "T00:00:00");
+  dt.setDate(dt.getDate() + delta);
+  var m = dt.getMonth() + 1, day = dt.getDate();
+  return dt.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+}
+
+function fmt(n) {
+  n = Math.round(n || 0);
+  return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, " ");
+}
+
+/* Вес пишем через запятую и без лишнего нуля: 12,5 и 10 */
+function fmtW(w) {
+  var v = Math.round((w || 0) * 10) / 10;
+  return String(v).replace(".", ",");
+}
+
+function tons(kg) {
+  if (kg < 1000) return fmt(kg) + " кг";
+  var t = kg / 1000;
+  return (t >= 10 ? Math.round(t) : Math.round(t * 10) / 10).toString().replace(".", ",") + " т";
+}
+
+function plural(n, one, few, many) {
+  var a = n % 10, b = n % 100;
+  if (a === 1 && b !== 11) return one;
+  if (a >= 2 && a <= 4 && (b < 10 || b >= 20)) return few;
+  return many;
+}
+
+var MONTHS_SHORT = ["янв","фев","мар","апр","май","июн","июл","авг","сен","окт","ноя","дек"];
+var MONTHS_FULL = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+
+function dateLabel(d) {
+  var dt = new Date(d + "T00:00:00");
+  return dt.getDate() + " " + MONTHS_FULL[dt.getMonth()];
+}
+
+function mmss(sec) {
+  var m = Math.floor(sec / 60), s = sec % 60;
+  return m + ":" + (s < 10 ? "0" : "") + s;
+}
+
+var toastTimer = null;
+function toast(msg, gold) {
+  var t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show" + (gold ? " xp" : "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(function () { t.className = "toast"; }, 2600);
+}
+
+/* ═══════════════════════════════════════════════
+   ЭФФЕКТЫ И ОКНА
+   ═══════════════════════════════════════════════ */
+
+var CONFETTI_COLORS = ["#4DA6FF", "#9FE0FF", "#A98BF0", "#F0B429", "#3DD68C", "#E8EEF8"];
+
+function confetti(count) {
+  count = count || 70;
+  for (var i = 0; i < count; i++) {
+    (function (n) {
+      setTimeout(function () {
+        var p = document.createElement("div");
+        p.className = "confetti-piece";
+        p.style.left = Math.random() * 100 + "vw";
+        p.style.background = CONFETTI_COLORS[n % CONFETTI_COLORS.length];
+        p.style.animation = "fall " + (2.2 + Math.random() * 1.6) + "s linear forwards";
+        if (Math.random() > .6) p.style.borderRadius = "50%";
+        document.body.appendChild(p);
+        setTimeout(function () { if (p.parentNode) p.parentNode.removeChild(p); }, 4200);
+      }, n * 22);
+    })(i);
+  }
+}
+
+function xpPop(el, xp) {
+  if (!el) return;
+  var r = el.getBoundingClientRect();
+  var d = document.createElement("div");
+  d.className = "xp-pop";
+  d.textContent = "+" + xp;
+  d.style.left = (r.left + r.width / 2 - 20) + "px";
+  d.style.top = (r.top - 6) + "px";
+  document.body.appendChild(d);
+  setTimeout(function () { if (d.parentNode) d.parentNode.removeChild(d); }, 1200);
+}
+
+function openModal(html) {
+  document.getElementById("modal").innerHTML = html;
+  document.getElementById("overlay").className = "overlay show";
+}
+function closeModal() { document.getElementById("overlay").className = "overlay"; }
+
+document.getElementById("overlay").addEventListener("click", function (e) {
+  if (e.target.id === "overlay") closeModal();
+});
+
+function pushLog(ic, text) {
+  S.log.unshift({ ts: today(), ic: ic, text: text });
+  if (S.log.length > 40) S.log.pop();
+}
+
+/* ═══════════════════════════════════════════════
+   СЕРИЯ ДНЕЙ
+   Один пропуск прощается — иначе одна занятая среда
+   обнуляет месяц и игра перестаёт мотивировать.
+   ═══════════════════════════════════════════════ */
+
+function touchStreak() {
+  var t = today();
+  if (S.streak.last === t) return;
+  if (!S.streak.last) S.streak.count = 1;
+  else {
+    var gap = daysBetween(S.streak.last, t);
+    if (gap === 1 || gap === 2) S.streak.count++;
+    else S.streak.count = 1;
+  }
+  S.streak.last = t;
+  if (S.streak.count > S.streak.best) S.streak.best = S.streak.count;
+}
+
+/* ═══════════════════════════════════════════════
+   ТРЕНИРОВКА: выбор упражнения, подходы, отдых
+   ═══════════════════════════════════════════════ */
+
+var restTimer = { left: 0, tick: null };
+
+function startWorkout(ex) {
+  var t = today();
+  S.cur = { d: t, g: groupToday(), ex: ex, sets: [], t0: Date.now() };
+  save();
+  renderAll();
+  go("train");
+}
+
+function cancelWorkout() {
+  if (S.cur && S.cur.sets.length) {
+    openModal(
+      '<div class="sys-label">[ Отменить тренировку? ]</div><div class="sys-rule"></div>' +
+      "<p>Записанные подходы (" + S.cur.sets.length + ") пропадут. Опыт за них не начислится.</p>" +
+      '<div class="modal-btns"><button class="btn" onclick="closeModal()">Вернуться</button>' +
+      '<button class="btn danger" onclick="doCancelWorkout()">Отменить</button></div>'
+    );
+    return;
+  }
+  doCancelWorkout();
+}
+
+function doCancelWorkout() {
+  S.cur = null;
+  stopRest();
+  save(); closeModal(); renderAll();
+}
+
+/* Кнопки «−» и «+» у полей веса и повторов */
+function bump(what, delta) {
+  var el = document.getElementById(what === "w" ? "in-w" : "in-r");
+  if (!el) return;
+  var v = parseFloat(String(el.value).replace(",", ".")) || 0;
+  v = Math.round((v + delta) * 10) / 10;
+  if (v < 0) v = 0;
+  if (what === "r" && v > 200) v = 200;
+  if (what === "w" && v > 200) v = 200;
+  el.value = what === "r" ? Math.round(v) : v;
+}
+
+function addSet() {
+  if (!S.cur) return;
+  var we = document.getElementById("in-w"), re = document.getElementById("in-r");
+  var w = parseFloat(String(we.value).replace(",", ".")) || 0;
+  var r = parseInt(re.value, 10) || 0;
+  if (r <= 0) { toast("Впишите, сколько повторов сделали"); re.focus(); return; }
+
+  var rec = isRecord(S.cur.ex, w, r);
+  S.cur.sets.push({ w: w, r: r, rec: rec ? 1 : 0 });
+  save();
+  renderTrain();
+
+  var btn = document.getElementById("btn-addset");
+  if (rec) { toast("Личный рекорд: " + fmtW(w) + " кг × " + r, true); xpPop(btn, 25); }
+  startRest();
+}
+
+function delSet(i) {
+  if (!S.cur) return;
+  S.cur.sets.splice(i, 1);
+  save();
+  renderTrain();
+}
+
+function startRest() {
+  stopRest();
+  restTimer.left = S.rest;
+  restTimer.tick = setInterval(function () {
+    restTimer.left--;
+    if (restTimer.left <= 0) {
+      stopRest();
+      toast("Отдых окончен — следующий подход");
+      renderTrain();
+      return;
+    }
+    var n = document.getElementById("rest-n");
+    var b = document.getElementById("rest-bar");
+    if (n) n.textContent = mmss(restTimer.left);
+    if (b) b.style.width = Math.round(restTimer.left / S.rest * 100) + "%";
+  }, 1000);
+  renderTrain();
+}
+
+function stopRest() {
+  if (restTimer.tick) clearInterval(restTimer.tick);
+  restTimer.tick = null;
+  restTimer.left = 0;
+}
+
+function skipRest() { stopRest(); renderTrain(); }
+
+/* Завершение: считаем объём, рекорды и опыт, пишем день в журнал */
+function finishWorkout() {
+  if (!S.cur || !S.cur.sets.length) { toast("Запишите хотя бы один подход"); return; }
+  var c = S.cur, t = c.d;
+  var recs = 0;
+  for (var i = 0; i < c.sets.length; i++) if (c.sets[i].rec) recs++;
+
+  var before = levelOf(totalXP()).lvl;
+  var legBefore = legendsOpen();
+  touchStreak();
+  var xp = workoutXP(c.sets, recs, S.streak.count);
+
+  if (!S.days[t]) S.days[t] = { g: c.g, items: [], xp: 0, recs: 0, sec: 0 };
+  var rec = S.days[t];
+  rec.items.push({ ex: c.ex, sets: c.sets });
+  rec.xp += xp;
+  rec.recs += recs;
+  rec.sec += Math.round((Date.now() - c.t0) / 1000);
+
+  S.cur = null;
+  stopRest();
+  checkAchievements();
+  pushLog(gicon(rec.g), c.ex + " · " + c.sets.length + " " + plural(c.sets.length, "подход", "подхода", "подходов") + " · +" + xp + " XP");
+  save();
+
+  var after = levelOf(totalXP()).lvl;
+  var legAfter = legendsOpen();
+  var newLegend = legAfter > legBefore ? LEGENDS[legAfter - 1] : null;
+  var rankUp = rankOf(after).letter !== rankOf(before).letter;
+  if (newLegend) pushLog("📜", "Открыта хроника: " + newLegend.name);
+  PENDING_LEGEND = newLegend ? newLegend.id : null;
+  save();
+  renderAll();
+  go("home");
+  confetti(recs ? 90 : 55);
+  showResult(c, xp, recs, before, after, newLegend, rankUp);
+}
+
+var PENDING_LEGEND = null;
+
+/* Следующее окно после итогов: сначала ранг, потом новая хроника */
+function afterResult(rankUp, lvl) {
+  if (rankUp) { showRankUp(lvl); return; }
+  afterRank();
+}
+
+function afterRank() {
+  if (PENDING_LEGEND) { var id = PENDING_LEGEND; PENDING_LEGEND = null; showLegend(id); return; }
+  closeModal();
+}
+
+function showResult(c, xp, recs, before, after, newLegend, rankUp) {
+  var vol = tonnage(c.sets);
+  var best = null;
+  for (var i = 0; i < c.sets.length; i++) {
+    var s = c.sets[i];
+    if (!best || s.w > best.w || (s.w === best.w && s.r > best.r)) best = s;
+  }
+  var h =
+    '<div class="sys-label">[ Тренировка засчитана ]</div><div class="sys-rule"></div>' +
+    '<h3 style="text-align:center">' + esc(c.ex) + "</h3>" +
+    '<p style="text-align:center;color:var(--gray2)">' + gicon(c.g) + " " + gname(c.g) + "</p>" +
+    '<div class="sum">' +
+      '<div><div class="n">' + c.sets.length + '</div><div class="l">подходов</div></div>' +
+      '<div><div class="n">' + tons(vol) + '</div><div class="l">поднято за тренировку</div></div>' +
+      '<div><div class="n">' + fmtW(best.w) + " × " + best.r + '</div><div class="l">лучший подход</div></div>' +
+      '<div><div class="n" style="color:var(--fire)">+' + xp + '</div><div class="l">опыта</div></div>' +
+    "</div>" +
+    (recs ? '<div class="rec-line" style="text-align:center">🏅 ' + recs + " " + plural(recs, "личный рекорд", "личных рекорда", "личных рекордов") + "</div>" : "") +
+    (after > before
+      ? '<div class="rec-line" style="text-align:center;color:var(--fire)">⬆ Уровень ' + after + " · " + rankName(after) + " «" + rankOf(after).title + "»</div>"
+      : "") +
+    (newLegend ? '<div class="rec-line" style="text-align:center;color:var(--fire-soft)">📜 Открыта хроника: ' + esc(newLegend.name) + "</div>" : "") +
+    '<div class="modal-btns"><button class="btn primary" onclick="afterResult(' + (rankUp ? "true" : "false") + ", " + after + ')">' +
+      (rankUp || newLegend ? "Дальше" : "Закрыть") + "</button></div>";
+  openModal(h);
+}
+
+/* ═══════════════════════════════════════════════
+   ХРОНИКИ СИСТЕМЫ
+   Короткие истории про людей, которые вытащили себя
+   ежедневной работой. Открываются по числу тренировок.
+   ═══════════════════════════════════════════════ */
+
+var LEGENDS = [
+  {
+    id: "stallone", ic: "🥊", name: "Сильвестр Сталлоне", tag: "«Рокки», 1976",
+    text: "Сталлоне был безработным актёром с долгами и сценарием, который написал, по его собственным рассказам, за три дня. Студия предлагала за «Рокки» большие деньги — но с условием, что играть будет звезда. Он отказался. Денег не было настолько, что он продал своего пса Буткуса за 40 долларов, а когда фильм запустили — выкупил обратно за 15 тысяч.",
+    line: "Главная ставка — не на талант, а на отказ соглашаться на «попроще»."
+  },
+  {
+    id: "arnold", ic: "🏆", name: "Арнольд Шварценеггер", tag: "7 титулов «Мистер Олимпия»",
+    text: "В австрийской деревне зал работал не каждый день. Подростком Арнольд, по его рассказам, пролезал внутрь в выходные — тренироваться было важнее, чем ждать понедельника. Дальше — армия, самоволка ради турнира, гауптвахта и первый кубок. Позже он объяснял свой метод просто: делай на один подход больше, чем хочется.",
+    line: "Не ждите удобного дня. Удобных дней не бывает — бывают сделанные."
+  },
+  {
+    id: "jackie", ic: "🐉", name: "Джеки Чан", tag: "Пекинская оперная школа",
+    text: "С семи лет Джеки попал в школу пекинской оперы: подъём до рассвета, акробатика, растяжка и удары до поздней ночи, и так десять лет почти без выходных. Он сам делает свои трюки и переломал, кажется, всё, что можно переломать. Его фраза из интервью: «Я не самый быстрый и не самый сильный — я просто не останавливаюсь».",
+    line: "Тело запоминает не один героический день, а десять лет обычных."
+  },
+  {
+    id: "bruce", ic: "🔥", name: "Брюс Ли", tag: "Дневники тренировок",
+    text: "Брюс Ли вёл тетради, куда записывал каждое упражнение, вес и число повторов — как бухгалтер. Отдельно он гонял предплечья и хват почти каждый день, считая, что именно там рождается скорость удара. Ему приписывают фразу: «Я не боюсь того, кто изучил десять тысяч ударов. Я боюсь того, кто отработал один удар десять тысяч раз».",
+    line: "Записанный подход отличается от «вроде позанимался» так же, как удар от замаха."
+  },
+  {
+    id: "ali", ic: "🦋", name: "Мохаммед Али", tag: "Чемпион мира в тяжёлом весе",
+    text: "Али приписывают слова о приседаниях: считать он начинал только тогда, когда становилось больно, — потому что до этого момента это была не работа, а разминка. Ещё одна известная его фраза: «Я ненавидел каждую минуту тренировок, но говорил себе: потерпи сейчас — и проживёшь остаток жизни чемпионом».",
+    line: "Последние два повтора — это и есть вся тренировка."
+  },
+  {
+    id: "tyson", ic: "👊", name: "Майк Тайсон", tag: "Самый молодой чемпион в тяжёлом весе",
+    text: "Подростком Тайсон жил по расписанию, которое сам называл скучным: сотни отжиманий, приседаний, работы на шею и пресс — каждый день, без выходных и без вдохновения. Ни тренажёров, ни добавок: железо, пол и будильник. К двадцати годам это превратилось в самый молодой чемпионский пояс в истории тяжёлого веса.",
+    line: "Скучная рутина побеждает яркие порывы. Всегда."
+  },
+  {
+    id: "karelin", ic: "🐻", name: "Александр Карелин", tag: "13 лет без поражений",
+    text: "Сибирский борец, трёхкратный олимпийский чемпион, который не проигрывал 13 лет. О его подготовке ходят легенды: бег по снегу, тяжёлые мешки вместо штанги, тренировки в морозы, когда нормальные люди не выходят из дома. Соперники говорили, что проигрывали ему ещё до свистка — от одного вида того, кто явно работал больше.",
+    line: "Погода, настроение и усталость — не участники переговоров."
+  },
+  {
+    id: "vlasov", ic: "⚙️", name: "Юрий Власов", tag: "Тяжёлая атлетика, Рим-1960",
+    text: "Интеллигент в очках, который поднимал больше всех на планете, и автор книг о том, как воля управляет телом. Именно его выступление, увиденное мальчишкой, Шварценеггер называл толчком, после которого решил заниматься железом всерьёз. Власов писал, что сила — это прежде всего порядок: в расписании, в питании, в голове.",
+    line: "Сила начинается не в зале, а в умении не откладывать."
+  },
+  {
+    id: "foreman", ic: "🕰", name: "Джордж Форман", tag: "Чемпион в 45 лет",
+    text: "Форман ушёл из бокса в 28, растолстел, стал проповедником — и вернулся на ринг в 38, когда все считали это шуткой. В 45 лет он выиграл титул чемпиона мира в тяжёлом весе у соперника на двадцать лет моложе. На вопрос о возрасте отвечал, что возраст — это просто число в документах, а форма — это то, что вы делали последние полгода.",
+    line: "Поздно начать не бывает. Бывает «так и не начал»."
+  },
+  {
+    id: "rock", ic: "🪨", name: "Дуэйн Джонсон", tag: "Клуб четырёх утра",
+    text: "После травмы и вылета из большого футбола у Джонсона, по его рассказам, осталось семь долларов в кармане. Дальше — тренировки в четыре утра, до всех дел, каждый день. На съёмки он возит собственное железо в фуре, чтобы не было повода пропустить. Зал у него называется просто: «Кузница железного рая».",
+    line: "Тренировка до дел — единственная, которую не отменят дела."
+  },
+  {
+    id: "jackman", ic: "🐺", name: "Хью Джекман", tag: "Росомаха в 50",
+    text: "Джекман не был спортсменом: он пришёл к серьёзным весам поздно, уже актёром, и последнюю «Росомаху» снимал ближе к пятидесяти. Его тренер рассказывал, что секрета нет — есть график на годы и правило не гнаться за чужими весами: сравнивать себя только с собой месяц назад.",
+    line: "Ваш соперник — вы сами в прошлый вторник."
+  },
+  {
+    id: "coleman", ic: "🏋️", name: "Ронни Колеман", tag: "8 титулов «Мистер Олимпия»",
+    text: "Днём Колеман работал полицейским в Арлингтоне, вечером шёл в зал и становился сильнейшим бодибилдером планеты. Его самая известная фраза звучит грубовато и точно: «Все хотят быть большими, но никто не хочет поднимать тяжёлое железо». Перед подходом он кричал «Yeah buddy» — и шёл делать то, что говорил.",
+    line: "Между «хочу» и «делаю» лежит ровно один подход."
+  }
+];
+
+/* Сколько тренировок нужно, чтобы открыть очередную запись */
+var LEGEND_AT = [1, 2, 3, 5, 8, 12, 17, 23, 30, 40, 55, 75];
+
+function legendsOpen() {
+  var n = workoutCount(), k = 0;
+  for (var i = 0; i < LEGEND_AT.length && i < LEGENDS.length; i++) if (n >= LEGEND_AT[i]) k = i + 1;
+  return k;
+}
+
+/* Запись дня: из открытых, меняется каждый день */
+function legendOfDay() {
+  var open = legendsOpen();
+  if (!open) return null;
+  var d = new Date(today() + "T00:00:00");
+  var idx = Math.floor(d.getTime() / 86400000) % open;
+  return LEGENDS[idx];
+}
+
+function showLegend(id) {
+  var L = null;
+  for (var i = 0; i < LEGENDS.length; i++) if (LEGENDS[i].id === id) L = LEGENDS[i];
+  if (!L) return;
+  openModal(
+    '<div class="sys-label">[ Хроника Системы ]</div><div class="sys-rule"></div>' +
+    '<div class="lg-ic">' + L.ic + "</div>" +
+    '<h3 style="text-align:center;margin-bottom:4px">' + esc(L.name) + "</h3>" +
+    '<div class="lg-tag">' + esc(L.tag) + "</div>" +
+    '<p class="lg-text">' + esc(L.text) + "</p>" +
+    '<div class="lg-line">' + esc(L.line) + "</div>" +
+    '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Закрыть</button></div>'
+  );
+}
+
+/* Карточка «Хроника» на главной */
+function renderLegendCard() {
+  var el = document.getElementById("legend-card");
+  if (!el) return;
+  var L = legendOfDay();
+  if (!L) {
+    el.innerHTML = '<h3>Хроники Системы</h3>' +
+      '<div style="color:var(--gray);font-size:13.5px;line-height:1.6">Первая запись откроется после первой тренировки. Всего в архиве ' +
+      LEGENDS.length + " историй о тех, кто вытащил себя ежедневной работой.</div>";
+    return;
+  }
+  el.innerHTML =
+    '<h3>Хроника дня</h3>' +
+    '<div class="lg-row" onclick="showLegend(' + jsq(L.id) + ')">' +
+      '<div class="lg-row-ic">' + L.ic + "</div>" +
+      '<div style="min-width:0">' +
+        '<div class="lg-row-n">' + esc(L.name) + "</div>" +
+        '<div class="lg-row-t">' + esc(L.tag) + "</div>" +
+        '<div class="lg-row-l">' + esc(L.line) + "</div>" +
+      "</div>" +
+    "</div>" +
+    '<div style="color:var(--gray);font-size:12.5px;margin-top:11px">Открыто записей: ' +
+      legendsOpen() + " из " + LEGENDS.length + " · нажмите, чтобы прочитать</div>";
+}
+
+/* Коллекция в профиле */
+function legendsHtml() {
+  var open = legendsOpen(), h = "";
+  for (var i = 0; i < LEGENDS.length; i++) {
+    var L = LEGENDS[i], isOpen = i < open;
+    h += '<div class="lgcard' + (isOpen ? "" : " lock") + '"' +
+         (isOpen ? ' onclick="showLegend(' + jsq(L.id) + ')"' : "") + ">" +
+           '<div class="lgcard-ic">' + (isOpen ? L.ic : "🔒") + "</div>" +
+           '<div class="lgcard-n">' + (isOpen ? esc(L.name) : "Запись закрыта") + "</div>" +
+           '<div class="lgcard-t">' + (isOpen ? esc(L.tag) : "после " + LEGEND_AT[i] + "-й тренировки") + "</div>" +
+         "</div>";
+  }
+  return h;
+}
+
+/* ═══════════════════════════════════════════════
+   НЕДЕЛИ БЕЗ ПРОПУСКОВ
+   ═══════════════════════════════════════════════ */
+
+/* Понедельник недели, в которую попадает дата */
+function mondayOf(date) {
+  var dt = new Date(date + "T00:00:00");
+  return shiftDate(date, -((dt.getDay() + 6) % 7));
+}
+
+/* Сколько дней недели закрыто тренировками */
+function weekDone(monday) {
+  var n = 0;
+  for (var i = 0; i < 7; i++) if (S.days[shiftDate(monday, i)]) n++;
+  return n;
+}
+
+function thisWeekDone() { return weekDone(mondayOf(today())); }
+
+/* Полные недели: все семь дней подряд отмечены */
+function perfectWeeks() {
+  var a = allDates();
+  if (!a.length) return 0;
+  var m = mondayOf(a[0]), last = mondayOf(today()), n = 0, guard = 0;
+  while (m <= last && guard++ < 600) {
+    if (weekDone(m) === 7) n++;
+    m = shiftDate(m, 7);
+  }
+  return n;
+}
+
+/* ═══════════════════════════════════════════════
+   ПОДСКАЗКА ПРОГРЕССИИ
+   Если в прошлый раз все подходы дались по 12 повторов
+   и больше — вес пора поднимать, иначе работа стоит.
+   ═══════════════════════════════════════════════ */
+
+function progressHint(prev) {
+  if (!prev || !prev.sets.length) return "";
+  var w = prev.sets[0].w, ok = true;
+  for (var i = 0; i < prev.sets.length; i++) {
+    if (prev.sets[i].w !== w) ok = false;
+    if (prev.sets[i].r < 12) ok = false;
+  }
+  if (!ok || prev.sets.length < 2) return "";
+  return '<div class="hint">⚡ Система: все подходы по 12 и больше при ' + fmtW(w) +
+         " кг. Добавьте 1–2 кг — рост идёт от веса, а не от лишних повторов.</div>";
+}
+
+/* ═══════════════════════════════════════════════
+   НОВЫЙ РАНГ
+   ═══════════════════════════════════════════════ */
+
+function showRankUp(lvl) {
+  var R = rankOf(lvl);
+  confetti(120);
+  openModal(
+    '<div class="sys-label">[ Повышение ранга ]</div><div class="sys-rule"></div>' +
+    '<div class="rank-up-glow">' + rankBadge(lvl, "big") + "</div>" +
+    '<h3 style="text-align:center">Ранг ' + R.letter + " · " + esc(R.title) + "</h3>" +
+    '<p style="text-align:center;color:var(--gray2)">' + esc(R.desc) + "</p>" +
+    '<div class="modal-btns"><button class="btn primary" onclick="afterRank()">Принять</button></div>'
+  );
+}
+
+/* ═══════════════════════════════════════════════
+   ВЫЗОВ НЕДЕЛИ на главной
+   ═══════════════════════════════════════════════ */
+
+function renderWeekChallenge() {
+  var el = document.getElementById("week-goal");
+  if (!el) return;
+  var done = thisWeekDone(), pct = Math.round(done / 7 * 100);
+  var txt = done === 7
+    ? "Идеальная неделя закрыта — семь дней из семи."
+    : "Тренировок на этой неделе: " + done + " из 7. " +
+      (done >= 5 ? "Осталось немного." : "Каждый отмеченный день приближает достижение.");
+  el.innerHTML =
+    '<div class="wgoal-t">' + (done === 7 ? "🔥 " : "") + esc(txt) + "</div>" +
+    '<div class="wgoal-bar"><i style="width:' + pct + '%"></i></div>';
+}
+
+/* ═══════════════════════════════════════════════
+   РЕНДЕР
+   ═══════════════════════════════════════════════ */
+
+function renderHome() {
+  var xp = totalXP(), L = levelOf(xp), R = rankOf(L.lvl), NR = nextRank(L.lvl);
+
+  document.getElementById("hero-av").innerHTML = rankBadge(L.lvl, "big");
+  document.getElementById("hero-name").textContent = S.name || "Охотник";
+  document.getElementById("hero-rank").innerHTML = rankName(L.lvl) + " · " + R.title;
+  document.getElementById("hero-level").textContent = L.lvl;
+  document.getElementById("hero-xpbar").style.width = Math.round(L.into / L.need * 100) + "%";
+  document.getElementById("hero-xp-now").textContent = fmt(xp) + " XP всего";
+  document.getElementById("hero-xp-next").textContent =
+    "до " + (L.lvl + 1) + " уровня: " + fmt(L.need - L.into) + " XP" +
+    (NR ? " · до ранга " + NR.letter + " — " + (NR.min - L.lvl) + " " + plural(NR.min - L.lvl, "уровень", "уровня", "уровней") : "");
+
+  document.getElementById("stat-workouts").textContent = workoutCount();
+  document.getElementById("stat-streak").textContent = S.streak.count;
+  document.getElementById("stat-streak-word").textContent = plural(S.streak.count, "день подряд", "дня подряд", "дней подряд");
+  document.getElementById("stat-tonnage").textContent = tons(totalTonnage());
+  document.getElementById("stat-records").textContent = recordsCount();
+
+  /* кольцо дня */
+  var done = setsToday(), goal = S.goalSets;
+  var pct = Math.min(1, goal ? done / goal : 0);
+  var ring = document.getElementById("day-ring");
+  ring.style.strokeDashoffset = (238.8 * (1 - pct)).toFixed(1);
+  document.getElementById("day-sets").textContent = done;
+  document.getElementById("day-sets-goal").textContent = "из " + goal + " " + plural(goal, "подхода", "подходов", "подходов");
+
+  var recToday = S.days[today()];
+  var title, sub;
+  if (S.cur) { title = "Тренировка идёт"; sub = esc(S.cur.ex) + " · записано подходов: " + S.cur.sets.length; }
+  else if (recToday) { title = "Сегодня сделано"; sub = "Объём: " + tons(dayTonnage(recToday)) + " · опыт: +" + recToday.xp + " XP"; }
+  else { title = "Сегодня ещё не тренировались"; sub = "Двадцать минут — и день закрыт."; }
+  document.getElementById("day-title").textContent = title;
+  document.getElementById("day-sub").innerHTML = sub;
+  document.getElementById("day-streak").textContent = S.streak.count;
+  document.getElementById("day-streak-word").textContent = plural(S.streak.count, "день подряд", "дня подряд", "дней подряд");
+  document.getElementById("day-flame").style.display = S.streak.count ? "" : "none";
+
+  /* задание дня */
+  var g = groupToday();
+  document.getElementById("gday-ic").textContent = gicon(g);
+  document.getElementById("gday-name").textContent = gname(g);
+  document.getElementById("gday-sub").textContent = recToday && !S.cur
+    ? "Сделано. Можно добавить ещё упражнение."
+    : "Одно упражнение, 20–30 минут.";
+  var b = document.getElementById("btn-start");
+  b.textContent = S.cur ? "Продолжить тренировку →" : (recToday ? "Добавить упражнение →" : "Начать тренировку →");
+
+  document.getElementById("nav-xp").textContent = fmt(xp);
+  document.getElementById("nav-streak").textContent = S.streak.count ? "🔥 " + S.streak.count : "";
+
+  renderWeek();
+  renderWeekChallenge();
+  renderLegendCard();
+  renderLogList();
+}
+
+function renderWeek() {
+  var el = document.getElementById("week-split");
+  var t = today(), dt = new Date(t + "T00:00:00");
+  var shift = (dt.getDay() + 6) % 7;             // понедельник — начало недели
+  var monday = shiftDate(t, -shift);
+  var h = "";
+  for (var i = 0; i < 7; i++) {
+    var date = shiftDate(monday, i);
+    var g = groupOn(date);
+    var rec = S.days[date];
+    var cls = date === t ? " is-now" : (rec ? " is-done" : "");
+    var mark = rec ? "✓" : (date === t ? "⚔" : "·");
+    h += '<div class="wday' + cls + '" title="' + dateLabel(date) + '">' +
+           '<div class="d">' + DAYS_SHORT[new Date(date + "T00:00:00").getDay()] + "</div>" +
+           '<div class="g">' + gshort(g) + "</div>" +
+           '<div class="m">' + mark + "</div>" +
+         "</div>";
+  }
+  el.innerHTML = h;
+
+  /* сегодняшний день виден сразу, даже если строка прокручивается */
+  var now = el.querySelector(".wday.is-now");
+  if (now && el.scrollWidth > el.clientWidth) {
+    el.scrollLeft = Math.max(0, now.offsetLeft - (el.clientWidth - now.offsetWidth) / 2);
+  }
+}
+
+function renderLogList() {
+  var el = document.getElementById("log-list");
+  if (!S.log.length) {
+    el.innerHTML = '<div class="log-empty">Пока пусто. Первая тренировка всё начнёт.</div>';
+    return;
+  }
+  var h = "";
+  for (var i = 0; i < Math.min(S.log.length, 8); i++) {
+    var e = S.log[i];
+    h += '<div class="log-item"><div class="log-ic">' + e.ic + "</div>" +
+         '<div class="log-txt">' + esc(e.text) + "</div>" +
+         '<div class="log-date">' + dateLabel(e.ts) + "</div></div>";
+  }
+  el.innerHTML = h;
+}
+
+/* Экран тренировки: либо выбор упражнения, либо запись подходов */
+function renderTrain() {
+  var el = document.getElementById("train-body");
+  var g = S.cur ? S.cur.g : groupToday();
+
+  document.getElementById("train-title").textContent = S.cur ? S.cur.ex : gname(g);
+  document.getElementById("train-sub").textContent = S.cur
+    ? "Записывайте каждый подход: вес и сколько повторов вышло."
+    : "Задание дня: " + gname(g).toLowerCase() + ". Выберите упражнение или впишите своё.";
+
+  if (!S.cur) { el.innerHTML = renderPicker(g); return; }
+
+  var c = S.cur, prev = lastTime(c.ex), best = bestSet(c.ex);
+  var h = '<div class="card" style="margin-bottom:14px">' +
+    '<div class="wo-head"><div class="wo-ex">' +
+      '<div class="g">' + gicon(c.g) + " " + esc(gname(c.g)) + "</div>" +
+      '<div class="n">' + esc(c.ex) + "</div>" +
+      '<div class="wo-prev">' + prevLine(prev, best) + "</div>" +
+    "</div></div>";
+
+  /* ввод подхода */
+  var lastSet = c.sets.length ? c.sets[c.sets.length - 1] : (prev && prev.sets.length ? prev.sets[prev.sets.length - 1] : null);
+  var dw = lastSet ? lastSet.w : 10;
+  var dr = lastSet ? lastSet.r : 10;
+  h += '<div class="setform">' +
+         '<div class="numf"><div class="numf-l">Вес, кг</div><div class="numf-in">' +
+           '<button type="button" onclick="bump(\'w\',-0.5)">−</button>' +
+           '<input id="in-w" type="number" step="0.5" inputmode="decimal" value="' + dw + '">' +
+           '<button type="button" onclick="bump(\'w\',0.5)">+</button>' +
+         "</div></div>" +
+         '<div class="numf"><div class="numf-l">Повторы</div><div class="numf-in">' +
+           '<button type="button" onclick="bump(\'r\',-1)">−</button>' +
+           '<input id="in-r" type="number" step="1" inputmode="numeric" value="' + dr + '">' +
+           '<button type="button" onclick="bump(\'r\',1)">+</button>' +
+         "</div></div>" +
+       "</div>" +
+       '<button class="btn primary wide" id="btn-addset" onclick="addSet()" style="margin-top:14px">Записать подход</button>';
+
+  if (restTimer.tick) {
+    h += '<div class="rest"><div class="rest-n" id="rest-n">' + mmss(restTimer.left) + "</div>" +
+         '<div style="flex:1"><div class="rest-l">Отдых между подходами</div>' +
+         '<div class="rest-bar"><i id="rest-bar" style="width:' + Math.round(restTimer.left / S.rest * 100) + '%"></i></div></div>' +
+         '<button class="btn sm ghost" onclick="skipRest()">Пропустить</button></div>';
+  }
+
+  /* список подходов */
+  h += '<div class="sets">';
+  if (!c.sets.length) h += '<div class="sets-empty">Подходов пока нет. Сделали — записали.</div>';
+  for (var i = 0; i < c.sets.length; i++) {
+    var s = c.sets[i];
+    h += '<div class="setrow' + (s.rec ? " is-rec" : "") + '">' +
+           '<div class="no">' + (i + 1) + "</div>" +
+           '<div class="v">' + fmtW(s.w) + ' <span>кг ×</span> ' + s.r + " <span>повт.</span></div>" +
+           (s.rec ? '<div class="rec">рекорд</div>' : "") +
+           '<button class="x" title="Удалить подход" onclick="delSet(' + i + ')">✕</button>' +
+         "</div>";
+  }
+  h += "</div></div>";
+
+  h += '<div style="display:flex;gap:10px;flex-wrap:wrap">' +
+         '<button class="btn primary" onclick="finishWorkout()" style="flex:1;min-width:180px;justify-content:center">Завершить тренировку</button>' +
+         '<button class="btn ghost" onclick="cancelWorkout()">Отменить</button>' +
+       "</div>";
+
+  el.innerHTML = h;
+}
+
+/* Строка «в прошлый раз» — чтобы было с чем сравнивать */
+function prevLine(prev, best) {
+  var out = "";
+  if (prev) {
+    var arr = [];
+    for (var i = 0; i < prev.sets.length; i++) arr.push(fmtW(prev.sets[i].w) + "×" + prev.sets[i].r);
+    out += "Прошлый раз (" + dateLabel(prev.d) + "): <b>" + arr.join(", ") + "</b>";
+  } else {
+    out += "Первый раз в этом упражнении — сегодня любой подход станет рекордом.";
+  }
+  if (best) out += "<br>Личный рекорд: <b>" + fmtW(best.w) + " кг × " + best.r + "</b>";
+  out += progressHint(prev);
+  return out;
+}
+
+function renderPicker(g) {
+  var list = exercisesOf(g);
+  var h = '<div class="card" style="margin-bottom:14px"><h3>Упражнение на ' + esc(gname(g).toLowerCase()) + "</h3>" +
+          '<div class="exgrid">';
+  for (var i = 0; i < list.length; i++) {
+    var ex = list[i], last = lastTime(ex.n);
+    h += '<button class="exchip' + (ex.own ? " own" : "") + '" onclick="startWorkout(' + jsq(ex.n) + ')">' +
+           '<div class="n">' + esc(ex.n) + "</div>" +
+           (ex.h ? '<div class="h">' + esc(ex.h) + "</div>" : "") +
+           (last ? '<div class="last">прошлый раз: ' + lastShort(last) + "</div>" : "") +
+         "</button>";
+  }
+  h += '<button class="exchip own" onclick="askOwnExercise()"><div class="n">+ Своё упражнение</div>' +
+       '<div class="h">Добавится в список этой группы</div></button>';
+  h += "</div></div>";
+  return h;
+}
+
+function lastShort(last) {
+  var s = last.sets;
+  var best = s[0];
+  for (var i = 1; i < s.length; i++) if (s[i].w > best.w) best = s[i];
+  return fmtW(best.w) + " кг × " + best.r + " · " + s.length + " " + plural(s.length, "подход", "подхода", "подходов");
+}
+
+/* Кавычки для подстановки названия в onclick */
+function jsq(s) { return "'" + String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;") + "'"; }
+
+function askOwnExercise() {
+  openModal(
+    '<div class="sys-label">[ Своё упражнение ]</div><div class="sys-rule"></div>' +
+    "<p>Название останется в списке группы «" + esc(gname(groupToday())) + "».</p>" +
+    '<input class="big" id="own-ex" maxlength="40" placeholder="Например: Жим гантелей на полу">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="saveOwnExercise()">Добавить</button></div>'
+  );
+  setTimeout(function () { var e = document.getElementById("own-ex"); if (e) e.focus(); }, 50);
+}
+
+function saveOwnExercise() {
+  var el = document.getElementById("own-ex");
+  var v = (el.value || "").trim();
+  if (!v) { toast("Впишите название"); return; }
+  var g = groupToday();
+  if (!S.custom[g]) S.custom[g] = [];
+  if (S.custom[g].indexOf(v) < 0) S.custom[g].push(v);
+  save(); closeModal();
+  startWorkout(v);
+}
+
+/* ═══════════════════════════════════════════════
+   ЖУРНАЛ: все тренировки по дням
+   ═══════════════════════════════════════════════ */
+
+function renderJournal() {
+  var el = document.getElementById("journal");
+  if (!el) return;
+  var dates = allDates().reverse();
+
+  if (!dates.length) {
+    el.innerHTML = '<div class="card"><div style="color:var(--gray)">Журнал пуст. После первой тренировки здесь появится запись: что делали, с каким весом и сколько подняли.</div></div>';
+    return;
+  }
+
+  var h = "";
+  for (var i = 0; i < dates.length; i++) {
+    var d = dates[i], rec = S.days[d];
+    var items = "";
+    for (var j = 0; j < rec.items.length; j++) {
+      var it = rec.items[j], arr = [];
+      for (var k = 0; k < it.sets.length; k++) {
+        var s = it.sets[k];
+        arr.push('<span class="jset' + (s.rec ? " is-rec" : "") + '">' + fmtW(s.w) + "×" + s.r + "</span>");
+      }
+      items += '<div class="jitem"><div class="jitem-n">' + esc(it.ex) + "</div>" +
+               '<div class="jsets">' + arr.join("") + "</div></div>";
+    }
+    h += '<div class="card jday">' +
+           '<div class="jday-head">' +
+             '<div class="jday-ic">' + gicon(rec.g) + "</div>" +
+             '<div style="flex:1;min-width:0">' +
+               '<div class="jday-d">' + dateLabel(d) + (d === today() ? " · сегодня" : "") + "</div>" +
+               '<div class="jday-g">' + esc(gname(rec.g)) + "</div>" +
+             "</div>" +
+             '<button class="x" title="Удалить запись" onclick="askDeleteDay(' + jsq(d) + ')">✕</button>' +
+           "</div>" +
+           items +
+           '<div class="jday-sum">' +
+             "<span>" + daySets(rec) + " " + plural(daySets(rec), "подход", "подхода", "подходов") + "</span>" +
+             "<span>" + tons(dayTonnage(rec)) + "</span>" +
+             (rec.recs ? '<span style="color:var(--gold)">🏅 ' + rec.recs + "</span>" : "") +
+             '<span style="color:var(--fire)">+' + (rec.xp || 0) + " XP</span>" +
+           "</div>" +
+         "</div>";
+  }
+  el.innerHTML = h;
+}
+
+function askDeleteDay(d) {
+  var rec = S.days[d];
+  if (!rec) return;
+  openModal(
+    '<div class="sys-label">[ Удалить запись? ]</div><div class="sys-rule"></div>' +
+    "<p>" + dateLabel(d) + " · " + esc(gname(rec.g)) + "<br>Пропадут " + daySets(rec) + " " +
+    plural(daySets(rec), "подход", "подхода", "подходов") + " и " + (rec.xp || 0) + " XP. Отменить будет нельзя.</p>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Оставить</button>' +
+    '<button class="btn danger" onclick="deleteDay(' + jsq(d) + ')">Удалить</button></div>'
+  );
+}
+
+function deleteDay(d) {
+  delete S.days[d];
+  save(); closeModal(); renderAll();
+  toast("Запись удалена");
+}
+
+/* ═══════════════════════════════════════════════
+   СИЛА: рекорды и объём работы
+   ═══════════════════════════════════════════════ */
+
+/* Сумма за последние n дней */
+function statsLastDays(n) {
+  var from = shiftDate(today(), -(n - 1));
+  var a = allDates(), out = { workouts: 0, sets: 0, ton: 0, recs: 0 };
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] < from) continue;
+    var rec = S.days[a[i]];
+    out.workouts++;
+    out.sets += daySets(rec);
+    out.ton += dayTonnage(rec);
+    out.recs += rec.recs || 0;
+  }
+  return out;
+}
+
+/* Объём по неделям: массив от старых к новым */
+function weeklyVolume(weeks) {
+  var t = today(), dt = new Date(t + "T00:00:00");
+  var shift = (dt.getDay() + 6) % 7;
+  var monday = shiftDate(t, -shift), out = [];
+  for (var w = weeks - 1; w >= 0; w--) {
+    var start = shiftDate(monday, -w * 7), sum = 0, days = 0;
+    for (var d = 0; d < 7; d++) {
+      var date = shiftDate(start, d);
+      if (date > t) break;
+      var rec = S.days[date];
+      if (rec) { sum += dayTonnage(rec); days++; }
+    }
+    out.push({ start: start, ton: sum, days: days });
+  }
+  return out;
+}
+
+/* Какой группе принадлежит упражнение: сначала справочник и свои упражнения,
+   и только потом — группа того дня, когда его делали */
+function groupOfExercise(ex, fallback) {
+  for (var g in EXERCISES) if (EXERCISES.hasOwnProperty(g)) {
+    for (var i = 0; i < EXERCISES[g].length; i++) if (EXERCISES[g][i].n === ex) return g;
+  }
+  for (var c in S.custom) if (S.custom.hasOwnProperty(c)) {
+    if (S.custom[c].indexOf(ex) >= 0) return c;
+  }
+  return fallback;
+}
+
+/* Все упражнения с историей, по группам */
+function exerciseStats() {
+  var map = {};
+  var a = allDates();
+  for (var i = 0; i < a.length; i++) {
+    var rec = S.days[a[i]];
+    for (var j = 0; j < rec.items.length; j++) {
+      var it = rec.items[j];
+      if (!map[it.ex]) map[it.ex] = { ex: it.ex, g: groupOfExercise(it.ex, rec.g), times: 0, ton: 0, sets: 0, best: null, lastDate: "" };
+      var m = map[it.ex];
+      m.times++;
+      m.sets += it.sets.length;
+      m.ton += tonnage(it.sets);
+      m.lastDate = a[i];
+      for (var k = 0; k < it.sets.length; k++) {
+        var s = it.sets[k];
+        if (!m.best || s.w > m.best.w || (s.w === m.best.w && s.r > m.best.r)) m.best = { w: s.w, r: s.r, d: a[i] };
+      }
+    }
+  }
+  var out = [];
+  for (var key in map) if (map.hasOwnProperty(key)) out.push(map[key]);
+  return out;
+}
+
+function renderPower() {
+  var el = document.getElementById("power-body");
+  if (!el) return;
+
+  if (!workoutCount()) {
+    el.innerHTML = '<div class="card"><div style="color:var(--gray)">Пока нечего считать. После первых тренировок здесь появятся рекорды по упражнениям и объём работы по неделям.</div></div>';
+    return;
+  }
+
+  var m = statsLastDays(30);
+  var h = '<div class="card" style="margin-bottom:14px"><h3>За последние 30 дней</h3>' +
+          '<div class="sum" style="grid-template-columns:repeat(4,1fr);margin:14px 0 0">' +
+            '<div><div class="n">' + m.workouts + '</div><div class="l">' + plural(m.workouts, "тренировка", "тренировки", "тренировок") + "</div></div>" +
+            '<div><div class="n">' + m.sets + '</div><div class="l">' + plural(m.sets, "подход", "подхода", "подходов") + "</div></div>" +
+            '<div><div class="n">' + tons(m.ton) + '</div><div class="l">поднято</div></div>' +
+            '<div><div class="n" style="color:var(--gold)">' + m.recs + '</div><div class="l">' + plural(m.recs, "рекорд", "рекорда", "рекордов") + "</div></div>" +
+          "</div></div>";
+
+  /* объём по неделям */
+  var wk = weeklyVolume(8), max = 1;
+  for (var i = 0; i < wk.length; i++) if (wk[i].ton > max) max = wk[i].ton;
+  var bars = "";
+  for (i = 0; i < wk.length; i++) {
+    var pct = Math.round(wk[i].ton / max * 100);
+    var lbl = new Date(wk[i].start + "T00:00:00");
+    bars += '<div class="chart-col">' +
+              '<div class="chart-val">' + (wk[i].ton ? tons(wk[i].ton) : "—") + "</div>" +
+              '<div class="chart-barwrap"><div class="chart-bar" style="height:' + Math.max(pct, wk[i].ton ? 4 : 1) + '%"></div></div>' +
+              '<div class="chart-lbl">' + lbl.getDate() + " " + MONTHS_SHORT[lbl.getMonth()] + "</div>" +
+            "</div>";
+  }
+  h += '<div class="card" style="margin-bottom:14px"><h3>Объём по неделям</h3>' +
+       '<div style="color:var(--gray);font-size:13px">Сколько килограммов поднято за неделю: вес умножается на повторы.</div>' +
+       '<div class="chart">' + bars + "</div></div>";
+
+  /* рекорды по группам */
+  var stats = exerciseStats();
+  var byGroup = {};
+  for (i = 0; i < stats.length; i++) {
+    if (!byGroup[stats[i].g]) byGroup[stats[i].g] = [];
+    byGroup[stats[i].g].push(stats[i]);
+  }
+  var order = ["shoulders", "legs", "triceps", "chest", "forearms", "biceps", "back"];
+  var recs = "";
+  for (i = 0; i < order.length; i++) {
+    var g = order[i], list = byGroup[g];
+    if (!list || !list.length) continue;
+    list.sort(function (a, b) { return b.ton - a.ton; });
+    var rows = "";
+    for (var j = 0; j < list.length; j++) {
+      var s = list[j];
+      rows += '<div class="prow">' +
+                '<div class="prow-n">' + esc(s.ex) + '<div class="prow-s">' + s.times + " " +
+                  plural(s.times, "тренировка", "тренировки", "тренировок") + " · " + tons(s.ton) + " всего</div></div>" +
+                '<div class="prow-b">' + (s.best ? fmtW(s.best.w) + " кг × " + s.best.r : "—") +
+                  '<div class="prow-s">' + (s.best ? dateLabel(s.best.d) : "") + "</div></div>" +
+              "</div>";
+    }
+    recs += '<div class="pgroup"><div class="pgroup-h">' + gicon(g) + " " + esc(gname(g)) + "</div>" + rows + "</div>";
+  }
+  h += '<div class="card"><h3>Личные рекорды</h3>' +
+       '<div style="color:var(--gray);font-size:13px;margin-bottom:6px">Лучший подход в каждом упражнении: сначала вес, при равном весе — повторы.</div>' +
+       recs + "</div>";
+
+  el.innerHTML = h;
+}
+
+/* ═══════════════════════════════════════════════
+   ДОСТИЖЕНИЯ
+   ═══════════════════════════════════════════════ */
+
+function totalSets() {
+  var n = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) n += daySets(S.days[a[i]]);
+  return n;
+}
+
+function groupsCovered() {
+  var seen = {}, n = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) {
+    var g = S.days[a[i]].g;
+    if (!seen[g]) { seen[g] = 1; n++; }
+  }
+  return n;
+}
+
+function heaviestSet() {
+  var best = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) {
+    var rec = S.days[a[i]];
+    for (var j = 0; j < rec.items.length; j++)
+      for (var k = 0; k < rec.items[j].sets.length; k++)
+        if (rec.items[j].sets[k].w > best) best = rec.items[j].sets[k].w;
+  }
+  return best;
+}
+
+function bestDaySets() {
+  var best = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) best = Math.max(best, daySets(S.days[a[i]]));
+  return best;
+}
+
+var ACHIEVEMENTS = [
+  { id: "first",  ic: "⚡", name: "Первый подход",     desc: "Первая записанная тренировка",   test: function () { return workoutCount() >= 1; } },
+  { id: "week",   ic: "🔥", name: "Неделя без пропусков", desc: "Серия 7 дней",               test: function () { return S.streak.best >= 7; } },
+  { id: "iron",   ic: "🌋", name: "Железная привычка", desc: "Серия 30 дней",                  test: function () { return S.streak.best >= 30; } },
+  { id: "circle", ic: "🔄", name: "Полный круг",       desc: "Все семь групп мышц пройдены",   test: function () { return groupsCovered() >= 7; } },
+  { id: "sets",   ic: "🧱", name: "Сотня подходов",    desc: "100 подходов всего",             test: function () { return totalSets() >= 100; } },
+  { id: "ton",    ic: "🏔", name: "Десять тонн",       desc: "10 000 кг за всё время",         test: function () { return totalTonnage() >= 10000; } },
+  { id: "recs",   ic: "🏅", name: "Десять рекордов",   desc: "10 личных рекордов",             test: function () { return recordsCount() >= 10; } },
+  { id: "w15",    ic: "💠", name: "Полный набор",      desc: "Подход с весом 15 кг и больше",  test: function () { return heaviestSet() >= 15; } },
+  { id: "long",   ic: "⏳", name: "Длинная сессия",    desc: "10 подходов за одну тренировку", test: function () { return bestDaySets() >= 10; } },
+  { id: "fifty",  ic: "🎖", name: "Полсотни",          desc: "50 тренировок",                  test: function () { return workoutCount() >= 50; } },
+  { id: "rankc",  ic: "⭐", name: "Ветеран",           desc: "5-й уровень, ранг C",            test: function () { return levelOf(totalXP()).lvl >= 5; } },
+  { id: "rankа",  ic: "👑", name: "Мастер",            desc: "12-й уровень, ранг A",           test: function () { return levelOf(totalXP()).lvl >= 12; } },
+  { id: "pweek",  ic: "📅", name: "Идеальная неделя",  desc: "Семь дней недели без пропусков", test: function () { return perfectWeeks() >= 1; } },
+  { id: "pmonth", ic: "🗓", name: "Безупречный месяц", desc: "Четыре идеальные недели",        test: function () { return perfectWeeks() >= 4; } },
+  { id: "chron",  ic: "📜", name: "Хранитель хроник",  desc: "Открыты все записи архива",      test: function () { return legendsOpen() >= LEGENDS.length; } }
+];
+
+function checkAchievements() {
+  for (var i = 0; i < ACHIEVEMENTS.length; i++) {
+    var a = ACHIEVEMENTS[i];
+    if (S.seenAch.indexOf(a.id) >= 0) continue;
+    var ok = false;
+    try { ok = a.test(); } catch (e) {}
+    if (!ok) continue;
+    S.seenAch.push(a.id);
+    pushLog(a.ic, "Достижение: " + a.name);
+    toast("Достижение: " + a.name, true);
+  }
+}
+
+/* ═══════════════════════════════════════════════
+   ПРОФИЛЬ: календарь, достижения, расписание, настройки
+   ═══════════════════════════════════════════════ */
+
+function setsOn(date) {
+  return daySets(S.days[date]);
+}
+
+function renderHeat() {
+  var el = document.getElementById("heatmap");
+  if (!el) return;
+  var t = today();
+  var dt = new Date(t + "T00:00:00");
+  var shift = (dt.getDay() + 6) % 7;              // понедельник = 0
+  var lastMonday = shiftDate(t, -shift);
+  var h = "", totalDays = 0, totalS = 0, totalT = 0;
+
+  var months = "", prevMonth = "";
+  for (var mw = 11; mw >= 0; mw--) {
+    var wd = shiftDate(lastMonday, -mw * 7);
+    var mm = wd.split("-")[1];
+    months += '<div class="heat-month">' + (mm !== prevMonth ? MONTHS_SHORT[parseInt(mm, 10) - 1] : "") + "</div>";
+    prevMonth = mm;
+  }
+
+  for (var w = 11; w >= 0; w--) {
+    h += '<div class="heat-week">';
+    for (var d = 0; d < 7; d++) {
+      var date = shiftDate(lastMonday, -w * 7 + d);
+      if (date > t) { h += '<div class="heat-cell" style="opacity:.25"></div>'; continue; }
+      var n = setsOn(date);
+      if (n > 0) { totalDays++; totalS += n; totalT += dayTonnage(S.days[date]); }
+      var lvl = n === 0 ? "" : n < 3 ? " l1" : n < 5 ? " l2" : n < 8 ? " l3" : " l4";
+      h += '<div class="heat-cell' + lvl + (date === t ? " is-today" : "") + '" title="' + dateLabel(date) +
+           (n ? " · " + n + " " + plural(n, "подход", "подхода", "подходов") : " · пусто") + '"></div>';
+    }
+    h += "</div>";
+  }
+  el.innerHTML = h;
+
+  var mrow = document.getElementById("heat-months");
+  if (mrow) mrow.innerHTML = months;
+  var sum = document.getElementById("heat-summary");
+  if (sum) sum.textContent = totalDays
+    ? totalDays + " " + plural(totalDays, "тренировка", "тренировки", "тренировок") + " · " + tons(totalT)
+    : "";
+
+  var hs = document.getElementById("heat-stats");
+  if (hs) {
+    var avg = totalDays ? Math.round(totalS / totalDays) : 0;
+    hs.innerHTML =
+      '<div class="hs"><div class="n" style="color:var(--fire)">' + S.streak.count +
+        '</div><div class="l">' + plural(S.streak.count, "день подряд", "дня подряд", "дней подряд") + "</div></div>" +
+      '<div class="hs"><div class="n">' + S.streak.best + '</div><div class="l">лучшая серия</div></div>' +
+      '<div class="hs"><div class="n">' + totalDays + '</div><div class="l">' +
+        plural(totalDays, "тренировка", "тренировки", "тренировок") + "</div></div>" +
+      '<div class="hs"><div class="n">' + (avg || "—") + '</div><div class="l">подходов за тренировку</div></div>';
+  }
+}
+
+function renderProfile() {
+  var el = document.getElementById("profile-body");
+  if (!el) return;
+
+  /* достижения */
+  var got = 0, cards = "";
+  for (var i = 0; i < ACHIEVEMENTS.length; i++) {
+    var a = ACHIEVEMENTS[i], ok = false;
+    try { ok = a.test(); } catch (e) {}
+    if (ok) got++;
+    cards += '<div class="ach' + (ok ? " got" : " lock") + '">' +
+               '<div class="ach-ic">' + a.ic + "</div>" +
+               '<div class="ach-name">' + esc(a.name) + "</div>" +
+               '<div class="ach-desc">' + esc(a.desc) + "</div>" +
+             "</div>";
+  }
+
+  /* расписание недели: понедельник первым */
+  var rows = "";
+  var order = [1, 2, 3, 4, 5, 6, 0];
+  var DAYS_FULL = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
+  for (i = 0; i < order.length; i++) {
+    var di = order[i], opts = "";
+    for (var k in GROUPS) if (GROUPS.hasOwnProperty(k)) {
+      opts += '<option value="' + k + '"' + (S.split[di] === k ? " selected" : "") + ">" + GROUPS[k].name + "</option>";
+    }
+    rows += '<div class="srow"><div class="srow-d">' + DAYS_FULL[di] + "</div>" +
+            '<select class="srow-s" onchange="setSplitDay(' + di + ', this.value)">' + opts + "</select></div>";
+  }
+
+  el.innerHTML =
+    '<div class="card" style="margin-bottom:14px"><h3>Календарь тренировок</h3>' +
+      '<div style="color:var(--gray);font-size:13px;margin-bottom:14px">Последние 12 недель. Чем ярче клетка — тем больше подходов в тот день.</div>' +
+      '<div class="heat-wrap"><div><div class="heat-months" id="heat-months"></div><div class="heat" id="heatmap"></div></div>' +
+      '<div class="heat-stats" id="heat-stats"></div></div>' +
+      '<div class="heat-legend"><span>пусто</span><span class="heat-cell"></span><span class="heat-cell l1"></span>' +
+      '<span class="heat-cell l2"></span><span class="heat-cell l3"></span><span class="heat-cell l4"></span>' +
+      '<span>8 подходов и больше</span><span style="margin-left:auto" id="heat-summary"></span></div>' +
+    "</div>" +
+
+    '<div class="card" style="margin-bottom:14px">' +
+      '<div class="ach-head"><h3 style="margin:0">Достижения</h3>' +
+      '<div class="ach-count">' + got + '<span class="ach-of"> из ' + ACHIEVEMENTS.length + "</span></div></div>" +
+      '<div class="ach-bar"><i style="width:' + Math.round(got / ACHIEVEMENTS.length * 100) + '%"></i></div>' +
+      '<div class="ach-grid" style="margin-top:14px">' + cards + "</div>" +
+    "</div>" +
+
+    '<div class="card" style="margin-bottom:14px"><h3>Хроники Системы</h3>' +
+      '<div style="color:var(--gray);font-size:13px;margin-bottom:12px">Истории тех, кто вытащил себя ежедневной работой. Новая запись открывается по мере тренировок: открыто ' +
+      legendsOpen() + " из " + LEGENDS.length + '.</div>' +
+      '<div class="lggrid">' + legendsHtml() + "</div>" +
+    "</div>" +
+
+    '<div class="card" style="margin-bottom:14px"><h3>Расписание недели</h3>' +
+      '<div style="color:var(--gray);font-size:13px;margin-bottom:12px">Какая группа мышц на какой день. Меняется в любой момент — прошлые записи не трогаются.</div>' +
+      rows +
+    "</div>" +
+
+    '<div class="card"><h3>Настройки</h3>' +
+      '<div class="set-row"><div><b>Цель дня</b><div class="set-s">' + S.goalSets + " " +
+        plural(S.goalSets, "подход", "подхода", "подходов") + " — по ним считается кольцо на главной</div></div>" +
+        '<button class="btn sm" onclick="askGoal()">Изменить</button></div>' +
+      '<div class="set-row"><div><b>Отдых между подходами</b><div class="set-s">' + mmss(S.rest) + "</div></div>" +
+        '<button class="btn sm" onclick="askRest()">Изменить</button></div>' +
+      '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">' +
+        '<button class="btn sm" onclick="askName()">Сменить имя</button>' +
+        '<button class="btn sm" onclick="showExport()">Код синхронизации</button>' +
+        '<button class="btn sm" onclick="showImport()">Загрузить код</button>' +
+        '<button class="btn sm" onclick="toggleBg()">Фон: ' + (S.bg ? "врата" : "выключен") + "</button>" +
+      "</div>" +
+      '<div class="danger-zone"><div class="danger-zone-t">Опасная зона</div>' +
+        '<div style="display:flex;gap:9px;flex-wrap:wrap">' +
+          '<button class="btn sm" onclick="askRestore()">Откатить сохранение</button>' +
+          '<button class="btn sm danger" onclick="askReset()">Сбросить всё</button>' +
+        "</div></div>" +
+      '<div style="color:var(--gray);font-size:12.5px;margin-top:13px;line-height:1.6">' +
+        "Прогресс хранится в браузере этого устройства. Чтобы продолжить на телефоне — нажмите «Код синхронизации», скопируйте текст, откройте игру на телефоне и вставьте через «Загрузить код».</div>" +
+    "</div>";
+
+  renderHeat();
+}
+
+function setSplitDay(di, g) {
+  S.split[di] = g;
+  save(); renderAll();
+  toast("Расписание обновлено");
+}
+
+function askGoal() {
+  openModal(
+    '<div class="sys-label">[ Цель дня ]</div><div class="sys-rule"></div>' +
+    "<p>Сколько подходов считать полным днём. Кольцо на главной заполняется по ним.</p>" +
+    '<input class="big" id="gl" type="number" inputmode="numeric" min="1" max="30" value="' + S.goalSets + '">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="saveGoal()">Сохранить</button></div>'
+  );
+}
+
+function saveGoal() {
+  var v = parseInt(document.getElementById("gl").value, 10);
+  if (!v || v < 1) { toast("Нужно число от 1 до 30"); return; }
+  S.goalSets = Math.min(v, 30);
+  save(); closeModal(); renderAll();
+}
+
+function askRest() {
+  openModal(
+    '<div class="sys-label">[ Отдых ]</div><div class="sys-rule"></div>' +
+    "<p>Сколько секунд отдыхать между подходами. Отсчёт запускается сам после каждого записанного подхода.</p>" +
+    '<input class="big" id="rs" type="number" inputmode="numeric" min="10" max="600" step="15" value="' + S.rest + '">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="saveRest()">Сохранить</button></div>'
+  );
+}
+
+function saveRest() {
+  var v = parseInt(document.getElementById("rs").value, 10);
+  if (!v || v < 10) { toast("Нужно число от 10 до 600 секунд"); return; }
+  S.rest = Math.min(v, 600);
+  save(); closeModal(); renderAll();
+}
+
+function askName() {
+  openModal(
+    "<h3>Как к вам обращаться?</h3>" +
+    '<input class="big" id="nm" maxlength="24" value="' + esc(S.name) + '" placeholder="Имя">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="saveName()">Сохранить</button></div>'
+  );
+  setTimeout(function () { var e = document.getElementById("nm"); if (e) e.focus(); }, 50);
+}
+
+function toggleBg() {
+  S.bg = S.bg ? 0 : 1;
+  save(); applyBg(); renderProfile();
+}
+
+/* ═══════════ Перенос прогресса между устройствами ═══════════ */
+
+function encodeState() {
+  try { return btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
+  catch (e) { return ""; }
+}
+function decodeState(str) {
+  try { return JSON.parse(decodeURIComponent(escape(atob(str.trim())))); }
+  catch (e) { return null; }
+}
+
+function showExport() {
+  openModal(
+    "<h3>Код синхронизации</h3>" +
+    "<p>Скопируйте всё содержимое, откройте игру на другом устройстве и вставьте через «Загрузить код».</p>" +
+    '<textarea id="ex" readonly>' + esc(encodeState()) + "</textarea>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Закрыть</button>' +
+    '<button class="btn primary" onclick="copyCode()">Скопировать</button></div>'
+  );
+}
+
+function copyCode() {
+  var t = document.getElementById("ex");
+  t.select(); t.setSelectionRange(0, 999999);
+  try { document.execCommand("copy"); toast("Скопировано"); } catch (e) { toast("Выделите и скопируйте вручную"); }
+}
+
+function showImport() {
+  openModal(
+    "<h3>Загрузить код</h3>" +
+    "<p>Вставьте код с другого устройства. Текущий прогресс на этом устройстве будет заменён.</p>" +
+    '<textarea id="im" placeholder="Вставьте код сюда"></textarea>' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="doImport()">Загрузить</button></div>'
+  );
+}
+
+function doImport() {
+  var v = document.getElementById("im").value;
+  var p = decodeState(v);
+  if (!p || !p.days) { toast("Код не распознан"); return; }
+  S = p;
+  normalizeState();
+  LOAD_BROKEN = false;            /* импорт — законный способ починить сломанное сохранение */
+  applyBg();
+  save(); closeModal(); renderAll();
+  toast("Прогресс загружен");
+}
+
+function askRestore() {
+  openModal(
+    '<div class="sys-label">[ Откат ]</div><div class="sys-rule"></div>' +
+    "<h3>Вернуть предыдущее сохранение?</h3>" +
+    "<p>Игра хранит одну версию назад. Всё, что сделано после неё, пропадёт. Нужно, только если текущий прогресс сломался или вы случайно снесли лишнее.</p>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn danger" onclick="restorePrev()">Откатить</button></div>'
+  );
+}
+
+function askReset() {
+  openModal(
+    '<div class="sys-label">[ Сброс ]</div><div class="sys-rule"></div>' +
+    "<h3>Стереть весь прогресс?</h3>" +
+    "<p>Пропадут все тренировки, рекорды, уровни и достижения. Это нельзя отменить — если сомневаетесь, сначала возьмите код синхронизации.</p>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn danger" onclick="doReset()">Стереть</button></div>'
+  );
+}
+
+function doReset() {
+  S = {
+    name: "", days: {}, cur: null, custom: {}, split: DEFAULT_SPLIT.slice(),
+    goalSets: 5, rest: 90, streak: { last: "", count: 0, best: 0 }, seenAch: [], log: [], bg: 1
+  };
+  save(); closeModal(); renderAll(); go("home");
+  toast("Прогресс сброшен");
+}
+
+function renderAll() {
+  renderHome();
+  renderTrain();
+  renderJournal();
+  renderPower();
+  renderProfile();
+}
+
+/* ═══════════════════════════════════════════════
+   НАВИГАЦИЯ И СТАРТ
+   ═══════════════════════════════════════════════ */
+
+function go(name) {
+  var secs = document.querySelectorAll(".section");
+  for (var i = 0; i < secs.length; i++) secs[i].className = "section";
+  document.getElementById("section-" + name).className = "section active";
+
+  var tabs = document.querySelectorAll(".nav-tab, .mnav-item");
+  for (var j = 0; j < tabs.length; j++) {
+    var on = tabs[j].getAttribute("data-go") === name;
+    tabs[j].className = tabs[j].className.replace(" active", "") + (on ? " active" : "");
+  }
+  window.scrollTo(0, 0);
+}
+
+document.addEventListener("click", function (e) {
+  var t = e.target;
+  while (t && t !== document.body) {
+    if (t.getAttribute && t.getAttribute("data-go")) { go(t.getAttribute("data-go")); return; }
+    t = t.parentNode;
+  }
+});
+
+document.getElementById("btn-start").addEventListener("click", function () {
+  go("train");
+});
+
+function applyBg() {
+  document.body.className = S.bg ? "" : "no-bg";
+}
+
+function spawnMotes() {
+  var box = document.getElementById("motes");
+  if (!box) return;
+  var h = "";
+  for (var i = 0; i < 18; i++) {
+    h += '<div class="mote" style="left:' + (Math.random() * 100).toFixed(1) + "%;animation-delay:" +
+         (Math.random() * 14).toFixed(1) + "s;animation-duration:" + (11 + Math.random() * 10).toFixed(1) + 's"></div>';
+  }
+  box.innerHTML = h;
+}
+
+function boot() {
+  load();
+  normalizeState();
+
+  /* пришли в новый день, а тренировка осталась незакрытой со вчера */
+  if (S.cur && S.cur.d !== today()) S.cur = null;
+
+  applyBg();
+  spawnMotes();
+  renderAll();
+
+  if (LOAD_BROKEN === "recovered") toast("Сохранение было повреждено — подняли предыдущую версию");
+
+  if (!S.name && !workoutCount()) {
+    setTimeout(function () {
+      openModal(
+        '<div class="sys-label">[ Система активирована ]</div><div class="sys-rule"></div>' +
+        '<h3 style="text-align:center">Вы получили ранг E</h3>' +
+        '<p style="text-align:center">Каждый день — своя группа мышц.<br>Опыт даётся за записанные подходы,<br>а не за намерение потренироваться.<br><br>Как к вам обращаться?</p>' +
+        '<input class="big" id="nm" maxlength="24" placeholder="Имя">' +
+        '<div class="modal-btns"><button class="btn" onclick="closeModal()">Потом</button>' +
+        '<button class="btn primary" onclick="saveName()">Начать</button></div>'
+      );
+      setTimeout(function () { var e = document.getElementById("nm"); if (e) e.focus(); }, 50);
+    }, 400);
+  }
+}
+
+function saveName() {
+  var el = document.getElementById("nm");
+  if (el && el.value.trim()) S.name = el.value.trim().slice(0, 24);
+  save(); closeModal(); renderHome();
+}
+
+boot();
+
+/* Офлайн-режим. Работает только по https (на GitHub Pages), при открытии
+   файла с диска молча пропускается — это нормально. */
+if ("serviceWorker" in navigator && location.protocol.indexOf("http") === 0) {
+  window.addEventListener("load", function () {
+    navigator.serviceWorker.register("./sw.js").catch(function () {});
+  });
+}
+
+</script>
+</body>
+</html>
