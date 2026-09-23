@@ -1,0 +1,609 @@
+<title>Кузница: руководство охотника</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Exo+2:wght@600;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+  :root {
+    --bg:        #05070C;
+    --panel:     #0E131E;
+    --panel-2:   #141B29;
+    --line:      #1C2634;
+    --line-2:    #2A3A50;
+    --accent:    #4DA6FF;
+    --accent-dim:#0A1E33;
+    --accent-lt: #9FE0FF;
+    --gold:      #F0B429;
+    --gold-dim:  #2A1F00;
+    --green:     #3DD68C;
+    --text:      #E8EEF8;
+    --muted:     #9FADC4;
+    --muted-2:   #7C89A3;
+    --display: "Exo 2", "Segoe UI", system-ui, sans-serif;
+    --body: "IBM Plex Sans", "Segoe UI", system-ui, sans-serif;
+    --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+  }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--body);
+    font-size: 16px;
+    line-height: 1.7;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .shell { max-width: 860px; margin: 0 auto; padding-block: 0 72px; padding-left: 18px; padding-right: 18px; }
+
+  /* ── шапка ── */
+  .top {
+    position: relative;
+    padding-block: 54px 34px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 34px;
+  }
+  .sys-label {
+    font-family: var(--mono);
+    font-size: 12px;
+    letter-spacing: 3px;
+    color: var(--accent);
+    text-transform: uppercase;
+    margin-bottom: 14px;
+  }
+  h1 {
+    font-family: var(--display);
+    font-weight: 800;
+    font-size: clamp(30px, 6vw, 46px);
+    line-height: 1.08;
+    letter-spacing: -0.5px;
+    text-wrap: balance;
+    margin: 0 0 14px;
+  }
+  .lede { color: var(--muted); font-size: 17px; max-width: 62ch; margin: 0; }
+  .top-meta {
+    display: flex; flex-wrap: wrap; gap: 10px 22px;
+    margin-top: 22px; font-size: 14px; color: var(--muted-2);
+  }
+  .top-meta a { color: var(--accent); text-decoration: none; border-bottom: 1px solid rgba(77,166,255,.35); }
+  .top-meta a:hover { color: var(--accent-lt); }
+
+  /* ── оглавление ── */
+  nav.toc { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 44px; }
+  nav.toc a {
+    font-family: var(--mono); font-size: 12.5px; letter-spacing: .4px;
+    color: var(--muted); text-decoration: none;
+    padding: 7px 12px; background: var(--panel); border: 1px solid var(--line);
+  }
+  nav.toc a:hover { color: var(--accent-lt); border-color: var(--line-2); }
+  nav.toc a b { color: var(--accent); font-weight: 500; margin-right: 7px; }
+
+  /* ── секции ── */
+  section { margin-bottom: 52px; scroll-margin-top: 20px; }
+  h2 {
+    font-family: var(--display); font-weight: 700;
+    font-size: clamp(22px, 4vw, 28px); line-height: 1.2;
+    margin: 0 0 6px; text-wrap: balance;
+    display: flex; align-items: baseline; gap: 14px;
+  }
+  h2 .num {
+    font-family: var(--mono); font-size: 14px; color: var(--accent);
+    letter-spacing: 1px; flex-shrink: 0;
+  }
+  h2 + .sub { color: var(--muted-2); font-size: 15px; margin: 0 0 22px; max-width: 62ch; }
+  h3 {
+    font-family: var(--display); font-weight: 700; font-size: 18px;
+    margin: 30px 0 10px; letter-spacing: .1px;
+  }
+  p { margin: 0 0 14px; max-width: 68ch; }
+  strong { color: #fff; font-weight: 600; }
+  em { color: var(--accent-lt); font-style: normal; }
+
+  ul, ol { margin: 0 0 16px; padding-left: 22px; max-width: 66ch; }
+  li { margin-bottom: 9px; }
+  li::marker { color: var(--accent); }
+
+  /* ── панель Системы ── */
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--line);
+    padding: 22px 24px;
+    margin: 20px 0;
+    clip-path: polygon(14px 0, 100% 0, 100% calc(100% - 14px), calc(100% - 14px) 100%, 0 100%, 0 14px);
+  }
+  .panel h3 { margin-top: 0; }
+  .panel > :last-child { margin-bottom: 0; }
+
+  .note {
+    border-left: 2px solid var(--accent);
+    background: var(--accent-dim);
+    padding: 15px 18px;
+    margin: 20px 0;
+    font-size: 15px;
+  }
+  .note > :last-child { margin-bottom: 0; }
+  .note.warn { border-left-color: var(--gold); background: var(--gold-dim); }
+  .note .tag {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 2px;
+    text-transform: uppercase; color: var(--accent); display: block; margin-bottom: 6px;
+  }
+  .note.warn .tag { color: var(--gold); }
+
+  /* ── шаги ── */
+  ol.steps { list-style: none; padding: 0; margin: 22px 0; max-width: none; }
+  ol.steps > li {
+    display: grid; grid-template-columns: 42px 1fr; gap: 16px;
+    padding-bottom: 20px; margin-bottom: 20px;
+    border-bottom: 1px solid var(--line);
+  }
+  ol.steps > li:last-child { border-bottom: none; padding-bottom: 0; margin-bottom: 0; }
+  ol.steps .n {
+    font-family: var(--mono); font-size: 15px; color: var(--accent);
+    width: 42px; height: 42px; display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line-2); background: var(--panel-2);
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+  ol.steps .t { font-family: var(--display); font-weight: 700; font-size: 17px; margin-bottom: 5px; }
+  ol.steps p { margin-bottom: 8px; }
+  ol.steps > li > div > :last-child { margin-bottom: 0; }
+
+  /* ── таблицы ── */
+  .tw { overflow-x: auto; margin: 20px 0; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; min-width: 460px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th {
+    font-family: var(--mono); font-size: 11.5px; letter-spacing: 1.6px;
+    text-transform: uppercase; color: var(--accent); font-weight: 500;
+    border-bottom-color: var(--line-2);
+  }
+  td.num, th.num { font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tbody tr:last-child td { border-bottom: none; }
+  .rank { font-family: var(--mono); color: var(--gold); font-weight: 500; }
+
+  kbd {
+    font-family: var(--mono); font-size: 13px;
+    background: var(--panel-2); border: 1px solid var(--line-2);
+    padding: 2px 7px; color: var(--accent-lt); white-space: nowrap;
+  }
+  code { font-family: var(--mono); font-size: 13.5px; color: var(--accent-lt); }
+
+  /* ── карточки ── */
+  .cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(232px, 1fr)); gap: 12px; margin: 20px 0; }
+  .card {
+    background: var(--panel); border: 1px solid var(--line); padding: 16px 18px;
+  }
+  .card .k { font-family: var(--mono); font-size: 11.5px; letter-spacing: 1.6px; text-transform: uppercase; color: var(--accent); margin-bottom: 7px; }
+  .card .v { font-size: 14.5px; color: var(--muted); line-height: 1.6; }
+  .card .v b { color: var(--text); font-weight: 600; }
+
+  .faq { border-top: 1px solid var(--line); }
+  .faq details { border-bottom: 1px solid var(--line); }
+  .faq summary {
+    cursor: pointer; padding: 15px 0; font-family: var(--display);
+    font-weight: 600; font-size: 16.5px; list-style: none;
+    display: flex; gap: 12px; align-items: baseline;
+  }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::before { content: "▸"; color: var(--accent); font-size: 13px; }
+  .faq details[open] summary::before { content: "▾"; }
+  .faq details > div { padding: 0 0 16px 24px; color: var(--muted); font-size: 15px; }
+  .faq details > div > :last-child { margin-bottom: 0; }
+  .faq details > div p { color: var(--muted); }
+
+  footer {
+    margin-top: 60px; padding-top: 24px; border-top: 1px solid var(--line);
+    color: var(--muted-2); font-size: 14px;
+  }
+  footer a { color: var(--accent); text-decoration: none; }
+
+  a:focus-visible, summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  @media (max-width: 560px) {
+    body { font-size: 15.5px; }
+    .shell { padding-left: 16px; padding-right: 16px; }
+    ol.steps > li { grid-template-columns: 34px 1fr; gap: 12px; }
+    ol.steps .n { width: 34px; height: 34px; font-size: 13px; }
+    h2 { gap: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="shell">
+
+  <header class="top">
+    <div class="sys-label">[ Руководство ]</div>
+    <h1>Кузница</h1>
+    <p class="lede">Домашние тренировки с гантелями, превращённые в игру. Здесь подробно, по шагам: что происходит на каждом экране, как считается опыт и что делать, если что-то пошло не так.</p>
+    <div class="top-meta">
+      <span>Игра: <a href="https://vladislavbropiton.github.io/game/">vladislavbropiton.github.io/game</a></span>
+      <span>Версия от 23 сентября 2026</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <a href="#start"><b>01</b>Первый запуск</a>
+    <a href="#status"><b>02</b>Экран «Статус»</a>
+    <a href="#workout"><b>03</b>Тренировка по шагам</a>
+    <a href="#journal"><b>04</b>Журнал</a>
+    <a href="#power"><b>05</b>Сила</a>
+    <a href="#profile"><b>06</b>Профиль</a>
+    <a href="#rules"><b>07</b>Правила и расчёты</a>
+    <a href="#sync"><b>08</b>Телефон и перенос</a>
+    <a href="#faq"><b>09</b>Если что-то не так</a>
+  </nav>
+
+  <!-- 01 ─────────────────────────────────── -->
+  <section id="start">
+    <h2><span class="num">01</span>Первый запуск</h2>
+    <p class="sub">Игра — одна веб-страница. Ничего устанавливать не обязательно, но на телефоне удобнее поставить её на домашний экран.</p>
+
+    <ol class="steps">
+      <li>
+        <div class="n">1</div>
+        <div>
+          <div class="t">Откройте ссылку</div>
+          <p><a href="https://vladislavbropiton.github.io/game/" style="color:var(--accent)">vladislavbropiton.github.io/game</a> — на компьютере или на телефоне, в любом браузере.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">2</div>
+        <div>
+          <div class="t">Система активируется</div>
+          <p>При первом заходе появится окно <em>«Вы получили ранг E»</em>. Впишите имя — оно будет стоять в вашем статусе. Можно нажать «Потом» и задать имя позже в профиле.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">3</div>
+        <div>
+          <div class="t">Поставьте на телефон (по желанию)</div>
+          <p><strong>Android, Chrome:</strong> меню <kbd>⋮</kbd> → «Установить приложение».</p>
+          <p><strong>iPhone, только Safari:</strong> кнопка «Поделиться» → «На экран Домой». В Chrome на iPhone такого пункта нет.</p>
+          <p>После установки игра открывается с иконки, на весь экран, и работает без интернета.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="note">
+      <span class="tag">Важно про прогресс</span>
+      <p>Прогресс хранится <strong>в браузере того устройства</strong>, где вы тренируетесь. Телефон и компьютер не связаны между собой: на каждом свой счёт. Как переносить — раздел <a href="#sync" style="color:var(--accent-lt)">08</a>.</p>
+    </div>
+  </section>
+
+  <!-- 02 ─────────────────────────────────── -->
+  <section id="status">
+    <h2><span class="num">02</span>Экран «Статус»</h2>
+    <p class="sub">Главная страница. Сверху вниз — шесть блоков, каждый отвечает на свой вопрос.</p>
+
+    <h3>Карточка охотника</h3>
+    <p>Значок ранга, имя, текущий ранг и уровень. Под ними — полоса опыта и две подписи: сколько опыта всего и сколько осталось до следующего уровня и до следующего ранга.</p>
+    <p>Ниже четыре плитки:</p>
+    <div class="cards">
+      <div class="card"><div class="k">Тренировок</div><div class="v">Сколько дней с записанными подходами. <b>Один день = одна тренировка</b>, даже если упражнений было два.</div></div>
+      <div class="card"><div class="k">Дней подряд</div><div class="v">Текущая серия. Один пропуск прощается, два подряд — серия начинается заново.</div></div>
+      <div class="card"><div class="k">Всего поднято</div><div class="v">Сумма <b>вес × повторы</b> по всем подходам за всё время. После тонны показывается в тоннах.</div></div>
+      <div class="card"><div class="k">Рекордов</div><div class="v">Сколько раз вы побили свой лучший подход в каком-либо упражнении.</div></div>
+    </div>
+
+    <h3>Кольцо дня</h3>
+    <p>Слева круг: сколько подходов сделано сегодня из цели дня (по умолчанию 5, меняется в профиле). Справа — короткий итог дня и значок серии. Пока тренировки нет, написано «Сегодня ещё не тренировались».</p>
+
+    <h3>Задание дня</h3>
+    <p>Группа мышц, назначенная на сегодняшний день недели, и кнопка входа в тренировку. Надпись на кнопке меняется по ситуации: <em>«Начать тренировку»</em>, <em>«Продолжить тренировку»</em> (если вы вышли, не завершив) или <em>«Добавить упражнение»</em> (если сегодня уже отмечались).</p>
+
+    <div class="tw">
+      <table>
+        <thead><tr><th>День недели</th><th>Группа мышц</th><th>Примеры упражнений в игре</th></tr></thead>
+        <tbody>
+          <tr><td>Понедельник</td><td>Бицепс</td><td>Подъём стоя, молот, концентрированный подъём</td></tr>
+          <tr><td>Вторник</td><td>Спина</td><td>Тяга в наклоне, пуловер, шраги</td></tr>
+          <tr><td>Среда</td><td>Плечи</td><td>Жим сидя, махи в стороны, жим Арнольда</td></tr>
+          <tr><td>Четверг</td><td>Ноги</td><td>Гоблет-приседания, выпады, румынская тяга</td></tr>
+          <tr><td>Пятница</td><td>Трицепс</td><td>Французский жим, разгибание из-за головы, кикбэк</td></tr>
+          <tr><td>Суббота</td><td>Грудь</td><td>Жим лёжа, разводка, пуловер</td></tr>
+          <tr><td>Воскресенье</td><td>Предплечья</td><td>Сгибания в запястьях, прогулка фермера</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Неделя и вызов недели</h3>
+    <p>Семь плиток — вся неделя с понедельника. Пройденные дни зелёные с галочкой, сегодняшний обведён синим. На телефоне полоса прокручивается вбок, сегодняшний день подкручивается сам. Под ней — строка вызова: <em>«Тренировок на этой неделе: 5 из 7»</em> и полоса прогресса. Семь из семи — достижение «Идеальная неделя».</p>
+
+    <h3>Хроника дня</h3>
+    <p>Одна из открытых историй про людей, которых вытащила ежедневная работа: Сталлоне, Шварценеггер, Джеки Чан, Брюс Ли, Али, Тайсон, Карелин, Власов, Форман, Джонсон, Джекман, Колеман. Нажмите на карточку — откроется полный текст. История меняется каждый день, новые записи открываются по числу тренировок.</p>
+
+    <h3>Что происходило</h3>
+    <p>Лента последних событий: завершённые тренировки, полученные достижения, открытые хроники.</p>
+  </section>
+
+  <!-- 03 ─────────────────────────────────── -->
+  <section id="workout">
+    <h2><span class="num">03</span>Тренировка по шагам</h2>
+    <p class="sub">Главный экран игры. Весь цикл — от выбора упражнения до окна с итогами.</p>
+
+    <ol class="steps">
+      <li>
+        <div class="n">1</div>
+        <div>
+          <div class="t">Нажмите «Начать тренировку»</div>
+          <p>С главной или через нижнее меню → «Тренировка». Откроется список упражнений на сегодняшнюю группу.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">2</div>
+        <div>
+          <div class="t">Выберите упражнение</div>
+          <p>В каждой карточке название, короткая подсказка по технике и — если вы уже делали это упражнение — строка <em>«прошлый раз: 12,5 кг × 12 · 3 подхода»</em>.</p>
+          <p>Нет нужного? Нажмите <kbd>+ Своё упражнение</kbd>, впишите название — оно сохранится в этой группе и дальше будет в списке.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">3</div>
+        <div>
+          <div class="t">Посмотрите на строку сравнения</div>
+          <p>Под названием игра показывает, что вы делали в прошлый раз, и ваш личный рекорд. Если в прошлый раз <strong>все</strong> подходы дались по 12 повторов и больше, появится жёлтая подсказка: пора добавить 1–2 кг.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">4</div>
+        <div>
+          <div class="t">Сделайте подход и запишите его</div>
+          <p>Два поля: <strong>вес</strong> (шаг 0,5 кг) и <strong>повторы</strong> (шаг 1). Значения подставляются из прошлого подхода, поэтому обычно достаточно нажать «Записать подход». Кнопки <kbd>−</kbd> и <kbd>+</kbd> удобнее клавиатуры, когда руки заняты гантелями.</p>
+          <p>Записывайте <em>после</em> подхода — по факту, а не по плану.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">5</div>
+        <div>
+          <div class="t">Отдохните</div>
+          <p>Сразу после записи запускается отсчёт отдыха — по умолчанию 1:30, меняется в профиле. Кнопка «Пропустить» убирает отсчёт, если вы готовы раньше.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">6</div>
+        <div>
+          <div class="t">Проверьте список подходов</div>
+          <p>Каждый записанный подход появляется строкой: номер, вес, повторы. Подход, побивший рекорд, подсвечен золотом и помечен словом «рекорд». Ошиблись — крестик справа удаляет строку.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">7</div>
+        <div>
+          <div class="t">Завершите тренировку</div>
+          <p>Кнопка «Завершить тренировку» закрывает день. Откроется окно итогов: подходы, сколько поднято, лучший подход, начисленный опыт и число рекордов.</p>
+          <p>Кнопка «Отменить» рядом выбрасывает записанные подходы — игра переспросит, если они есть.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">8</div>
+        <div>
+          <div class="t">Заберите награды</div>
+          <p>Если тренировка подняла вас на новый ранг, следом откроется окно <em>«Повышение ранга»</em>. Если открылась новая история — окно <em>«Хроника Системы»</em>. Нажимайте «Дальше», пока окна не закончатся.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="note">
+      <span class="tag">Можно больше одного упражнения</span>
+      <p>После завершения кнопка на главной меняется на «Добавить упражнение». Все упражнения одного дня складываются в одну запись журнала, опыт начисляется за каждое.</p>
+    </div>
+  </section>
+
+  <!-- 04 ─────────────────────────────────── -->
+  <section id="journal">
+    <h2><span class="num">04</span>Журнал</h2>
+    <p class="sub">Все тренировки по дням, свежие сверху.</p>
+    <p>Каждая запись: дата и группа мышц, названия упражнений, все подходы плашками (рекорды — золотые), и итог дня — подходы, поднятый вес, рекорды, опыт.</p>
+    <p>Крестик в правом верхнем углу записи удаляет день целиком. Игра предупредит, сколько подходов и опыта пропадёт. Отменить удаление нельзя — но можно откатить сохранение в профиле, если вы ещё ничего не успели записать поверх.</p>
+  </section>
+
+  <!-- 05 ─────────────────────────────────── -->
+  <section id="power">
+    <h2><span class="num">05</span>Сила</h2>
+    <p class="sub">Экран про прогресс: растёт нагрузка или стоит на месте.</p>
+
+    <h3>За последние 30 дней</h3>
+    <p>Четыре цифры: тренировок, подходов, поднято, рекордов. Считается скользящее окно — ровно последние 30 дней, а не календарный месяц.</p>
+
+    <h3>Объём по неделям</h3>
+    <p>Столбики за восемь недель. Высота — сколько килограммов поднято за неделю (вес × повторы, всё вместе). Ровный или растущий ряд — вы прибавляете; проседающий — неделя выпала.</p>
+
+    <h3>Личные рекорды</h3>
+    <p>Все упражнения, разложенные по группам мышц. По каждому: лучший подход, дата, когда он был поставлен, сколько тренировок и сколько всего поднято в этом упражнении.</p>
+    <p>Лучшим считается подход с <strong>наибольшим весом</strong>; при равном весе — тот, где больше повторов.</p>
+  </section>
+
+  <!-- 06 ─────────────────────────────────── -->
+  <section id="profile">
+    <h2><span class="num">06</span>Профиль</h2>
+    <p class="sub">Календарь, достижения, архив историй, расписание и настройки.</p>
+
+    <h3>Календарь тренировок</h3>
+    <p>Последние 12 недель клетками: чем ярче, тем больше подходов в тот день. Сегодняшняя клетка обведена золотом. Рядом — серия, лучшая серия, число тренировок и среднее число подходов за тренировку.</p>
+
+    <h3>Достижения</h3>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Достижение</th><th>Как получить</th></tr></thead>
+        <tbody>
+          <tr><td>Первый подход</td><td>Первая записанная тренировка</td></tr>
+          <tr><td>Неделя без пропусков</td><td>Серия 7 дней</td></tr>
+          <tr><td>Железная привычка</td><td>Серия 30 дней</td></tr>
+          <tr><td>Полный круг</td><td>Пройдены все семь групп мышц</td></tr>
+          <tr><td>Сотня подходов</td><td>100 подходов за всё время</td></tr>
+          <tr><td>Десять тонн</td><td>10 000 кг за всё время</td></tr>
+          <tr><td>Десять рекордов</td><td>10 личных рекордов</td></tr>
+          <tr><td>Полный набор</td><td>Подход с весом 15 кг и больше</td></tr>
+          <tr><td>Длинная сессия</td><td>10 подходов за одну тренировку</td></tr>
+          <tr><td>Полсотни</td><td>50 тренировок</td></tr>
+          <tr><td>Ветеран</td><td>5-й уровень, ранг C</td></tr>
+          <tr><td>Мастер</td><td>12-й уровень, ранг A</td></tr>
+          <tr><td><strong>Идеальная неделя</strong></td><td>Все семь дней одной недели, с понедельника по воскресенье</td></tr>
+          <tr><td>Безупречный месяц</td><td>Четыре идеальные недели</td></tr>
+          <tr><td>Хранитель хроник</td><td>Открыты все 12 историй</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p>Достижения проверяются в момент завершения тренировки: появляется уведомление, и запись падает в ленту на главной.</p>
+
+    <h3>Хроники Системы</h3>
+    <p>Архив из 12 историй. Закрытые показывают, после какой тренировки откроются: 1, 2, 3, 5, 8, 12, 17, 23, 30, 40, 55 и 75-й.</p>
+
+    <h3>Расписание недели</h3>
+    <p>Семь строк с выпадающими списками — можно назначить любой день любой группе. Например, поменять воскресенье с понедельника местами. Прошлые записи журнала при этом не меняются: там остаётся та группа, которая была в тот день.</p>
+
+    <h3>Настройки</h3>
+    <ul>
+      <li><strong>Цель дня</strong> — сколько подходов считать полным днём (кольцо на главной).</li>
+      <li><strong>Отдых между подходами</strong> — длительность отсчёта в секундах.</li>
+      <li><strong>Сменить имя</strong> — имя в статусе.</li>
+      <li><strong>Код синхронизации</strong> и <strong>Загрузить код</strong> — перенос прогресса, раздел 08.</li>
+      <li><strong>Фон: врата</strong> — выключает подсветку портала на фоне, если мешает.</li>
+    </ul>
+
+    <div class="note warn">
+      <span class="tag">Опасная зона</span>
+      <p><strong>Откатить сохранение</strong> — вернуться к предыдущей версии прогресса. Игра хранит ровно одну версию назад: пригодится, если случайно удалили день.</p>
+      <p><strong>Сбросить всё</strong> — стереть тренировки, уровни и достижения. Отменить нельзя. Если сомневаетесь — сначала скопируйте код синхронизации себе в заметки.</p>
+    </div>
+  </section>
+
+  <!-- 07 ─────────────────────────────────── -->
+  <section id="rules">
+    <h2><span class="num">07</span>Правила и расчёты</h2>
+    <p class="sub">Как именно игра считает опыт, уровни, рекорды и серию.</p>
+
+    <h3>Опыт за тренировку</h3>
+    <div class="panel">
+      <p style="font-family:var(--mono); font-size:14.5px; color:var(--accent-lt); margin-bottom:12px">60 + (поднято ÷ 40) + (рекорды × 25) + (серия × 4)</p>
+      <ul style="margin-bottom:0">
+        <li><strong>60</strong> — за то, что тренировка вообще состоялась.</li>
+        <li><strong>Объём</strong> — сумма «вес × повторы» по всем подходам, делённая на 40. Тренировка на 900 кг даёт ~22 XP.</li>
+        <li><strong>25 за каждый рекорд</strong> в этой тренировке.</li>
+        <li><strong>Бонус серии</strong> — по 4 XP за день серии, но не больше чем за 10 дней (максимум 40).</li>
+      </ul>
+    </div>
+
+    <h3>Уровни и ранги</h3>
+    <p>На первый уровень нужно 400 XP, дальше каждый следующий дороже на 250: 400, 650, 900, 1150 и так далее.</p>
+    <div class="tw">
+      <table>
+        <thead><tr><th>Ранг</th><th>С уровня</th><th>Название</th><th>Смысл</th></tr></thead>
+        <tbody>
+          <tr><td class="rank">E</td><td class="num">1</td><td>Пробуждённый</td><td>Система вас заметила</td></tr>
+          <tr><td class="rank">D</td><td class="num">3</td><td>Охотник</td><td>Тело начало отвечать</td></tr>
+          <tr><td class="rank">C</td><td class="num">5</td><td>Ветеран</td><td>Вес растёт, техника держится</td></tr>
+          <tr><td class="rank">B</td><td class="num">8</td><td>Элита</td><td>Тренировка стала частью дня</td></tr>
+          <tr><td class="rank">A</td><td class="num">12</td><td>Мастер</td><td>Силу видно со стороны</td></tr>
+          <tr><td class="rank">S</td><td class="num">17</td><td>Монарх</td><td>Уровень, до которого доходят единицы</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <h3>Рекорды</h3>
+    <p>Подход считается рекордом, если его вес больше вашего прежнего лучшего в этом упражнении — или вес тот же, но повторов больше. Сравнение идёт с <strong>полной историей и с подходами текущей тренировки</strong>, поэтому второй, более слабый подход рекордом не станет.</p>
+    <p>Первый подход в новом упражнении — всегда рекорд: сравнивать не с чем.</p>
+
+    <h3>Серия дней</h3>
+    <p>Серия растёт, если между тренировками прошёл один день. <strong>Один пропуск прощается</strong> — тренировались в понедельник и в среду, серия продолжается. Два пропуска подряд обнуляют счёт.</p>
+    <p>Лучшая серия запоминается отдельно и не сбрасывается.</p>
+
+    <h3>Подсказка по весу</h3>
+    <p>Если в прошлый раз в этом упражнении <strong>все</strong> подходы были с одним весом и по 12 повторов и больше, игра предложит добавить 1–2 кг. Повторы за пределами 12 дают всё меньше: дальше растит вес.</p>
+  </section>
+
+  <!-- 08 ─────────────────────────────────── -->
+  <section id="sync">
+    <h2><span class="num">08</span>Телефон и перенос прогресса</h2>
+    <p class="sub">Компьютер и телефон считают отдельно. Переносится всё одним кодом.</p>
+
+    <ol class="steps">
+      <li>
+        <div class="n">1</div>
+        <div>
+          <div class="t">На устройстве, где прогресс свежее</div>
+          <p>Профиль → «Код синхронизации» → «Скопировать». Это длинная строка букв и цифр — в ней вся ваша история.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">2</div>
+        <div>
+          <div class="t">Перешлите код себе</div>
+          <p>Любым способом: сообщение самому себе в Telegram, заметки, почта.</p>
+        </div>
+      </li>
+      <li>
+        <div class="n">3</div>
+        <div>
+          <div class="t">На втором устройстве</div>
+          <p>Профиль → «Загрузить код» → вставить → «Загрузить». Прогресс на этом устройстве <strong>заменится</strong> на присланный, поэтому переносите в ту сторону, где данных меньше.</p>
+        </div>
+      </li>
+    </ol>
+
+    <div class="note">
+      <span class="tag">Совет</span>
+      <p>Код синхронизации — единственная полная резервная копия. Раз в пару недель сохраняйте свежий код в заметки: браузер может очистить данные сайта, и тогда восстановить будет неоткуда.</p>
+    </div>
+
+    <h3>Работа без интернета</h3>
+    <p>После первого открытия игра целиком лежит в памяти телефона: включённый в самолёте режим ей не мешает. При появлении сети она сама подтягивает свежую версию.</p>
+  </section>
+
+  <!-- 09 ─────────────────────────────────── -->
+  <section id="faq">
+    <h2><span class="num">09</span>Если что-то не так</h2>
+    <p class="sub">Короткие ответы на то, что случается чаще всего.</p>
+
+    <div class="faq">
+      <details open>
+        <summary>Пропустил день — что будет?</summary>
+        <div>
+          <p>Ничего страшного: один пропуск серия прощает. Группа мышц не «переносится» — просто в следующий день тренируется то, что стоит на этот день недели. Если хочется догнать пропущенное, откройте тренировку и выберите упражнение вручную: записи всё равно засчитаются.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Хочу другое расписание</summary>
+        <div>
+          <p>Профиль → «Расписание недели» → выберите группу для каждого дня. Меняется в любой момент, старые записи не трогаются.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Записал подход с ошибкой</summary>
+        <div>
+          <p>Пока тренировка не завершена — крестик справа от строки удаляет подход. Если тренировка уже закрыта, удалите день целиком в журнале и запишите заново.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Случайно удалил день</summary>
+        <div>
+          <p>Профиль → «Опасная зона» → «Откатить сохранение». Вернётся версия, которая была до последнего изменения. Работает только один шаг назад, поэтому делайте это сразу.</p>
+        </div>
+      </details>
+      <details>
+        <summary>На телефоне старая версия игры</summary>
+        <div>
+          <p>Обновите страницу. Если игра установлена на домашний экран и всё равно показывает старое — удалите иконку, откройте ссылку в браузере, обновите и поставьте заново. Прогресс при этом не пропадёт: он хранится отдельно от самой страницы.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Прогресс пропал</summary>
+        <div>
+          <p>Чаще всего это чужой браузер, режим инкогнито или очистка данных сайта. Восстановить можно только из кода синхронизации. Если код есть — Профиль → «Загрузить код».</p>
+        </div>
+      </details>
+      <details>
+        <summary>Гантели разборные — какой вес писать?</summary>
+        <div>
+          <p>Вес <strong>одной</strong> гантели. Игра считает объём по этому числу: 12,5 кг × 12 повторов = 150 кг. Главное — писать одинаково из раза в раз, иначе сравнение с прошлой тренировкой перестанет быть честным.</p>
+        </div>
+      </details>
+      <details>
+        <summary>Упражнение на время, а не на повторы</summary>
+        <div>
+          <p>Для планки, удержания или прогулки фермера пишите вес и в повторы — секунды. Рекорд будет считаться так же, а в журнале вы всегда вспомните, что это была статика.</p>
+        </div>
+      </details>
+    </div>
+  </section>
+
+  <footer>
+    Игра: <a href="https://vladislavbropiton.github.io/game/">vladislavbropiton.github.io/game</a> · всё хранится в вашем браузере, никуда не отправляется.
+  </footer>
+
+</div>
