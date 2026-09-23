@@ -1415,6 +1415,7 @@ var S = {
   split: null,       // расписание недели, индекс = день недели JS
   goalSets: 5,       // цель дня в подходах — кольцо на главной
   rest: 90,          // отдых между подходами, секунд
+  maxW: 15,          // потолок веса гантели: выше собрать нечем
   streak: { last: "", count: 0, best: 0 },
   seenAch: [],
   log: [],           // { ts, ic, text } — последние 40 событий
@@ -1449,6 +1450,7 @@ function load() {
     if (isArr(p.split)) S.split = p.split;
     if (typeof p.goalSets === "number") S.goalSets = p.goalSets;
     if (typeof p.rest === "number") S.rest = p.rest;
+    if (typeof p.maxW === "number") S.maxW = p.maxW;
     if (p.streak && typeof p.streak === "object") S.streak = p.streak;
     if (isArr(p.seenAch)) S.seenAch = p.seenAch;
     if (isArr(p.log)) S.log = p.log;
@@ -1493,6 +1495,7 @@ function normalizeState() {
   if (!isArr(S.split) || S.split.length !== 7) S.split = DEFAULT_SPLIT.slice();
   if (typeof S.goalSets !== "number" || S.goalSets < 1) S.goalSets = 5;
   if (typeof S.rest !== "number" || S.rest < 10) S.rest = 90;
+  if (typeof S.maxW !== "number" || S.maxW <= 0) S.maxW = 15;
   if (!S.streak) S.streak = { last: "", count: 0, best: 0 };
   if (!S.seenAch) S.seenAch = [];
   if (!S.log) S.log = [];
@@ -1601,6 +1604,18 @@ function bestSet(ex) {
   var h = exHistory(ex), best = null, i, j;
   for (i = 0; i < h.length; i++) for (j = 0; j < h[i].sets.length; j++) best = maxSet(best, h[i].sets[j]);
   if (S.cur && S.cur.ex === ex) for (j = 0; j < S.cur.sets.length; j++) best = maxSet(best, S.cur.sets[j]);
+  return best;
+}
+
+/* Лучшее число повторов с максимальным весом — главный показатель,
+   когда вес больше не растёт */
+function bestRepsAtMax(ex) {
+  var h = exHistory(ex), best = 0, i, j;
+  for (i = 0; i < h.length; i++) for (j = 0; j < h[i].sets.length; j++)
+    if (h[i].sets[j].w >= S.maxW && h[i].sets[j].r > best) best = h[i].sets[j].r;
+  if (S.cur && S.cur.ex === ex)
+    for (j = 0; j < S.cur.sets.length; j++)
+      if (S.cur.sets[j].w >= S.maxW && S.cur.sets[j].r > best) best = S.cur.sets[j].r;
   return best;
 }
 
@@ -1968,7 +1983,8 @@ function showResult(c, xp, recs, before, after, newLegend, rankUp) {
       '<div><div class="n">' + fmtW(best.w) + " × " + best.r + '</div><div class="l">лучший подход</div></div>' +
       '<div><div class="n" style="color:var(--fire)">+' + xp + '</div><div class="l">опыта</div></div>' +
     "</div>" +
-    (recs ? '<div class="rec-line" style="text-align:center">🏅 ' + recs + " " + plural(recs, "личный рекорд", "личных рекорда", "личных рекордов") + "</div>" : "") +
+    (recs ? '<div class="rec-line" style="text-align:center">🏅 ' + recs + " " + plural(recs, "личный рекорд", "личных рекорда", "личных рекордов") +
+            (best.w >= S.maxW ? " · потолок веса взят, растут повторы" : "") + "</div>" : "") +
     (after > before
       ? '<div class="rec-line" style="text-align:center;color:var(--fire)">⬆ Уровень ' + after + " · " + rankName(after) + " «" + rankOf(after).title + "»</div>"
       : "") +
@@ -2157,16 +2173,37 @@ function perfectWeeks() {
    и больше — вес пора поднимать, иначе работа стоит.
    ═══════════════════════════════════════════════ */
 
-function progressHint(prev) {
-  if (!prev || !prev.sets.length) return "";
+var HARD_WAYS = [
+  "замедлите опускание до трёх секунд",
+  "добавьте паузу в нижней точке на две секунды",
+  "сократите отдых между подходами на 20–30 секунд",
+  "сделайте лишний подход",
+  "работайте одной рукой за раз",
+  "последний подход доводите до отказа"
+];
+
+/* Что советовать дальше. Пока вес можно добавить — советуем вес.
+   На потолке снаряда растить нечего, кроме повторов и сложности. */
+function progressHint(prev, ex) {
+  if (!prev || !prev.sets.length || prev.sets.length < 2) return "";
   var w = prev.sets[0].w, ok = true;
   for (var i = 0; i < prev.sets.length; i++) {
     if (prev.sets[i].w !== w) ok = false;
     if (prev.sets[i].r < 12) ok = false;
   }
-  if (!ok || prev.sets.length < 2) return "";
-  return '<div class="hint">⚡ Система: все подходы по 12 и больше при ' + fmtW(w) +
-         " кг. Добавьте 1–2 кг — рост идёт от веса, а не от лишних повторов.</div>";
+  if (!ok) return "";
+
+  if (w < S.maxW) {
+    var next = Math.min(S.maxW, w + 2);
+    return '<div class="hint">⚡ Система: все подходы по 12 и больше при ' + fmtW(w) +
+           " кг. Ставьте " + fmtW(next) + " кг — пока вес можно добавить, добавляйте вес.</div>";
+  }
+
+  /* потолок снаряда: дальше растут повторы и сложность */
+  var reps = bestRepsAtMax(ex), way = HARD_WAYS[(reps + prev.sets.length) % HARD_WAYS.length];
+  return '<div class="hint">⚡ Система: ' + fmtW(w) + " кг — ваш потолок по снаряду, и это нормально. " +
+         "Теперь рекорд — это повторы: побейте " + reps + " " + plural(reps, "повтор", "повтора", "повторов") +
+         ". А чтобы было тяжелее при том же весе — " + way + ".</div>";
 }
 
 /* ═══════════════════════════════════════════════
@@ -2323,7 +2360,7 @@ function renderTrain() {
     '<div class="wo-head"><div class="wo-ex">' +
       '<div class="g">' + gicon(c.g) + " " + esc(gname(c.g)) + "</div>" +
       '<div class="n">' + esc(c.ex) + "</div>" +
-      '<div class="wo-prev">' + prevLine(prev, best) + "</div>" +
+      '<div class="wo-prev">' + prevLine(prev, best, c.ex) + "</div>" +
     "</div></div>";
 
   /* ввод подхода */
@@ -2374,7 +2411,7 @@ function renderTrain() {
 }
 
 /* Строка «в прошлый раз» — чтобы было с чем сравнивать */
-function prevLine(prev, best) {
+function prevLine(prev, best, ex) {
   var out = "";
   if (prev) {
     var arr = [];
@@ -2384,7 +2421,10 @@ function prevLine(prev, best) {
     out += "Первый раз в этом упражнении — сегодня любой подход станет рекордом.";
   }
   if (best) out += "<br>Личный рекорд: <b>" + fmtW(best.w) + " кг × " + best.r + "</b>";
-  out += progressHint(prev);
+  var mr = ex ? bestRepsAtMax(ex) : 0;
+  if (mr) out += "<br>Лучшее на " + fmtW(S.maxW) + " кг: <b>" + mr + " " +
+                 plural(mr, "повтор", "повтора", "повторов") + "</b>";
+  out += progressHint(prev, ex);
   return out;
 }
 
@@ -2523,6 +2563,18 @@ function statsLastDays(n) {
   return out;
 }
 
+/* Сколько повторов сделано за последние n дней */
+function repsLastDays(n) {
+  var from = shiftDate(today(), -(n - 1)), a = allDates(), sum = 0;
+  for (var i = 0; i < a.length; i++) {
+    if (a[i] < from) continue;
+    var rec = S.days[a[i]];
+    for (var j = 0; j < rec.items.length; j++)
+      for (var k = 0; k < rec.items[j].sets.length; k++) sum += rec.items[j].sets[k].r || 0;
+  }
+  return sum;
+}
+
 /* Объём по неделям: массив от старых к новым */
 function weeklyVolume(weeks) {
   var t = today(), dt = new Date(t + "T00:00:00");
@@ -2588,11 +2640,12 @@ function renderPower() {
   }
 
   var m = statsLastDays(30);
+  var reps30 = repsLastDays(30);
   var h = '<div class="card" style="margin-bottom:14px"><h3>За последние 30 дней</h3>' +
           '<div class="sum" style="grid-template-columns:repeat(4,1fr);margin:14px 0 0">' +
             '<div><div class="n">' + m.workouts + '</div><div class="l">' + plural(m.workouts, "тренировка", "тренировки", "тренировок") + "</div></div>" +
             '<div><div class="n">' + m.sets + '</div><div class="l">' + plural(m.sets, "подход", "подхода", "подходов") + "</div></div>" +
-            '<div><div class="n">' + tons(m.ton) + '</div><div class="l">поднято</div></div>' +
+            '<div><div class="n">' + fmt(reps30) + '</div><div class="l">' + plural(reps30, "повтор", "повтора", "повторов") + "</div></div>" +
             '<div><div class="n" style="color:var(--gold)">' + m.recs + '</div><div class="l">' + plural(m.recs, "рекорд", "рекорда", "рекордов") + "</div></div>" +
           "</div></div>";
 
@@ -2629,11 +2682,13 @@ function renderPower() {
     var rows = "";
     for (var j = 0; j < list.length; j++) {
       var s = list[j];
+      var mr = bestRepsAtMax(s.ex);
       rows += '<div class="prow">' +
                 '<div class="prow-n">' + esc(s.ex) + '<div class="prow-s">' + s.times + " " +
                   plural(s.times, "тренировка", "тренировки", "тренировок") + " · " + tons(s.ton) + " всего</div></div>" +
                 '<div class="prow-b">' + (s.best ? fmtW(s.best.w) + " кг × " + s.best.r : "—") +
-                  '<div class="prow-s">' + (s.best ? dateLabel(s.best.d) : "") + "</div></div>" +
+                  '<div class="prow-s">' + (mr ? "на " + fmtW(S.maxW) + " кг: " + mr + " " + plural(mr, "повтор", "повтора", "повторов")
+                                               : (s.best ? dateLabel(s.best.d) : "")) + "</div></div>" +
               "</div>";
     }
     recs += '<div class="pgroup"><div class="pgroup-h">' + gicon(g) + " " + esc(gname(g)) + "</div>" + rows + "</div>";
@@ -2675,6 +2730,41 @@ function heaviestSet() {
   return best;
 }
 
+/* Лучший подход по повторам среди всех упражнений на максимальном весе */
+function bestRepsWithMax() {
+  var best = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) {
+    var rec = S.days[a[i]];
+    for (var j = 0; j < rec.items.length; j++)
+      for (var k = 0; k < rec.items[j].sets.length; k++) {
+        var st = rec.items[j].sets[k];
+        if (st.w >= S.maxW && st.r > best) best = st.r;
+      }
+  }
+  return best;
+}
+
+function totalReps() {
+  var n = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) {
+    var rec = S.days[a[i]];
+    for (var j = 0; j < rec.items.length; j++)
+      for (var k = 0; k < rec.items[j].sets.length; k++) n += rec.items[j].sets[k].r || 0;
+  }
+  return n;
+}
+
+function bestDayReps() {
+  var best = 0, a = allDates();
+  for (var i = 0; i < a.length; i++) {
+    var rec = S.days[a[i]], n = 0;
+    for (var j = 0; j < rec.items.length; j++)
+      for (var k = 0; k < rec.items[j].sets.length; k++) n += rec.items[j].sets[k].r || 0;
+    if (n > best) best = n;
+  }
+  return best;
+}
+
 function bestDaySets() {
   var best = 0, a = allDates();
   for (var i = 0; i < a.length; i++) best = Math.max(best, daySets(S.days[a[i]]));
@@ -2689,7 +2779,11 @@ var ACHIEVEMENTS = [
   { id: "sets",   ic: "🧱", name: "Сотня подходов",    desc: "100 подходов всего",             test: function () { return totalSets() >= 100; } },
   { id: "ton",    ic: "🏔", name: "Десять тонн",       desc: "10 000 кг за всё время",         test: function () { return totalTonnage() >= 10000; } },
   { id: "recs",   ic: "🏅", name: "Десять рекордов",   desc: "10 личных рекордов",             test: function () { return recordsCount() >= 10; } },
-  { id: "w15",    ic: "💠", name: "Полный набор",      desc: "Подход с весом 15 кг и больше",  test: function () { return heaviestSet() >= 15; } },
+  { id: "w15",    ic: "💠", name: "Полный набор",      desc: "Подход с максимальным весом снаряда", test: function () { return heaviestSet() >= S.maxW; } },
+  { id: "r15",    ic: "🔂", name: "Пятнадцать на пятнадцати", desc: "15 повторов с максимальным весом", test: function () { return bestRepsWithMax() >= 15; } },
+  { id: "r20",    ic: "🔁", name: "Двадцатка",          desc: "20 повторов с максимальным весом", test: function () { return bestRepsWithMax() >= 20; } },
+  { id: "r100",   ic: "💯", name: "Сотня за тренировку", desc: "100 повторов за одно занятие",   test: function () { return bestDayReps() >= 100; } },
+  { id: "r5000",  ic: "🧮", name: "Пять тысяч повторов", desc: "5 000 повторов за всё время",    test: function () { return totalReps() >= 5000; } },
   { id: "long",   ic: "⏳", name: "Длинная сессия",    desc: "10 подходов за одну тренировку", test: function () { return bestDaySets() >= 10; } },
   { id: "fifty",  ic: "🎖", name: "Полсотни",          desc: "50 тренировок",                  test: function () { return workoutCount() >= 50; } },
   { id: "rankc",  ic: "⭐", name: "Ветеран",           desc: "5-й уровень, ранг C",            test: function () { return levelOf(totalXP()).lvl >= 5; } },
@@ -2836,6 +2930,9 @@ function renderProfile() {
         '<button class="btn sm" onclick="askGoal()">Изменить</button></div>' +
       '<div class="set-row"><div><b>Отдых между подходами</b><div class="set-s">' + mmss(S.rest) + "</div></div>" +
         '<button class="btn sm" onclick="askRest()">Изменить</button></div>' +
+      '<div class="set-row"><div><b>Потолок снаряда</b><div class="set-s">' + fmtW(S.maxW) +
+        " кг на гантель — на этом весе игра начинает считать рекорды по повторам</div></div>" +
+        '<button class="btn sm" onclick="askMaxW()">Изменить</button></div>' +
       '<div style="display:flex;gap:9px;flex-wrap:wrap;margin-top:14px">' +
         '<button class="btn sm" onclick="askName()">Сменить имя</button>' +
         '<button class="btn sm" onclick="showExport()">Код синхронизации</button>' +
@@ -2892,6 +2989,24 @@ function saveRest() {
   if (!v || v < 10) { toast("Нужно число от 10 до 600 секунд"); return; }
   S.rest = Math.min(v, 600);
   save(); closeModal(); renderAll();
+}
+
+function askMaxW() {
+  openModal(
+    '<div class="sys-label">[ Потолок снаряда ]</div><div class="sys-rule"></div>' +
+    "<p>Максимальный вес <b>одной</b> гантели, который вы можете собрать. Дойдя до него, игра перестанет требовать вес и начнёт считать рекорды по повторам.</p>" +
+    '<input class="big" id="mw" type="number" inputmode="decimal" step="0.5" min="1" max="100" value="' + S.maxW + '">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="saveMaxW()">Сохранить</button></div>'
+  );
+}
+
+function saveMaxW() {
+  var v = parseFloat(String(document.getElementById("mw").value).replace(",", "."));
+  if (!v || v < 1) { toast("Нужно число от 1 до 100"); return; }
+  S.maxW = Math.min(v, 100);
+  save(); closeModal(); renderAll();
+  toast("Потолок снаряда: " + fmtW(S.maxW) + " кг");
 }
 
 function askName() {
@@ -2981,7 +3096,7 @@ function askReset() {
 function doReset() {
   S = {
     name: "", days: {}, cur: null, custom: {}, split: DEFAULT_SPLIT.slice(),
-    goalSets: 5, rest: 90, streak: { last: "", count: 0, best: 0 }, seenAch: [], log: [], bg: 1
+    goalSets: 5, rest: 90, maxW: 15, streak: { last: "", count: 0, best: 0 }, seenAch: [], log: [], bg: 1
   };
   save(); closeModal(); renderAll(); go("home");
   toast("Прогресс сброшен");
