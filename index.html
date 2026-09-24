@@ -1196,6 +1196,34 @@
   .howto-txt { min-width: 100%; }
 }
 
+/* Кнопка возврата над содержимым экрана */
+.backbtn { margin-bottom: 12px; }
+/* ═══════════════ Показ движения ═══════════════ */
+.movebox { position: relative; width: 150px; height: 192px; flex-shrink: 0; }
+.poseframe {
+  position: absolute; inset: 0; opacity: 0; transition: opacity .45s;
+  display: flex; flex-direction: column; align-items: center;
+}
+.poseframe.on { opacity: 1; }
+.pose { width: 150px; height: 170px; display: block; }
+.pose .lb { stroke: var(--fire); stroke-linecap: round; opacity: .95; }
+.pose .lb.far { stroke: #2A4A6B; }
+.pose .lb-head { fill: var(--fire); }
+.pose .dumb rect { fill: var(--white); }
+.pose .gear { fill: var(--card2); stroke: var(--border2); stroke-width: 1; }
+.pose .floor { stroke: var(--border2); stroke-width: 2; }
+.poselbl {
+  position: absolute; bottom: 0; left: 0; right: 0; text-align: center;
+  font-size: 11.5px; color: var(--gray2); letter-spacing: .2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .poseframe { transition: none; }
+}
+@media (max-width: 720px) {
+  .movebox { margin: 0 auto; }
+}
+
 </style>
 </head>
 <body>
@@ -1498,6 +1526,45 @@ var MUSCLE_NAMES = {
   hams: "бицепс бедра",
   quads: "квадрицепс",
   calves: "икры"
+};
+
+/* Позы для показа движения: углы суставов двух фаз упражнения */
+var MOVES = {
+  "Болгарские приседы": { view: "side", la: "нога на опоре", lb: "опустились", a: { t: 8, sh: 180, el: 180, hip: 172, kn: 186, hip2: 218, kn2: 125, bench: "chair" }, b: { t: 14, sh: 180, el: 180, hip: 142, kn: 196, hip2: 228, kn2: 112, bench: "chair" } },
+  "Выпады с гантелями": { view: "side", la: "стоим", lb: "шаг и вниз", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 8, sh: 180, el: 180, hip: 152, kn: 182, hip2: 205, kn2: 140 } },
+  "Гоблет-приседания": { view: "side", la: "стоим", lb: "в приседе", a: { t: 4, sh: 200, el: 330, hip: 180, kn: 180 }, b: { t: 28, sh: 200, el: 330, hip: 125, kn: 205 } },
+  "Жим Арнольда": { view: "side", la: "ладони к себе", lb: "выжали вверх", a: { t: 0, sh: 200, el: 15, hip: 100, kn: 180, bench: "bench" }, b: { t: 0, sh: 5, el: 0, hip: 100, kn: 180, bench: "bench" } },
+  "Жим гантелей лёжа": { view: "side", la: "у груди", lb: "выжали вверх", a: { t: 272, sh: 340, el: 25, hip: 88, kn: 136, lying: 1, bench: "bench", lift: 26 }, b: { t: 272, sh: 0, el: 0, hip: 88, kn: 136, lying: 1, bench: "bench", lift: 26 } },
+  "Жим гантелей сидя": { view: "side", la: "у плеч", lb: "вверху", a: { t: 0, sh: 205, el: 5, hip: 100, kn: 180, bench: "bench" }, b: { t: 0, sh: 5, el: 0, hip: 100, kn: 180, bench: "bench" } },
+  "Жим под углом": { view: "side", la: "у верха груди", lb: "выжали", a: { t: 300, sh: 340, el: 20, hip: 80, kn: 128, lying: 1, bench: "bench", lift: 26 }, b: { t: 300, sh: 0, el: 0, hip: 80, kn: 128, lying: 1, bench: "bench", lift: 26 } },
+  "Зашагивания на стул": { view: "side", la: "перед опорой", lb: "встали на опору", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180, dx: -26, bench: "step" }, b: { t: 14, sh: 180, el: 180, hip: 138, kn: 198, hip2: 192, kn2: 172, dx: -18, bench: "step" } },
+  "Кикбэк в наклоне": { view: "side", la: "локоть согнут", lb: "разогнули назад", a: { t: 72, sh: 195, el: 135, hip: 182, kn: 176 }, b: { t: 72, sh: 195, el: 196, hip: 182, kn: 176 } },
+  "Концентрированный подъём": { view: "side", la: "рука выпрямлена", lb: "согнули", a: { t: 34, sh: 192, el: 192, hip: 100, kn: 180, bench: "bench" }, b: { t: 34, sh: 192, el: 300, hip: 100, kn: 180, bench: "bench" } },
+  "Махи в наклоне": { view: "side", la: "руки висят", lb: "развели назад", a: { t: 72, sh: 180, el: 180, hip: 182, kn: 176 }, b: { t: 72, sh: 255, el: 250, hip: 182, kn: 176 } },
+  "Махи в стороны": { view: "front", la: "руки внизу", lb: "до уровня плеч", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 0, sh: 95, el: 95, hip: 180, kn: 180 } },
+  "Молот": { view: "side", la: "внизу", lb: "подняли", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180, vert: 1 }, b: { t: 0, sh: 180, el: 338, hip: 180, kn: 180, vert: 1 } },
+  "Обратные отжимания": { view: "side", la: "вверху", lb: "опустились", a: { t: 22, sh: 200, el: 190, hip: 112, kn: 172, bench: "chair" }, b: { t: 18, sh: 222, el: 168, hip: 116, kn: 176, bench: "chair" } },
+  "Обратные сгибания": { view: "side", la: "внизу", lb: "подняли к груди", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 0, sh: 180, el: 332, hip: 180, kn: 180 } },
+  "Отжимания с гантелями": { view: "side", la: "вверху", lb: "опустились", a: { t: 292, sh: 172, el: 176, hip: 84, kn: 88 }, b: { t: 292, sh: 202, el: 150, hip: 84, kn: 88 } },
+  "Подъём гантелей стоя": { view: "side", la: "руки внизу", lb: "согнули", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 0, sh: 180, el: 338, hip: 180, kn: 180 } },
+  "Подъёмы на носки": { view: "side", la: "пятки внизу", lb: "на носках", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 0, sh: 180, el: 180, hip: 180, kn: 178, lift: 11 } },
+  "Подъёмы перед собой": { view: "side", la: "внизу", lb: "до уровня глаз", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 0, sh: 88, el: 88, hip: 180, kn: 180 } },
+  "Прогулка фермера": { view: "side", la: "шаг левой", lb: "шаг правой", a: { t: 0, sh: 180, el: 180, hip: 192, kn: 178, hip2: 166, kn2: 186 }, b: { t: 0, sh: 180, el: 180, hip: 166, kn: 186, hip2: 192, kn2: 178 } },
+  "Пуловер": { view: "side", la: "за головой", lb: "вернули по дуге", a: { t: 272, sh: 290, el: 290, hip: 88, kn: 136, lying: 1, bench: "bench", lift: 26 }, b: { t: 272, sh: 0, el: 0, hip: 88, kn: 136, lying: 1, bench: "bench", lift: 26 } },
+  "Разводка лёжа": { view: "front", la: "развели в стороны", lb: "свели над грудью", a: { t: 0, sh: 100, el: 100, hip: 180, kn: 180 }, b: { t: 0, sh: 58, el: 48, hip: 180, kn: 180 } },
+  "Разгибание из-за головы": { view: "side", la: "за головой", lb: "выпрямили", a: { t: 0, sh: 2, el: 205, hip: 180, kn: 180 }, b: { t: 0, sh: 2, el: 2, hip: 180, kn: 180 } },
+  "Разгибания в запястьях": { view: "side", la: "кисть вниз", lb: "кисть вверх", a: { t: 16, sh: 168, el: 106, hip: 100, kn: 180, bench: "bench" }, b: { t: 16, sh: 168, el: 82, hip: 100, kn: 180, bench: "bench" } },
+  "Румынская тяга": { view: "side", la: "стоим", lb: "таз назад", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 70, sh: 180, el: 180, hip: 186, kn: 174 } },
+  "Сгибания в запястьях": { view: "side", la: "кисть вниз", lb: "кисть вверх", a: { t: 16, sh: 168, el: 104, hip: 100, kn: 180, bench: "bench" }, b: { t: 16, sh: 168, el: 84, hip: 100, kn: 180, bench: "bench" } },
+  "Сгибания с паузой": { view: "side", la: "внизу", lb: "пауза вверху", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 0, sh: 180, el: 330, hip: 180, kn: 180 } },
+  "Сгибания сидя": { view: "side", la: "внизу", lb: "вверху", a: { t: 0, sh: 186, el: 186, hip: 100, kn: 180, bench: "bench" }, b: { t: 0, sh: 186, el: 336, hip: 100, kn: 180, bench: "bench" } },
+  "Тяга гантели в наклоне": { view: "side", la: "рука висит", lb: "тянем к поясу", a: { t: 80, sh: 180, el: 180, hip: 124, kn: 182, hip2: 162, kn2: 192, bench: "chair" }, b: { t: 80, sh: 205, el: 158, hip: 124, kn: 182, hip2: 162, kn2: 192, bench: "chair" } },
+  "Тяга двух гантелей": { view: "side", la: "руки висят", lb: "тянем к поясу", a: { t: 62, sh: 180, el: 180, hip: 186, kn: 174 }, b: { t: 62, sh: 208, el: 152, hip: 186, kn: 174 } },
+  "Тяга лёжа на животе": { view: "side", la: "руки внизу", lb: "тянем к поясу", a: { t: 272, sh: 180, el: 180, hip: 88, kn: 88, lying: 1, bench: "bench", lift: 26 }, b: { t: 272, sh: 205, el: 150, hip: 88, kn: 88, lying: 1, bench: "bench", lift: 26 } },
+  "Удержание гантелей": { view: "front", la: "взяли вес", lb: "держим", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 0, sh: 180, el: 180, hip: 180, kn: 180, up: 3 } },
+  "Узкий жим лёжа": { view: "side", la: "у груди", lb: "выжали", a: { t: 272, sh: 350, el: 15, hip: 88, kn: 136, lying: 1, bench: "bench", lift: 26 }, b: { t: 272, sh: 0, el: 0, hip: 88, kn: 136, lying: 1, bench: "bench", lift: 26 } },
+  "Французский жим лёжа": { view: "side", la: "руки вверх", lb: "опустили к вискам", a: { t: 272, sh: 0, el: 0, hip: 88, kn: 136, lying: 1, bench: "bench", lift: 26 }, b: { t: 272, sh: 0, el: 250, hip: 88, kn: 136, lying: 1, bench: "bench", lift: 26 } },
+  "Шраги": { view: "front", la: "плечи опущены", lb: "плечи к ушам", a: { t: 0, sh: 180, el: 180, hip: 180, kn: 180 }, b: { t: 0, sh: 180, el: 180, hip: 180, kn: 180, up: 9 } }
 };
 
 var ANATOMY = {
@@ -1929,8 +1996,15 @@ function xpPop(el, xp) {
 function openModal(html) {
   document.getElementById("modal").innerHTML = html;
   document.getElementById("overlay").className = "overlay show";
+  pushNav({ modal: 1 });          /* системная кнопка «назад» сначала закроет окно */
 }
 function closeModal() { document.getElementById("overlay").className = "overlay"; }
+
+/* Запись в историю браузера. На телефоне это делает кнопку «назад»
+   полезной: она возвращает на прошлый экран, а не выходит из игры. */
+function pushNav(state) {
+  try { history.pushState(state, ""); } catch (e) {}
+}
 
 document.getElementById("overlay").addEventListener("click", function (e) {
   if (e.target.id === "overlay") closeModal();
@@ -1972,6 +2046,31 @@ function startWorkout(ex) {
   save();
   renderAll();
   go("train");
+}
+
+/* Назад к списку упражнений. Если подходы уже записаны — не теряем их молча */
+function backToList() {
+  if (S.cur && S.cur.sets.length) {
+    openModal(
+      '<div class="sys-label">[ Вернуться к списку ]</div><div class="sys-rule"></div>' +
+      "<p>В этом упражнении записано подходов: " + S.cur.sets.length +
+      ". Что с ними сделать?</p>" +
+      '<div class="modal-btns"><button class="btn" onclick="closeModal()">Остаться</button>' +
+      '<button class="btn primary" onclick="closeModal(); finishWorkout()">Засчитать тренировку</button></div>' +
+      '<button class="btn sm ghost" style="width:100%;margin-top:10px;justify-content:center" onclick="dropAndBack()">Выбросить подходы</button>'
+    );
+    return;
+  }
+  S.cur = null;
+  stopRest();
+  save(); renderAll();
+}
+
+function dropAndBack() {
+  S.cur = null;
+  stopRest();
+  save(); closeModal(); renderAll();
+  toast("Подходы не сохранены");
 }
 
 function cancelWorkout() {
@@ -2538,6 +2637,157 @@ function renderWeekChallenge() {
 }
 
 
+
+/* ═══════════════════════════════════════════════
+   ПОКАЗ ДВИЖЕНИЯ
+   Фигура собирается по углам суставов: так одна и та же
+   отрисовка показывает любое упражнение, и всё работает офлайн.
+   Углы: 0 — вверх, 90 — вперёд (вправо), 180 — вниз.
+   ═══════════════════════════════════════════════ */
+
+var POSE_VIEW = { W: 150, H: 170, GROUND: 158 };
+
+function pdir(a, len) {
+  var r = a * Math.PI / 180;
+  return { x: Math.sin(r) * len, y: -Math.cos(r) * len };
+}
+
+/* Считаем точки скелета от таза, потом ставим фигуру на пол */
+function posePoints(p) {
+  var L = { torso: 40, upper: 22, fore: 21, thigh: 28, shin: 28, neck: 9, head: 9, foot: 10 };
+  var pel = { x: 0, y: 0 }, d;
+
+  d = pdir(p.t, L.torso);
+  var sh = { x: pel.x + d.x, y: pel.y + d.y };
+  d = pdir(p.t, L.neck);
+  var neck = { x: sh.x + d.x, y: sh.y + d.y };
+  d = pdir(p.t, L.head);
+  var head = { x: neck.x + d.x, y: neck.y + d.y };
+
+  d = pdir(p.sh, L.upper);
+  var el = { x: sh.x + d.x, y: sh.y + d.y };
+  d = pdir(p.el, L.fore);
+  var hand = { x: el.x + d.x, y: el.y + d.y };
+
+  d = pdir(p.hip, L.thigh);
+  var kn = { x: pel.x + d.x, y: pel.y + d.y };
+  d = pdir(p.kn, L.shin);
+  var ank = { x: kn.x + d.x, y: kn.y + d.y };
+
+  /* вторая нога — для выпадов и зашагиваний.
+     Копии, а не те же объекты: иначе сдвиг фигуры применится к ним дважды
+     и нога уедет по диагонали за пределы картинки. */
+  var kn2 = { x: kn.x, y: kn.y }, ank2 = { x: ank.x, y: ank.y };
+  if (p.hip2 != null) {
+    d = pdir(p.hip2, L.thigh);
+    kn2 = { x: pel.x + d.x, y: pel.y + d.y };
+    d = pdir(p.kn2 != null ? p.kn2 : p.kn, L.shin);
+    ank2 = { x: kn2.x + d.x, y: kn2.y + d.y };
+  }
+
+  var pts = { pel: pel, sh: sh, neck: neck, head: head, el: el, hand: hand,
+              kn: kn, ank: ank, kn2: kn2, ank2: ank2 };
+
+  /* шраги: поднимаем верх тела, не трогая ноги */
+  if (p.up) {
+    var upKeys = ["sh", "neck", "head", "el", "hand"];
+    for (var u = 0; u < upKeys.length; u++) pts[upKeys[u]].y -= p.up;
+  }
+
+  /* ставим на пол и по центру */
+  var low = Math.max(ank.y, ank2.y, p.lying ? Math.max(sh.y, head.y) : -1e9);
+  var dy = POSE_VIEW.GROUND - (p.floorY != null ? p.floorY : low);
+  var xs = [pts.head.x, pts.sh.x, pts.hand.x, pts.ank.x, pts.ank2.x, pts.pel.x];
+  var mid = (Math.min.apply(null, xs) + Math.max.apply(null, xs)) / 2;
+  var dx = POSE_VIEW.W / 2 - mid + (p.dx || 0);
+
+  if (p.lift) dy -= p.lift;
+  for (var k in pts) if (pts.hasOwnProperty(k)) { pts[k].x += dx; pts[k].y += dy; }
+  return pts;
+}
+
+function seg(a, b, w, cls) {
+  return '<line class="' + (cls || "lb") + '" x1="' + a.x.toFixed(1) + '" y1="' + a.y.toFixed(1) +
+         '" x2="' + b.x.toFixed(1) + '" y2="' + b.y.toFixed(1) + '" stroke-width="' + w + '"/>';
+}
+
+/* Гантель в руке */
+function dumbbell(h, front) {
+  if (front) {
+    return '<g class="dumb"><rect x="' + (h.x - 3) + '" y="' + (h.y - 8) + '" width="6" height="16" rx="2"/></g>';
+  }
+  return '<g class="dumb"><rect x="' + (h.x - 8) + '" y="' + (h.y - 3) + '" width="16" height="6" rx="2"/></g>';
+}
+
+function poseSvg(p, front) {
+  var q = posePoints(p), h = "";
+  var bench = "";
+  if (p.bench === "bench") bench = '<rect class="gear" x="18" y="' + (POSE_VIEW.GROUND - 26) + '" width="114" height="9" rx="3"/>' +
+                                   '<rect class="gear" x="30" y="' + (POSE_VIEW.GROUND - 17) + '" width="8" height="17"/>' +
+                                   '<rect class="gear" x="112" y="' + (POSE_VIEW.GROUND - 17) + '" width="8" height="17"/>';
+  if (p.bench === "chair") bench = '<rect class="gear" x="86" y="' + (POSE_VIEW.GROUND - 34) + '" width="46" height="8" rx="2"/>' +
+                                   '<rect class="gear" x="90" y="' + (POSE_VIEW.GROUND - 26) + '" width="7" height="26"/>' +
+                                   '<rect class="gear" x="122" y="' + (POSE_VIEW.GROUND - 26) + '" width="7" height="26"/>';
+  if (p.bench === "step") bench = '<rect class="gear" x="88" y="' + (POSE_VIEW.GROUND - 22) + '" width="48" height="22" rx="2"/>';
+
+  /* дальняя нога и рука — приглушённо, чтобы читалась глубина */
+  if (p.hip2 != null) h += seg(q.pel, q.kn2, 9, "lb far") + seg(q.kn2, q.ank2, 8, "lb far");
+
+  h += seg(q.pel, q.kn, 10, "lb") + seg(q.kn, q.ank, 9, "lb");
+  h += seg(q.pel, q.sh, 13, "lb");
+
+  /* вид спереди: вторая рука и вторая нога зеркально */
+  if (front) {
+    var mir = function (pt) { return { x: 2 * q.sh.x - pt.x, y: pt.y }; };
+    var el2 = mir(q.el), hand2 = mir(q.hand);
+    h += seg(q.sh, el2, 9, "lb") + seg(el2, hand2, 8, "lb");
+    h += dumbbell(hand2, true);
+    var ankM = { x: 2 * q.pel.x - q.ank.x, y: q.ank.y }, knM = { x: 2 * q.pel.x - q.kn.x, y: q.kn.y };
+    h += seg(q.pel, knM, 10, "lb") + seg(knM, ankM, 9, "lb");
+  }
+
+  h += seg(q.sh, q.el, 9, "lb") + seg(q.el, q.hand, 8, "lb");
+  h += '<circle class="lb-head" cx="' + q.head.x.toFixed(1) + '" cy="' + q.head.y.toFixed(1) + '" r="10"/>';
+  if (!p.noWeight) h += dumbbell(q.hand, front || p.vert);
+
+  /* пол */
+  var ground = p.bench === "bench" || p.lying ? "" :
+    '<line class="floor" x1="6" y1="' + (POSE_VIEW.GROUND + 4) + '" x2="' + (POSE_VIEW.W - 6) +
+    '" y2="' + (POSE_VIEW.GROUND + 4) + '"/>';
+
+  return '<svg viewBox="0 0 ' + POSE_VIEW.W + " " + POSE_VIEW.H + '" class="pose" aria-hidden="true">' +
+         bench + ground + h + "</svg>";
+}
+
+/* Две фазы: фаза 1 ↔ фаза 2, переключаются сами */
+var poseTimers = {};
+
+function moveHtml(ex) {
+  var M = MOVES[ex];
+  if (!M) return "";
+  var id = "pose-" + Math.random().toString(36).slice(2, 8);
+  var front = M.view === "front";
+  return '<div class="movebox" id="' + id + '">' +
+      '<div class="poseframe on">' + poseSvg(M.a, front) + '<div class="poselbl">1 · ' + esc(M.la || "начало") + "</div></div>" +
+      '<div class="poseframe">' + poseSvg(M.b, front) + '<div class="poselbl">2 · ' + esc(M.lb || "рабочая точка") + "</div></div>" +
+    "</div>";
+}
+
+/* Переключение фаз у всех показов на экране */
+function startPoseLoop() {
+  clearInterval(poseTimers.t);
+  poseTimers.t = setInterval(function () {
+    var boxes = document.querySelectorAll(".movebox");
+    for (var i = 0; i < boxes.length; i++) {
+      var f = boxes[i].querySelectorAll(".poseframe");
+      if (f.length < 2) continue;
+      var onIdx = f[0].className.indexOf("on") > -1 ? 0 : 1;
+      f[onIdx].className = "poseframe";
+      f[1 - onIdx].className = "poseframe on";
+    }
+  }, 1400);
+}
+
 /* ═══════════════ СХЕМА ТЕЛА ═══════════════
    Силуэт собран из простых фигур: так он читается
    и на маленьком экране, и без картинок из интернета. */
@@ -2617,8 +2867,9 @@ function howToHtml(ex) {
   for (i = 0; i < on.length; i++) chips += '<span class="mchip main">' + esc(muscleWord(on[i])) + "</span>";
   for (i = 0; i < on2.length; i++) chips += '<span class="mchip">' + esc(muscleWord(on2[i])) + "</span>";
 
-  return '<details class="howto"><summary>Как выполнять и что работает</summary>' +
+  return '<details class="howto" ontoggle="startPoseLoop()"><summary>Как выполнять и что работает</summary>' +
     '<div class="howto-in">' +
+      moveHtml(ex) +
       '<div class="bodies">' +
         '<div class="bodybox">' + bodySvg("front", on, on2) + '<div class="bodylbl">спереди</div></div>' +
         '<div class="bodybox">' + bodySvg("back", on, on2) + '<div class="bodylbl">сзади</div></div>' +
@@ -2745,10 +2996,16 @@ function renderTrain() {
     ? "Записывайте каждый подход: вес и сколько повторов вышло."
     : "Задание дня: " + gname(g).toLowerCase() + ". Выберите упражнение или впишите своё.";
 
-  if (!S.cur) { el.innerHTML = renderPicker(g); return; }
+  if (!S.cur) {
+    el.innerHTML =
+      '<button class="btn sm ghost backbtn" onclick="go(\'home\')">← На главную</button>' +
+      renderPicker(g);
+    return;
+  }
 
   var c = S.cur, prev = lastTime(c.ex), best = bestSet(c.ex);
-  var h = '<div class="card" style="margin-bottom:14px">' +
+  var h = '<button class="btn sm ghost backbtn" onclick="backToList()">← К списку упражнений</button>' +
+    '<div class="card" style="margin-bottom:14px">' +
     '<div class="wo-head"><div class="wo-ex">' +
       '<div class="g">' + gicon(c.g) + " " + esc(gname(c.g)) + "</div>" +
       '<div class="n">' + esc(c.ex) + "</div>" +
@@ -2800,6 +3057,7 @@ function renderTrain() {
        "</div>";
 
   el.innerHTML = h;
+  startPoseLoop();
 }
 
 /* Строка «в прошлый раз» — чтобы было с чем сравнивать */
@@ -3508,7 +3766,7 @@ function renderAll() {
    НАВИГАЦИЯ И СТАРТ
    ═══════════════════════════════════════════════ */
 
-function go(name) {
+function go(name, noPush) {
   var secs = document.querySelectorAll(".section");
   for (var i = 0; i < secs.length; i++) secs[i].className = "section";
   document.getElementById("section-" + name).className = "section active";
@@ -3519,7 +3777,15 @@ function go(name) {
     tabs[j].className = tabs[j].className.replace(" active", "") + (on ? " active" : "");
   }
   window.scrollTo(0, 0);
+  if (!noPush) pushNav({ scr: name });
 }
+
+/* Кнопка «назад» телефона: сначала закрывает окно, потом возвращает на прошлый экран */
+window.addEventListener("popstate", function (e) {
+  var ov = document.getElementById("overlay");
+  if (ov.className.indexOf("show") > -1) { ov.className = "overlay"; return; }
+  go((e.state && e.state.scr) || "home", true);
+});
 
 document.addEventListener("click", function (e) {
   var t = e.target;
@@ -3549,6 +3815,7 @@ function spawnMotes() {
 }
 
 function boot() {
+  try { history.replaceState({ scr: "home" }, ""); } catch (e) {}
   load();
   normalizeState();
 
