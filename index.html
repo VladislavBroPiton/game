@@ -620,7 +620,13 @@
     border-radius: 10px; padding: 12px 14px; font-size: 15px; color: var(--white);
   }
   .modal input.big:focus { outline: none; border-color: var(--fire); }
-  .modal-btns { display: flex; gap: 9px; margin-top: 16px; }
+  /* кнопки держатся у нижнего края: в длинном окне их видно без прокрутки */
+  .modal-btns {
+    display: flex; gap: 9px; margin-top: 16px;
+    position: sticky; bottom: -26px; z-index: 2;
+    padding: 12px 0 0; margin-bottom: -26px; padding-bottom: 26px;
+    background: linear-gradient(to bottom, rgba(9,14,24,0), rgba(9,14,24,.96) 26%, rgba(9,14,24,.99));
+  }
   .modal-btns .btn { flex: 1; }
 
   /* ─────────── TOAST ─────────── */
@@ -1164,17 +1170,33 @@
 .howto[open] summary::before { content: "▾"; }
 .howto-in { display: flex; gap: 22px; flex-wrap: wrap; padding-bottom: 6px; }
 
-.bodies { display: flex; gap: 14px; flex-shrink: 0; cursor: pointer; position: relative; --bodyh: 284px; align-items: flex-start; }
+.bodies { display: flex; gap: 14px; flex-shrink: 0; cursor: pointer; position: relative; --bodyh: 340px; align-items: flex-start; }
 .bodybox { text-align: center; }
 
 /* Иллюстрация мышечной системы и слой подсветки поверх неё */
-.atlas { position: relative; height: var(--bodyh); width: auto; }
+.atlas { position: relative; height: min(var(--bodyh), 40vh); width: auto; isolation: isolate; overflow: hidden; }
+.atlas-in { position: absolute; inset: 0; transform-origin: 0 0; }
 .atlas-img { height: 100%; width: auto; display: block; }
 .atlas-over { position: absolute; inset: 0; width: 100%; height: 100%; }
-.zone { fill: rgba(40,140,255,.66); }
-.zone.on2 { fill: rgba(60,150,240,.26); }
-.zone-line { fill: none; stroke: #BDE4FF; stroke-width: 2; opacity: .42; }
-.atlas-credit { font-size: 11px; color: var(--gray); margin-top: 12px; line-height: 1.45; text-align: center; }
+/* перекраска: яркость и прорисовка мышцы сохраняются, меняется только цвет */
+.zone { fill: #1763F5; mix-blend-mode: color; }
+.zone.on2 { fill: #57A6FF; opacity: .6; }
+.zone-edge { fill: none; stroke: #9FD2FF; stroke-width: 4; opacity: .5; }
+.zone-edge.on2 { opacity: .25; stroke-width: 3; }
+.atlas.zoomable { cursor: zoom-in; touch-action: none; }
+.atlas.zoomed { cursor: grab; }
+.atlas.zoomed:active { cursor: grabbing; }
+.zoombar { display: flex; align-items: center; justify-content: center; gap: 8px; margin-top: 10px; }
+.zbtn {
+  min-width: 38px; height: 34px; padding: 0 10px; font-size: 17px; line-height: 1;
+  color: var(--txt); background: rgba(80,150,255,.10); border: 1px solid rgba(90,160,255,.34);
+  border-radius: 9px; cursor: pointer;
+}
+.zbtn:hover { background: rgba(80,150,255,.20); }
+.zbtn.wide { font-size: 13px; }
+.zval { min-width: 54px; text-align: center; font-size: 13px; color: var(--gray); }
+.zoomhint { text-align: center; font-size: 11px; color: var(--gray); margin-top: 6px; opacity: .9; }
+.atlas-credit { font-size: 11px; color: var(--gray); margin-top: 10px; line-height: 1.4; text-align: center; opacity: .85; }
 
 .bodylbl { font-size: 11px; color: var(--gray); margin-top: 6px; letter-spacing: 1.2px; text-transform: uppercase; }
 .bodyhint {
@@ -1182,7 +1204,7 @@
   font-size: 11px; color: var(--gray); opacity: .85;
 }
 .bodies.big { justify-content: center; cursor: default; gap: 10px; }
-.bodies.big { --bodyh: 340px; }
+.bodies.big { --bodyh: 390px; }
 
 .howto-txt { flex: 1; min-width: 210px; }
 .mchips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
@@ -1203,14 +1225,14 @@
 @media (max-width: 720px) {
   .howto-in { gap: 26px; }
   .bodies { width: 100%; justify-content: center; gap: 10px; }
-  .bodies { --bodyh: 270px; }
-  .bodies.big { --bodyh: 285px; }
+  .bodies { --bodyh: 330px; }
+  .bodies.big { --bodyh: 360px; }
   .howto-txt { min-width: 100%; }
 }
 @media (max-width: 380px) {
   .bodies { gap: 6px; }
-  .bodies { --bodyh: 224px; }
-  .bodies.big { --bodyh: 240px; }
+  .bodies { --bodyh: 280px; }
+  .bodies.big { --bodyh: 300px; }
 }
 
 /* Кнопка возврата над содержимым экрана */
@@ -2594,55 +2616,158 @@ function renderWeekChallenge() {
 /* ═══════════════════════════════════════════════
    АНАТОМИЧЕСКАЯ СХЕМА
    Основа — иллюстрация мышечной системы из учебника
-   OpenStax Anatomy & Physiology (CC BY 4.0). Поверх неё
+   Jmarchn по атласу Julien Bouglé (CC BY-SA 3.0). Поверх неё
    подсвечиваются работающие мышцы. Зоны построены по
    контуру фигуры, координаты — в пикселях картинок.
    ═══════════════════════════════════════════════ */
 
 var ATLAS = {
-  front: { src: "img/body-front.webp", w: 581, h: 1100, zones: {
-    traps: ["M207 178 207 188 207 198 207 208 382 208 382 198 382 188 363 178Z"],
-    delts: ["M164 190 152 200 150 210 150 220 150 230 150 240 150 250 150 260 150 270 150 280 150 290 215 290 215 280 215 270 215 260 215 250 215 240 215 230 215 220 215 210 215 200 215 190Z", "M374 190 374 200 374 210 374 220 374 230 374 240 374 250 374 260 374 270 374 280 374 290 439 290 439 280 439 270 439 260 439 250 439 240 439 230 439 220 437 210 430 200 420 190Z"],
-    chest: ["M202 204 202 214 202 224 202 234 202 244 202 254 202 264 202 274 202 284 202 294 202 304 202 314 202 324 285 324 285 314 285 304 285 294 285 284 285 274 285 264 285 254 285 244 285 234 285 224 285 214 285 204Z", "M304 204 304 214 304 224 304 234 304 244 304 254 304 264 304 274 304 284 304 294 304 304 304 314 304 324 387 324 387 314 387 304 387 294 387 284 387 274 387 264 387 254 387 244 387 234 387 224 387 214 387 204Z"],
-    abs: ["M252 352 252 362 252 372 252 382 252 392 252 402 252 412 252 422 252 432 252 442 252 452 252 462 252 472 252 482 252 492 252 502 341 502 341 492 341 482 341 472 341 462 341 452 341 442 341 432 341 422 341 412 341 402 341 392 341 382 341 372 341 362 341 352Z"],
-    obliques: ["M214 352 214 362 214 372 214 382 214 392 214 402 214 412 214 422 214 432 214 442 214 452 214 462 214 472 214 482 214 492 214 502 247 502 247 492 247 482 247 472 247 462 247 452 247 442 247 432 247 422 247 412 247 402 247 392 247 382 247 372 247 362 247 352Z", "M346 352 346 362 346 372 346 382 346 392 346 402 346 412 346 422 346 432 346 442 346 452 346 462 346 472 346 482 346 492 346 502 379 502 379 492 379 482 379 472 379 462 379 452 379 442 379 432 379 422 379 412 379 402 379 392 379 382 379 372 379 362 379 352Z"],
-    biceps: ["M132 298 132 308 132 318 132 328 132 338 132 348 132 358 132 368 132 378 132 388 132 398 132 408 132 418 203 418 203 408 203 398 203 388 203 378 203 368 203 358 203 348 203 338 203 328 203 318 203 308 203 298Z", "M386 298 386 308 386 318 386 328 386 338 386 348 386 358 386 368 386 378 386 388 386 398 386 408 386 418 457 418 457 408 457 398 457 388 457 378 457 368 457 358 457 348 457 338 457 328 457 318 456 308 452 298Z"],
-    forearms: ["M70 430 68 440 66 450 64 460 63 470 63 480 61 490 60 500 56 510 60 520 55 530 46 540 47 550 179 550 179 540 179 530 179 520 179 510 179 500 179 490 179 480 124 470 179 460 132 450 135 440 137 430Z", "M445 430 446 440 450 450 453 460 459 470 464 480 470 490 475 500 488 510 494 520 501 530 507 540 518 550 527 550 536 540 526 530 525 520 530 510 528 500 520 490 519 480 513 470 517 460 516 450 514 440 512 430Z"],
-    quads: ["M206 556 206 566 206 576 206 586 206 596 206 606 206 616 206 626 206 636 206 646 206 656 206 666 206 676 206 686 206 696 206 706 206 716 206 726 206 736 281 736 282 726 284 716 284 706 282 696 282 686 281 676 279 666 281 656 281 646 281 636 281 626 284 616 281 606 281 596 281 586 284 576 284 566 289 556Z", "M300 556 300 566 300 576 301 586 301 596 301 606 300 616 302 626 301 636 301 646 301 656 302 666 301 676 300 686 300 696 300 706 300 716 300 726 302 736 379 736 383 726 383 716 383 706 383 696 383 686 383 676 383 666 383 656 383 646 383 636 383 626 383 616 383 606 383 596 383 586 383 576 383 566 383 556Z"],
-    calves: ["M222 786 220 796 216 806 212 816 212 826 212 836 212 846 212 856 212 866 212 876 212 886 212 896 212 906 212 916 212 926 212 936 213 946 262 946 264 936 266 926 268 916 271 906 273 896 275 886 276 876 278 866 278 856 276 846 276 836 275 826 273 816 272 806 275 796 276 786Z", "M305 786 307 796 311 806 308 816 308 826 305 836 305 846 305 856 305 866 305 876 307 886 310 896 310 906 314 916 316 926 319 936 321 946 369 946 372 936 373 926 373 916 373 906 373 896 373 886 373 876 373 866 373 856 373 846 373 836 373 826 370 816 366 806 362 796 360 786Z"]
+  front: { src: "img/body-front.webp", w: 602, h: 1800, zones: {
+    traps: ["M302 286 345 288 390 298 428 312 446 330 424 338 384 322 340 310 302 302Z", "M300 286 257 288 212 298 174 312 156 330 178 338 218 322 262 310 300 302Z"],
+    delts: ["M452 318 490 330 520 356 540 392 544 432 534 462 510 470 486 452 466 414 454 358Z", "M150 318 112 330 82 356 62 392 58 432 68 462 92 470 116 452 136 414 148 358Z"],
+    chest: ["M304 334 358 330 408 336 444 352 466 378 470 408 458 444 430 478 392 498 348 504 306 502Z", "M298 334 244 330 194 336 158 352 136 378 132 408 144 444 172 478 210 498 254 504 296 502Z"],
+    abs: ["M302 506 346 506 378 522 392 572 396 642 392 702 382 762 364 802 330 816 302 818Z", "M300 506 256 506 224 522 210 572 206 642 210 702 220 762 238 802 272 816 300 818Z"],
+    obliques: ["M400 548 432 566 450 606 456 664 450 722 430 782 398 814 388 782 394 702 398 632Z", "M202 548 170 566 152 606 146 664 152 722 172 782 204 814 214 782 208 702 204 632Z"],
+    biceps: ["M462 452 506 452 534 482 546 534 546 596 534 648 512 686 486 682 468 632 460 540Z", "M140 452 96 452 68 482 56 534 56 596 68 648 90 686 116 682 134 632 142 540Z"],
+    forearms: ["M468 700 512 696 546 724 566 782 572 840 562 880 532 886 508 842 488 788 470 740Z", "M134 700 90 696 56 724 36 782 30 840 40 880 70 886 94 842 114 788 132 740Z"],
+    quads: ["M330 934 396 926 444 948 466 1000 470 1070 464 1140 450 1200 424 1248 388 1256 352 1240 338 1180 330 1090 328 1010Z", "M272 934 206 926 158 948 136 1000 132 1070 138 1140 152 1200 178 1248 214 1256 250 1240 264 1180 272 1090 274 1010Z"],
+    calves: ["M348 1288 400 1278 436 1300 456 1352 464 1414 458 1480 440 1536 410 1570 378 1560 360 1500 350 1420 346 1340Z", "M254 1288 202 1278 166 1300 146 1352 138 1414 144 1480 162 1536 192 1570 224 1560 242 1500 252 1420 256 1340Z"]
   }},
-  back: { src: "img/body-back.webp", w: 462, h: 1100, zones: {
-    traps: ["M190 128 192 138 190 148 190 158 190 168 190 178 179 188 168 198 154 208 154 218 154 228 154 238 154 248 154 258 154 268 154 278 154 288 154 298 154 308 154 318 154 328 307 328 307 318 307 308 307 298 307 288 307 278 307 268 307 258 307 248 307 238 307 228 307 218 307 208 307 198 307 188 291 178 286 168 286 158 284 148 283 138 281 128Z"],
-    delts_rear: ["M140 208 109 218 102 228 79 238 78 248 83 258 83 268 78 278 78 288 149 288 149 278 149 268 149 258 149 248 149 238 149 228 149 218 149 208Z", "M320 198 320 208 320 218 320 228 320 238 320 248 320 258 320 268 320 278 320 288 395 288 394 278 393 268 392 258 391 248 384 238 377 228 366 218 359 208 341 198Z"],
-    lats: ["M120 252 120 262 120 272 120 282 120 292 120 302 120 312 120 322 120 332 122 342 125 352 134 362 133 372 138 382 145 392 153 402 153 412 199 412 199 402 199 392 199 382 199 372 199 362 199 352 199 342 199 332 199 322 199 312 199 302 199 292 199 282 199 272 199 262 199 252Z", "M256 252 256 262 256 272 256 282 256 292 256 302 256 312 256 322 256 332 256 342 256 352 256 362 256 372 256 382 256 392 256 402 256 412 335 412 335 402 335 392 335 382 335 372 335 362 335 352 335 342 335 332 335 322 335 312 335 302 335 292 335 282 335 272 335 262 335 252Z"],
-    lowback: ["M174 378 174 388 174 398 174 408 174 418 174 428 174 438 174 448 174 458 174 468 283 468 283 458 283 448 283 438 283 428 283 418 283 408 283 398 283 388 283 378Z"],
-    triceps: ["M78 278 78 288 75 298 71 308 66 318 63 328 59 338 56 348 56 358 56 368 57 378 59 388 59 398 106 398 109 388 109 378 129 368 129 358 129 348 129 338 129 328 129 318 129 308 129 298 129 288 129 278Z", "M338 278 338 288 338 298 338 308 338 318 338 328 338 338 338 348 338 358 338 368 338 378 338 388 338 398 392 398 396 388 399 378 399 368 399 358 398 348 396 338 392 328 392 318 393 308 395 298 395 288 394 278Z"],
-    forearms: ["M61 402 57 412 51 422 47 432 44 442 41 452 38 462 34 472 33 482 32 492 29 502 26 512 23 522 18 532 52 532 59 522 69 512 70 502 75 492 79 482 83 472 87 462 91 452 91 442 91 432 90 422 100 412 104 402Z", "M358 402 358 412 366 422 364 432 365 442 367 452 369 462 373 472 377 482 381 492 386 502 392 512 398 522 404 532 438 532 435 522 432 512 428 502 425 492 423 482 419 472 418 462 416 452 411 442 409 432 405 422 398 412 392 402Z"],
-    glutes: ["M148 476 148 486 148 496 148 506 148 516 148 526 148 536 148 546 148 556 148 566 148 576 148 586 317 586 317 576 317 566 317 556 317 546 317 536 317 526 317 516 317 506 317 496 317 486 317 476Z"],
-    hams: ["M148 598 148 608 148 618 148 628 148 638 148 648 148 658 148 668 155 678 159 688 159 698 160 708 159 718 205 718 203 708 203 698 203 688 211 678 214 668 215 658 219 648 218 638 218 628 218 618 218 608 218 598Z", "M249 598 247 608 249 618 249 628 250 638 250 648 249 658 255 668 256 678 264 688 264 698 264 708 262 718 308 718 309 708 305 698 310 688 314 678 315 668 315 658 315 648 315 638 315 628 315 618 315 608 315 598Z"],
-    calves: ["M162 756 160 766 158 776 156 786 160 796 160 806 157 816 159 826 159 836 160 846 160 856 162 866 163 876 165 886 168 896 169 906 172 916 175 926 202 926 202 916 205 906 206 896 208 886 208 876 211 866 211 856 212 846 211 836 207 826 206 816 206 806 205 796 205 786 207 776 206 766 206 756Z", "M259 756 262 766 261 776 261 786 262 796 264 806 264 816 261 826 258 836 258 846 258 856 259 866 258 876 259 886 261 896 261 906 261 916 261 926 289 926 292 916 295 906 298 896 299 886 302 876 302 866 301 856 303 846 305 836 306 826 308 816 308 806 307 796 309 786 311 776 305 766 305 756Z"]
+  back: { src: "img/body-back.webp", w: 589, h: 1800, zones: {
+    traps: ["M296 152 330 160 366 202 412 286 438 322 420 342 384 350 356 418 328 498 298 560Z", "M294 152 260 160 224 202 178 286 152 322 170 342 206 350 234 418 262 498 292 560Z"],
+    delts_rear: ["M444 312 484 326 516 352 538 390 542 430 530 460 504 468 480 448 460 408 446 352Z", "M146 312 106 326 74 352 52 390 48 430 60 460 86 468 110 448 130 408 144 352Z"],
+    lats: ["M330 432 382 440 430 466 458 512 466 566 452 618 422 654 382 666 342 652 312 620 300 570 302 502Z", "M260 432 208 440 160 466 132 512 124 566 138 618 168 654 208 666 248 652 278 620 290 570 288 502Z"],
+    lowback: ["M296 566 328 572 348 612 354 672 346 726 324 762 296 768Z", "M294 566 262 572 242 612 236 672 244 726 266 762 294 768Z"],
+    triceps: ["M460 452 504 452 532 482 544 534 544 596 532 648 510 686 484 682 466 632 458 540Z", "M130 452 86 452 58 482 46 534 46 596 58 648 80 686 106 682 124 632 132 540Z"],
+    forearms: ["M466 700 510 696 544 724 564 782 570 840 560 880 530 886 506 842 486 788 468 740Z", "M124 700 80 696 46 724 26 782 20 840 30 880 60 886 84 842 104 788 122 740Z"],
+    glutes: ["M296 792 348 788 400 802 440 838 460 884 456 942 432 992 392 1016 346 1014 312 988 296 934Z", "M294 792 242 788 190 802 150 838 130 884 134 942 158 992 198 1016 244 1014 278 988 294 934Z"],
+    hams: ["M324 1024 382 1018 430 1040 452 1092 458 1160 448 1226 420 1266 380 1272 346 1250 330 1184 324 1104Z", "M266 1024 208 1018 160 1040 138 1092 132 1160 142 1226 170 1266 210 1272 244 1250 260 1184 266 1104Z"],
+    calves: ["M342 1284 394 1276 432 1300 452 1352 458 1416 450 1478 430 1522 398 1538 366 1518 350 1458 342 1380Z", "M248 1284 196 1276 158 1300 138 1352 132 1416 140 1478 160 1522 192 1538 224 1518 240 1458 248 1380Z"]
   }}
 };
 
-/* Схема: картинка плюс слой подсветки */
-function bodySvg(view, on, on2) {
-  var A = ATLAS[view === "front" ? "front" : "back"], fills = "", lines = "";
+/* ── Увеличение схемы в окне: колесо, щипок, перетаскивание, кнопки ──
+   Обе фигуры масштабируются вместе, чтобы вид спереди и сзади совпадал. */
+var ZOOMS = [];
+
+function setupZoom() {
+  ZOOMS = [];
+  var nodes = document.querySelectorAll("#modal .atlas.zoomable");
+  for (var i = 0; i < nodes.length; i++) ZOOMS.push(makeZoom(nodes[i]));
+  showZoomVal();
+}
+
+function showZoomVal() {
+  var el = document.getElementById("zval");
+  if (!el || !ZOOMS.length) return;
+  var mx = 1;                                   /* колесо увеличивает ту фигуру, где курсор */
+  for (var i = 0; i < ZOOMS.length; i++) mx = Math.max(mx, ZOOMS[i].scale());
+  el.textContent = Math.round(mx * 100) + "%";
+}
+
+function zoomStep(dir) {
+  for (var i = 0; i < ZOOMS.length; i++) ZOOMS[i].byCenter(dir > 0 ? 1.4 : 1 / 1.4);
+  showZoomVal();
+}
+
+function zoomReset() {
+  for (var i = 0; i < ZOOMS.length; i++) ZOOMS[i].reset();
+  showZoomVal();
+}
+
+function makeZoom(box) {
+  var inner = box.querySelector(".atlas-in"), s = 1, tx = 0, ty = 0, MAX = 6;
+  var drag = null, pinch = 0, base = 1;
+
+  function apply() {
+    var w = box.clientWidth, h = box.clientHeight;
+    tx = Math.max(Math.min(0, w - w * s), Math.min(0, tx));
+    ty = Math.max(Math.min(0, h - h * s), Math.min(0, ty));
+    inner.style.transform = "translate(" + tx + "px," + ty + "px) scale(" + s + ")";
+    if (s > 1.01) box.classList.add("zoomed"); else box.classList.remove("zoomed");
+  }
+  function at(px, py, ns) {
+    ns = Math.max(1, Math.min(MAX, ns));
+    var k = ns / s;
+    tx = px - k * (px - tx); ty = py - k * (py - ty);
+    s = ns; apply();
+  }
+
+  box.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    var r = box.getBoundingClientRect();
+    at(e.clientX - r.left, e.clientY - r.top, s * (e.deltaY < 0 ? 1.2 : 1 / 1.2));
+    showZoomVal();
+  }, { passive: false });
+
+  box.addEventListener("dblclick", function (e) {
+    var r = box.getBoundingClientRect();
+    if (s > 1.01) { s = 1; tx = 0; ty = 0; apply(); }
+    else at(e.clientX - r.left, e.clientY - r.top, 2.6);
+    showZoomVal();
+  });
+
+  /* мышь или один палец — тянуть увеличенную картинку */
+  box.addEventListener("pointerdown", function (e) {
+    if (s <= 1.01 || pinch) return;
+    drag = { x: e.clientX, y: e.clientY };
+    try { box.setPointerCapture(e.pointerId); } catch (err) {}
+  });
+  box.addEventListener("pointermove", function (e) {
+    if (!drag) return;
+    tx += e.clientX - drag.x; ty += e.clientY - drag.y;
+    drag.x = e.clientX; drag.y = e.clientY; apply();
+  });
+  box.addEventListener("pointerup", function () { drag = null; });
+  box.addEventListener("pointercancel", function () { drag = null; });
+
+  /* два пальца — щипок */
+  function gap(t) {
+    var dx = t[0].clientX - t[1].clientX, dy = t[0].clientY - t[1].clientY;
+    return Math.sqrt(dx * dx + dy * dy) || 1;
+  }
+  box.addEventListener("touchstart", function (e) {
+    if (e.touches.length === 2) { pinch = gap(e.touches); base = s; drag = null; }
+  }, { passive: true });
+  box.addEventListener("touchmove", function (e) {
+    if (e.touches.length !== 2 || !pinch) return;
+    e.preventDefault();
+    var r = box.getBoundingClientRect();
+    at((e.touches[0].clientX + e.touches[1].clientX) / 2 - r.left,
+       (e.touches[0].clientY + e.touches[1].clientY) / 2 - r.top,
+       base * gap(e.touches) / pinch);
+    showZoomVal();
+  }, { passive: false });
+  box.addEventListener("touchend", function (e) { if (e.touches.length < 2) pinch = 0; });
+
+  return {
+    byCenter: function (k) { at(box.clientWidth / 2, box.clientHeight / 2, s * k); },
+    reset: function () { s = 1; tx = 0; ty = 0; apply(); },
+    scale: function () { return s; }
+  };
+}
+
+/* Схема: картинка плюс слой подсветки.
+   Работающая мышца не закрывается плашкой, а перекрашивается
+   (mix-blend-mode: color) — прорисовка пучков остаётся видна. */
+function bodySvg(view, on, on2, big) {
+  var A = ATLAS[view === "front" ? "front" : "back"], fills = "", edges = "";
   for (var k in A.zones) {
     if (!A.zones.hasOwnProperty(k)) continue;
     var st = on.indexOf(k) >= 0 ? "on" : (on2.indexOf(k) >= 0 ? "on2" : "");
     if (!st) continue;
     for (var i = 0; i < A.zones[k].length; i++) {
       fills += '<path class="zone ' + st + '" d="' + A.zones[k][i] + '"/>';
-      if (st === "on") lines += '<path class="zone-line" d="' + A.zones[k][i] + '"/>';
+      edges += '<path class="zone-edge ' + st + '" d="' + A.zones[k][i] + '"/>';
     }
   }
-  return '<div class="atlas" style="aspect-ratio:' + A.w + "/" + A.h + '">' +
-           '<img class="atlas-img" src="' + A.src + '" alt="" loading="lazy">' +
-           '<svg class="atlas-over" viewBox="0 0 ' + A.w + " " + A.h + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' +
-             '<defs><filter id="soft" x="-25%" y="-25%" width="150%" height="150%">' +
-               '<feGaussianBlur stdDeviation="11"/></filter></defs>' +
-             '<g filter="url(#soft)">' + fills + "</g>" + lines +
-           "</svg></div>";
+  return '<div class="atlas' + (big ? " zoomable" : "") + '" style="aspect-ratio:' + A.w + "/" + A.h + '">' +
+           '<div class="atlas-in">' +
+             '<img class="atlas-img" src="' + A.src + '" alt="" loading="lazy">' +
+             '<svg class="atlas-over" viewBox="0 0 ' + A.w + " " + A.h + '" preserveAspectRatio="xMidYMid meet" aria-hidden="true">' +
+               fills + edges +
+             "</svg>" +
+           "</div></div>";
 }
 
 function muscleWord(k) { return MUSCLE_NAMES[k] || k; }
@@ -2666,13 +2791,21 @@ function showBody(ex) {
     '<div class="sys-label">[ Что работает ]</div><div class="sys-rule"></div>' +
     '<h3 style="text-align:center;margin-bottom:12px">' + esc(ex) + "</h3>" +
     '<div class="bodies big">' +
-      '<div class="bodybox">' + bodySvg("front", on, on2) + '<div class="bodylbl">спереди</div></div>' +
-      '<div class="bodybox">' + bodySvg("back", on, on2) + '<div class="bodylbl">сзади</div></div>' +
+      '<div class="bodybox">' + bodySvg("front", on, on2, 1) + '<div class="bodylbl">спереди</div></div>' +
+      '<div class="bodybox">' + bodySvg("back", on, on2, 1) + '<div class="bodylbl">сзади</div></div>' +
     "</div>" +
+    '<div class="zoombar">' +
+      '<button type="button" class="zbtn" onclick="zoomStep(-1)" aria-label="Уменьшить">&minus;</button>' +
+      '<span class="zval" id="zval">100%</span>' +
+      '<button type="button" class="zbtn" onclick="zoomStep(1)" aria-label="Увеличить">+</button>' +
+      '<button type="button" class="zbtn wide" onclick="zoomReset()">сброс</button>' +
+    "</div>" +
+    '<div class="zoomhint">колесо или два пальца — приблизить, потом тянуть</div>' +
     '<div class="mchips" style="justify-content:center;margin-top:14px">' + chips + "</div>" +
-    '<div class="atlas-credit">Иллюстрация: OpenStax Anatomy &amp; Physiology, лицензия CC BY 4.0</div>' +
+    '<div class="atlas-credit">Иллюстрация: Jmarchn / Julien Bouglé &middot; Викисклад &middot; CC BY-SA 3.0 &middot; изменена</div>' +
     '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Закрыть</button></div>'
   );
+  setupZoom();
 }
 
 /* Блок «Как выполнять»: схема, список мышц, шаги, частая ошибка */
@@ -2695,7 +2828,7 @@ function howToHtml(ex) {
       "</div>" +
       '<div class="howto-txt">' +
         '<div class="mchips">' + chips + "</div>" +
-        '<div class="atlas-credit">Иллюстрация: OpenStax Anatomy &amp; Physiology, лицензия CC BY 4.0</div>' +
+        '<div class="atlas-credit">Иллюстрация: Jmarchn / Julien Bouglé &middot; Викисклад &middot; CC BY-SA 3.0 &middot; изменена</div>' +
         "<ol class=\"howsteps\">" + steps + "</ol>" +
         '<div class="mistake"><b>Частая ошибка.</b> ' + esc(A.err) + "</div>" +
       "</div>" +
