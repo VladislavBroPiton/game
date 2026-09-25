@@ -1067,6 +1067,12 @@
 .set-row { display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid rgba(28,38,52,.6); }
 .set-row > div:first-child { flex: 1; min-width: 0; font-size: 14px; }
 .set-s { color: var(--gray); font-size: 12.5px; margin-top: 3px; }
+.tinp {
+  background: var(--dark); border: 1px solid var(--border2); border-radius: 9px;
+  padding: 8px 10px; font-size: 15px; color: var(--white); font-family: inherit;
+}
+.tinp:focus { outline: none; border-color: var(--fire); }
+.remnote { color: var(--gray); font-size: 12.5px; line-height: 1.6; margin-top: 14px; }
 
 @media (max-width: 720px) {
   .srow-s { min-width: 128px; }
@@ -1602,7 +1608,8 @@ var S = {
   streak: { last: "", count: 0, best: 0 },
   seenAch: [],
   log: [],           // { ts, ic, text } — последние 40 событий
-  bg: 1              // 1 — врата на фоне
+  bg: 1,             // 1 — врата на фоне
+  rem: { n: 0, times: [], shown: {} }   // напоминания: сколько раз в день, во сколько, что показали
 };
 
 var LOAD_BROKEN = false;   /* сохранение не прочиталось — беречь его от перезаписи */
@@ -1638,6 +1645,7 @@ function load() {
     if (isArr(p.seenAch)) S.seenAch = p.seenAch;
     if (isArr(p.log)) S.log = p.log;
     if (typeof p.bg === "number") S.bg = p.bg;
+    if (p.rem && typeof p.rem === "object") S.rem = p.rem;
   } catch (e) {}
 }
 
@@ -1683,6 +1691,11 @@ function normalizeState() {
   if (!S.seenAch) S.seenAch = [];
   if (!S.log) S.log = [];
   if (typeof S.bg !== "number") S.bg = 1;
+  if (!S.rem || typeof S.rem !== "object") S.rem = { n: 0, times: [], shown: {} };
+  if (typeof S.rem.n !== "number" || S.rem.n < 0 || S.rem.n > 3) S.rem.n = 0;
+  if (!isArr(S.rem.times)) S.rem.times = [];
+  if (S.rem.times.length !== S.rem.n) S.rem.times = S.rem.n ? REM_PRESETS[S.rem.n].slice() : [];
+  if (!S.rem.shown || typeof S.rem.shown !== "object") S.rem.shown = {};
 }
 
 /* ═══════════════════════════════════════════════
@@ -1974,6 +1987,8 @@ function openModal(html) {
   pushNav({ modal: 1 });          /* системная кнопка «назад» сначала закроет окно */
 }
 function closeModal() { document.getElementById("overlay").className = "overlay"; }
+/* перерисовать содержимое открытого окна, не добавляя запись в историю */
+function setModal(html) { document.getElementById("modal").innerHTML = html; }
 
 /* Запись в историю браузера. На телефоне это делает кнопку «назад»
    полезной: она возвращает на прошлый экран, а не выходит из игры. */
@@ -3470,6 +3485,181 @@ function renderHeat() {
   }
 }
 
+/* ═══════════════════════════════════════════════
+   НАПОМИНАНИЯ
+   Веб-приложение не может разбудить телефон, когда его полностью
+   закрыли. Поэтому: пока игра открыта или свёрнута — приходит
+   уведомление, если закрыта — напомним при следующем входе.
+   День считается закрытым, когда записан хотя бы один подход.
+   ═══════════════════════════════════════════════ */
+
+var REM_PRESETS = { 1: ["19:00"], 2: ["12:00", "19:00"], 3: ["09:00", "14:00", "20:00"] };
+var remTimer = null;
+var remDraft = { n: 0, times: [] };
+
+function remOn() { return S.rem && S.rem.n > 0; }
+function remWord(n) { return n + " " + plural(n, "раз", "раза", "раз") + " в день"; }
+
+function remText() {
+  return remOn() ? remWord(S.rem.n) + ": " + S.rem.times.join(", ") : "Выключены";
+}
+
+function remNoteShort() {
+  if (!remOn()) return "напомним, если день не отмечен";
+  if (window.Notification && Notification.permission === "granted") return "уведомления разрешены";
+  return "уведомления не разрешены — напомним при входе";
+}
+
+function remNote() {
+  if (!remOn()) return "Напомним, если день не отмечен";
+  if (!window.Notification) return "Браузер не умеет уведомления — напомним при входе в игру";
+  if (Notification.permission === "granted") return "Уведомления разрешены";
+  return "Уведомления не разрешены — напомним при входе в игру";
+}
+
+/* сегодня уже что-то записано */
+function dayDone() { return setsToday() > 0; }
+
+function nowHM() {
+  var d = new Date(), h = d.getHours(), m = d.getMinutes();
+  return (h < 10 ? "0" : "") + h + ":" + (m < 10 ? "0" : "") + m;
+}
+
+/* Время каких напоминаний уже прошло, а показать их ещё не удалось */
+function remDue() {
+  if (!remOn() || dayDone()) return [];
+  var t = today(), now = nowHM(), shown = S.rem.shown[t] || [], out = [];
+  for (var i = 0; i < S.rem.times.length; i++) {
+    if (S.rem.times[i] <= now && shown.indexOf(i) < 0) out.push(i);
+  }
+  return out;
+}
+
+function remMark(list) {
+  var t = today(), i;
+  if (!S.rem.shown[t]) S.rem.shown[t] = [];
+  for (i = 0; i < list.length; i++) {
+    if (S.rem.shown[t].indexOf(list[i]) < 0) S.rem.shown[t].push(list[i]);
+  }
+  var keep = [t, shiftDate(t, -1)];          /* старые отметки не копим */
+  for (var k in S.rem.shown) {
+    if (S.rem.shown.hasOwnProperty(k) && keep.indexOf(k) < 0) delete S.rem.shown[k];
+  }
+  save();
+}
+
+/* Показываем один раз: несколько пропущенных за день слотов не дублируем */
+function remFire() {
+  var due = remDue();
+  if (!due.length) return;
+  if (remShow()) remMark(due);
+}
+
+function remShow() {
+  var g = gname(groupToday()).toLowerCase();
+  if (document.visibilityState === "visible") {
+    toast("План на сегодня не отмечен: " + g);
+    return true;
+  }
+  try {
+    if (window.Notification && Notification.permission === "granted" &&
+        navigator.serviceWorker && navigator.serviceWorker.ready) {
+      navigator.serviceWorker.ready.then(function (r) {
+        r.showNotification("Кузница: план на сегодня не отмечен", {
+          body: "Сегодня " + g + ". Двадцать минут — и день закрыт.",
+          icon: "./icon-192.png", badge: "./icon-192.png",
+          tag: "forge-rem", renotify: true
+        });
+      }).catch(function () {});
+      return true;
+    }
+  } catch (e) {}
+  return false;                               /* не смогли — повторим при входе */
+}
+
+function remStart() {
+  if (remTimer) clearInterval(remTimer);
+  if (!remOn()) return;
+  remTimer = setInterval(remFire, 30000);
+  remFire();
+}
+
+function remAsk() {
+  if (!window.Notification) { toast("Браузер не умеет уведомления"); return; }
+  function done(p) {
+    setModal(remModalHtml());
+    toast(p === "granted" ? "Уведомления разрешены"
+                          : "Уведомления запрещены — напомним при входе в игру");
+  }
+  try {
+    var r = Notification.requestPermission(done);
+    if (r && r.then) r.then(done);
+  } catch (e) { toast("Не получилось спросить разрешение"); }
+}
+
+/* ── окно настройки ── */
+function askRem() {
+  remDraft = { n: S.rem.n, times: S.rem.times.slice() };
+  openModal(remModalHtml());
+}
+
+function remModalHtml() {
+  var n = remDraft.n, chips = "", fields = "", i, v;
+  var opts = [0, 1, 2, 3];
+  for (i = 0; i < opts.length; i++) {
+    v = opts[i];
+    chips += '<button class="btn sm' + (v === n ? " primary" : "") + '" onclick="remPick(' + v + ')">' +
+             (v === 0 ? "Выключить" : remWord(v)) + "</button>";
+  }
+  for (i = 0; i < n; i++) {
+    fields += '<div class="set-row"><div><b>Напоминание ' + (i + 1) + "</b></div>" +
+              '<input type="time" class="tinp" id="remt' + i + '" value="' +
+              esc(remDraft.times[i] || REM_PRESETS[n][i]) + '"></div>';
+  }
+  var needAsk = n > 0 && window.Notification && Notification.permission === "default";
+  return '<div class="sys-label">[ Напоминания ]</div><div class="sys-rule"></div>' +
+    '<h3 style="text-align:center">Когда напоминать</h3>' +
+    '<p style="text-align:center">Напоминание приходит, только если в этот день ' +
+      "не записано ни одного подхода. Отметили тренировку — на сегодня тишина.</p>" +
+    '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:6px">' + chips + "</div>" +
+    fields +
+    (needAsk ? '<div style="margin-top:14px;text-align:center">' +
+                 '<button class="btn sm" onclick="remAsk()">Разрешить уведомления</button></div>' : "") +
+    '<div class="remnote"><b style="color:var(--gray2)">' + esc(remNote()) + "</b></div>" +
+    '<div class="remnote" style="margin-top:8px">' +
+      "Пока игра открыта или свёрнута, напоминание придёт уведомлением. " +
+      "Если вы закрыли её полностью, телефон её не разбудит — напомним при следующем входе." +
+    "</div>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+      '<button class="btn primary" onclick="remSave()">Сохранить</button></div>';
+}
+
+function remReadTimes() {
+  var out = [], el;
+  for (var i = 0; i < 3; i++) {
+    el = document.getElementById("remt" + i);
+    if (el && el.value) out.push(el.value);
+  }
+  return out;
+}
+
+function remPick(v) {
+  var t = remReadTimes(), def = REM_PRESETS[v] || [], out = [];
+  for (var i = 0; i < v; i++) out.push(t[i] || def[i]);
+  remDraft = { n: v, times: out };
+  setModal(remModalHtml());
+}
+
+function remSave() {
+  var t = remReadTimes();
+  S.rem.n = remDraft.n;
+  S.rem.times = remDraft.n ? t.slice(0, remDraft.n).sort() : [];
+  S.rem.shown = {};
+  remMark(remDue());            /* только что настроили — прошедшее время сегодня не дёргаем */
+  save(); closeModal(); renderProfile(); remStart();
+  toast(S.rem.n ? "Напоминания: " + S.rem.times.join(", ") : "Напоминания выключены");
+}
+
 function renderProfile() {
   var el = document.getElementById("profile-body");
   if (!el) return;
@@ -3534,6 +3724,9 @@ function renderProfile() {
         '<button class="btn sm" onclick="askGoal()">Изменить</button></div>' +
       '<div class="set-row"><div><b>Отдых между подходами</b><div class="set-s">' + mmss(S.rest) + "</div></div>" +
         '<button class="btn sm" onclick="askRest()">Изменить</button></div>' +
+      '<div class="set-row"><div><b>Напоминания</b><div class="set-s">' + remText() +
+        " — " + remNoteShort() + '</div></div>' +
+        '<button class="btn sm" onclick="askRem()">Настроить</button></div>' +
       '<div class="set-row"><div><b>Потолок снаряда</b><div class="set-s">' + fmtW(S.maxW) +
         " кг на гантель — на этом весе игра начинает считать рекорды по повторам</div></div>" +
         '<button class="btn sm" onclick="askMaxW()">Изменить</button></div>' +
@@ -3779,6 +3972,9 @@ function boot() {
   renderAll();
 
   if (LOAD_BROKEN === "recovered") toast("Сохранение было повреждено — подняли предыдущую версию");
+
+  remStart();
+  document.addEventListener("visibilitychange", remFire);
 
   if (!S.name && !workoutCount()) {
     setTimeout(function () {
