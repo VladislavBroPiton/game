@@ -2,14 +2,16 @@
    Стратегия: сеть первой для страницы (чтобы не застрять на старой версии),
    кэш первым для иконок. Без сети всё берётся из кэша. */
 
-var CACHE = "forge-body-v1";   /* имя новое: старый кэш игры-плана сносится сам */
+var CACHE = "forge-body-v2";   /* имя новое: старый кэш игры-плана сносится сам */
 var ASSETS = [
   "./",
   "./index.html",
   "./icon-192.png",
   "./icon-512.png",
   "./apple-touch-icon.png",
-  "./manifest.json"
+  "./manifest.json",
+  "./img/body-front.webp",
+  "./img/body-back.webp"
 ];
 
 self.addEventListener("install", function (e) {
