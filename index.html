@@ -1069,6 +1069,14 @@
   font: inherit; font-size: 13.5px; padding: 8px 11px; border-radius: 3px; min-width: 150px; cursor: pointer;
 }
 .srow-s:focus { outline: none; border-color: var(--fire); }
+/* Кнопки под схемами: атлас крупно и объёмная проекция */
+.viewbtns { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
+.viewbtns .btn.holo {
+  border-color: rgba(120,190,255,.55);
+  background: linear-gradient(135deg, rgba(80,150,255,.18), rgba(169,139,240,.12));
+  color: var(--white);
+}
+
 /* Переключатель «атлас / проекция» и холст объёмной фигуры */
 .viewtabs { display: flex; gap: 8px; justify-content: center; margin: 4px 0 12px; }
 .vtab {
@@ -3188,9 +3196,23 @@ function showBody(ex) {
 
 var HOLO = null, HOLO_ON = [], HOLO_ON2 = [];
 
+/* Открыть окно сразу на объёмной проекции — минуя атлас */
+function showBody3D(ex) {
+  showBody(ex);
+  showHolo();
+}
+
+/* Кнопки увеличения относятся к атласу: в проекции масштаб свой */
+function zoomBarShow(on) {
+  var a = document.querySelector("#modal .zoombar"), b = document.querySelector("#modal .zoomhint");
+  if (a) a.style.display = on ? "" : "none";
+  if (b) b.style.display = on ? "" : "none";
+}
+
 function showAtlas() {
   document.getElementById("view-atlas").style.display = "";
   document.getElementById("view-holo").style.display = "none";
+  zoomBarShow(true);
   document.getElementById("vt-atlas").className = "vtab on";
   document.getElementById("vt-holo").className = "vtab";
   if (HOLO) { HOLO.stop(); HOLO = null; }
@@ -3200,6 +3222,7 @@ function showAtlas() {
 function showHolo() {
   document.getElementById("view-atlas").style.display = "none";
   document.getElementById("view-holo").style.display = "";
+  zoomBarShow(false);
   document.getElementById("vt-atlas").className = "vtab";
   document.getElementById("vt-holo").className = "vtab on";
   if (!window.Holo || !Holo.supported()) { toast("Браузер не умеет объёмную графику"); showAtlas(); return; }
@@ -3219,7 +3242,7 @@ function howToHtml(ex) {
   for (i = 0; i < on.length; i++) chips += '<span class="mchip main">' + esc(muscleWord(on[i])) + "</span>";
   for (i = 0; i < on2.length; i++) chips += '<span class="mchip">' + esc(muscleWord(on2[i])) + "</span>";
 
-  return '<details class="howto"><summary>Как выполнять и что работает</summary>' +
+  return '<details class="howto"><summary>Как выполнять: шаги, схема, частая ошибка</summary>' +
     '<div class="howto-in">' +
       '<div class="bodies" onclick="showBody(' + jsq(ex) + ')" title="Открыть крупно">' +
         '<div class="bodybox">' + bodySvg("front", on, on2) + '<div class="bodylbl">спереди</div></div>' +
@@ -3228,6 +3251,10 @@ function howToHtml(ex) {
       "</div>" +
       '<div class="howto-txt">' +
         '<div class="mchips">' + chips + "</div>" +
+        '<div class="viewbtns">' +
+          '<button type="button" class="btn sm" onclick="showBody(' + jsq(ex) + ')">Атлас крупно</button>' +
+          '<button type="button" class="btn sm holo" onclick="showBody3D(' + jsq(ex) + ')">Проекция 3D</button>' +
+        "</div>" +
         '<div class="atlas-credit">Иллюстрация: Jmarchn / Julien Bouglé &middot; Викисклад &middot; CC BY-SA 3.0 &middot; изменена</div>' +
         "<ol class=\"howsteps\">" + steps + "</ol>" +
         '<div class="mistake"><b>Частая ошибка.</b> ' + esc(A.err) + "</div>" +
@@ -3477,6 +3504,10 @@ function renderTrain() {
       '<div class="g">' + gicon(c.g) + " " + esc(gname(c.g)) + "</div>" +
       '<div class="n">' + esc(c.ex) + "</div>" +
       '<div class="wo-prev">' + prevLine(prev, best, c.ex) + "</div>" +
+      (ANATOMY[c.ex] ? '<div class="viewbtns">' +
+        '<button type="button" class="btn sm" onclick="showBody(' + jsq(c.ex) + ')">Что работает</button>' +
+        '<button type="button" class="btn sm holo" onclick="showBody3D(' + jsq(c.ex) + ')">Проекция 3D</button>' +
+      "</div>" : "") +
     "</div></div>" + howToHtml(c.ex) + questHtml(c.g);
 
   /* ввод подхода */
