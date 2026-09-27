@@ -79,6 +79,11 @@
 
   /* Частицы маны, медленно всплывающие снизу */
   .motes { position: fixed; inset: 0; pointer-events: none; z-index: 1; overflow: hidden; }
+  /* цепи врат: живут за интерфейсом, считаются на canvas */
+  .chains { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; }
+  .chains-ov { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
+  body.no-bg .chains { display: none; }
+  @media (prefers-reduced-motion: reduce) { .chains { display: none; } }
   .mote {
     position: absolute; bottom: -12px; width: 3px; height: 3px; border-radius: 50%;
     background: var(--fire); box-shadow: 0 0 8px 2px var(--glow);
@@ -1064,7 +1069,20 @@
   font: inherit; font-size: 13.5px; padding: 8px 11px; border-radius: 3px; min-width: 150px; cursor: pointer;
 }
 .srow-s:focus { outline: none; border-color: var(--fire); }
+/* Переключатель «атлас / проекция» и холст объёмной фигуры */
+.viewtabs { display: flex; gap: 8px; justify-content: center; margin: 4px 0 12px; }
+.vtab {
+  font-size: 12.5px; padding: 7px 14px; border-radius: 9px; cursor: pointer;
+  color: var(--gray2); background: rgba(80,150,255,.07); border: 1px solid var(--border2);
+}
+.vtab.on { color: var(--white); background: rgba(80,150,255,.20); border-color: var(--fire); }
+.holocv { display: block; width: 100%; height: min(46vh, 380px); touch-action: none; cursor: grab; }
+.holocv:active { cursor: grabbing; }
+.holohint { text-align: center; font-size: 11px; color: var(--gray); margin-top: 6px; }
+
 /* Цели дня: босс, тень, подземелье */
+.bossfx { display: block; width: 100%; height: 132px; margin: -4px 0 8px; }
+@media (prefers-reduced-motion: reduce) { .bossfx { display: none; } }
 .quests { display: grid; gap: 10px; margin-bottom: 14px; }
 .quest {
   background: var(--card); border: 1px solid var(--border); border-left: 2px solid var(--border2);
@@ -1439,6 +1457,8 @@
 </div>
 
 
+<canvas id="chains" class="chains" aria-hidden="true"></canvas>
+
 <div class="bg-gate" aria-hidden="true">
         <svg viewBox="0 0 300 230" preserveAspectRatio="xMaxYMax meet">
           <defs>
@@ -1571,6 +1591,9 @@ var EXERCISES = {
 };
 
 </script>
+<script src="js/holo.js"></script>
+<script src="js/boss.js"></script>
+<script src="js/rope.js"></script>
 <script>
 /* ═══════════════════════════════════════════════
    АНАТОМИЯ: что работает и как выполнять
@@ -2040,9 +2063,25 @@ function xpPop(el, xp) {
 function openModal(html) {
   document.getElementById("modal").innerHTML = html;
   document.getElementById("overlay").className = "overlay show";
+  hangModal();                   /* окно Системы повисает на цепях */
   pushNav({ modal: 1 });          /* системная кнопка «назад» сначала закроет окно */
 }
-function closeModal() { document.getElementById("overlay").className = "overlay"; }
+function closeModal() {
+  document.getElementById("overlay").className = "overlay";
+  if (HOLO) { HOLO.stop(); HOLO = null; }
+  if (window.Chains) Chains.detach();
+}
+
+/* Цепи цепляются за верхние углы окна, когда оно уже разместилось */
+function hangModal() {
+  if (!window.Chains) return;
+  requestAnimationFrame(function () {
+    var m = document.getElementById("modal");
+    if (!m) return;
+    var r = m.getBoundingClientRect();
+    if (r.width) Chains.attach(r);
+  });
+}
 /* перерисовать содержимое открытого окна, не добавляя запись в историю */
 function setModal(html) { document.getElementById("modal").innerHTML = html; }
 
@@ -2161,6 +2200,7 @@ function addSet() {
   S.cur.sets.push({ w: w, r: r, rec: rec ? 1 : 0 });
   save();
   if (S.cur.sets.length === 1) { pushDone(); remSync(); }
+  if (window.Chains) Chains.impulse(0.6);
   if (dungActive()) { S.dng.run.reps += r; save(); }        /* забег считает повторы отдельно */   /* день закрыт — будить незачем */
   renderTrain();
 
@@ -3117,9 +3157,19 @@ function showBody(ex) {
   openModal(
     '<div class="sys-label">[ Что работает ]</div><div class="sys-rule"></div>' +
     '<h3 style="text-align:center;margin-bottom:12px">' + esc(ex) + "</h3>" +
-    '<div class="bodies big">' +
-      '<div class="bodybox">' + bodySvg("front", on, on2, 1) + '<div class="bodylbl">спереди</div></div>' +
-      '<div class="bodybox">' + bodySvg("back", on, on2, 1) + '<div class="bodylbl">сзади</div></div>' +
+    '<div class="viewtabs">' +
+      '<button type="button" class="vtab on" id="vt-atlas" onclick="showAtlas()">Атлас</button>' +
+      '<button type="button" class="vtab" id="vt-holo" onclick="showHolo()">Проекция 3D</button>' +
+    "</div>" +
+    '<div id="view-atlas">' +
+      '<div class="bodies big">' +
+        '<div class="bodybox">' + bodySvg("front", on, on2, 1) + '<div class="bodylbl">спереди</div></div>' +
+        '<div class="bodybox">' + bodySvg("back", on, on2, 1) + '<div class="bodylbl">сзади</div></div>' +
+      "</div>" +
+    "</div>" +
+    '<div id="view-holo" style="display:none">' +
+      '<canvas id="holocv" class="holocv" aria-label="Объёмная проекция тела"></canvas>' +
+      '<div class="holohint">тяните пальцем, чтобы повернуть</div>' +
     "</div>" +
     '<div class="zoombar">' +
       '<button type="button" class="zbtn" onclick="zoomStep(-1)" aria-label="Уменьшить">&minus;</button>' +
@@ -3133,6 +3183,29 @@ function showBody(ex) {
     '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Закрыть</button></div>'
   );
   setupZoom();
+  HOLO_ON = on; HOLO_ON2 = on2;
+}
+
+var HOLO = null, HOLO_ON = [], HOLO_ON2 = [];
+
+function showAtlas() {
+  document.getElementById("view-atlas").style.display = "";
+  document.getElementById("view-holo").style.display = "none";
+  document.getElementById("vt-atlas").className = "vtab on";
+  document.getElementById("vt-holo").className = "vtab";
+  if (HOLO) { HOLO.stop(); HOLO = null; }
+}
+
+/* Проекция запускается по требованию: пока её не открыли, видеокарта не трогается */
+function showHolo() {
+  document.getElementById("view-atlas").style.display = "none";
+  document.getElementById("view-holo").style.display = "";
+  document.getElementById("vt-atlas").className = "vtab";
+  document.getElementById("vt-holo").className = "vtab on";
+  if (!window.Holo || !Holo.supported()) { toast("Браузер не умеет объёмную графику"); showAtlas(); return; }
+  if (HOLO) HOLO.stop();
+  HOLO = Holo.mount(document.getElementById("holocv"), HOLO_ON, HOLO_ON2);
+  if (!HOLO) { toast("Не удалось запустить проекцию"); showAtlas(); }
 }
 
 /* Блок «Как выполнять»: схема, список мышц, шаги, частая ошибка */
@@ -3267,6 +3340,23 @@ function renderLogList() {
 }
 
 /* Экран тренировки: либо выбор упражнения, либо запись подходов */
+var BOSS_HP_SHOWN = {};
+
+/* Сцена боя живёт на холсте внутри карточки босса. Экран перерисовывается
+   целиком, поэтому прошлое здоровье помним отдельно — так виден удар. */
+function mountBossFx() {
+  if (!window.BossFx) return;
+  var cv = document.getElementById("bossfx");
+  if (!cv) return;
+  var g = cv.getAttribute("data-g"), hp = parseFloat(cv.getAttribute("data-hp"));
+  var seed = 0;
+  for (var i = 0; i < g.length; i++) seed = (seed * 31 + g.charCodeAt(i)) & 0xffff;
+  var prev = typeof BOSS_HP_SHOWN[g] === "number" ? BOSS_HP_SHOWN[g] : hp;
+  BossFx.mount(cv, seed + 7, prev);
+  if (hp < prev - 0.001) BossFx.hit(cv, hp);      /* урон с прошлого подхода */
+  BOSS_HP_SHOWN[g] = hp;
+}
+
 /* Блок «Цель дня»: босс группы, тень из прошлого и подземелье */
 function questHtml(g) {
   var b = bossCurrent(g), lock = bossLocked(g), sets = groupSets(today(), g), h = "";
@@ -3275,6 +3365,8 @@ function questHtml(g) {
     var p = bossProgress(b, sets);
     var pc = Math.min(100, Math.round(p.have / p.need * 100));
     h += '<div class="quest' + (p.done ? " won" : "") + '">' +
+      '<canvas class="bossfx" id="bossfx" data-g="' + g + '" data-hp="' +
+        Math.max(0, 1 - p.have / p.need).toFixed(3) + '" aria-hidden="true"></canvas>' +
       '<div class="quest-top"><span class="quest-ic">☠️</span>' +
         '<div><div class="quest-n">' + esc(b.n) + '</div>' +
         '<div class="quest-d">' + esc(b.d) + "</div></div>" +
@@ -3374,6 +3466,7 @@ function renderTrain() {
     el.innerHTML =
       '<button class="btn sm ghost backbtn" onclick="go(\'home\')">← На главную</button>' +
       questHtml(g) + renderPicker(g);
+    mountBossFx();
     return;
   }
 
@@ -3431,6 +3524,8 @@ function renderTrain() {
        "</div>";
 
   el.innerHTML = h;
+  mountBossFx();
+  if (dungActive()) dungTick();
 }
 
 /* Строка «в прошлый раз» — чтобы было с чем сравнивать */
@@ -4959,6 +5054,7 @@ function boot() {
 
   applyBg();
   spawnMotes();
+  Chains.init();
   renderAll();
 
   if (LOAD_BROKEN === "recovered") toast("Сохранение было повреждено — подняли предыдущую версию");
