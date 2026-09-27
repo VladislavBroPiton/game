@@ -2111,6 +2111,7 @@ function addSet() {
   var rec = isRecord(S.cur.ex, w, r);
   S.cur.sets.push({ w: w, r: r, rec: rec ? 1 : 0 });
   save();
+  if (S.cur.sets.length === 1) { pushDone(); remSync(); }   /* день закрыт — будить незачем */
   renderTrain();
 
   var btn = document.getElementById("btn-addset");
@@ -3500,6 +3501,137 @@ function renderHeat() {
    День считается закрытым, когда записан хотя бы один подход.
    ═══════════════════════════════════════════════ */
 
+/* ── Служба напоминаний ────────────────────────────────────────────
+   Телефон не запускает закрытое веб-приложение сам, поэтому будит его
+   сигналом снаружи. Служба знает только время напоминаний, часовой пояс
+   и дату последней тренировки — что показать, решает телефон: фразу и
+   группу дня он берёт из своей памяти (IndexedDB), а не из сети.
+   Адрес службы: пусто — значит работаем по-старому, без сигналов. */
+var PUSH_URL = "";     /* можно вписать сюда, а можно указать в настройках игры */
+
+function pushUrl() {
+  if (PUSH_URL) return PUSH_URL;
+  try { return localStorage.getItem("forge_push_url") || ""; } catch (e) { return ""; }
+}
+function setPushUrl(u) {
+  try { localStorage.setItem("forge_push_url", u); } catch (e) {}
+}
+var VAPID_PUBLIC = "BDOA1YrTj0ncZyOPy9WM1GLCMu4RPk2_UfNhwt_VXY6Adi32a7XSuYlbBKlD3JqmUmUTp8ZIsnLXZVvj0Y_2JPc";
+
+function pushOn() { return !!pushUrl(); }
+
+/* Общая память с фоновым обработчиком: он не видит localStorage */
+function idb() {
+  return new Promise(function (res, rej) {
+    var q = indexedDB.open("forge", 1);
+    q.onupgradeneeded = function () { q.result.createObjectStore("rem"); };
+    q.onsuccess = function () { res(q.result); };
+    q.onerror = function () { rej(q.error); };
+  });
+}
+function idbPut(val) {
+  return idb().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction("rem", "readwrite");
+      t.objectStore("rem").put(val, "state");
+      t.oncomplete = function () { res(true); };
+      t.onerror = function () { rej(t.error); };
+    });
+  }).catch(function () { return false; });
+}
+function idbGet() {
+  return idb().then(function (db) {
+    return new Promise(function (res) {
+      var r = db.transaction("rem", "readonly").objectStore("rem").get("state");
+      r.onsuccess = function () { res(r.result || null); };
+      r.onerror = function () { res(null); };
+    });
+  }).catch(function () { return null; });
+}
+
+/* Всё, что нужно фоновому обработчику, чтобы собрать напоминание сам */
+function remSync() {
+  var names = [], i;
+  for (i = 0; i < 7; i++) names.push(gname(S.split[i] || DEFAULT_SPLIT[i]));
+  return idbPut({
+    times: S.rem.times.slice(),
+    done: setsToday() > 0 ? today() : "",
+    dayNames: names,
+    phrases: remPool(),
+    seen: (S.rem.seen || []).slice(),
+    head: "Кузница: сегодня "
+  });
+}
+
+/* Очередь фраз общая: фоновый показ тоже её расходует */
+function remPullSeen() {
+  return idbGet().then(function (st) {
+    if (!st || !isArr(st.seen)) return;
+    var cur = S.rem.seen || [], add = [], i;
+    for (i = 0; i < st.seen.length; i++) if (cur.indexOf(st.seen[i]) < 0) add.push(st.seen[i]);
+    if (!add.length) return;
+    S.rem.seen = cur.concat(add);
+    var lim = remPool().length;
+    if (S.rem.seen.length > lim) S.rem.seen = S.rem.seen.slice(S.rem.seen.length - lim);
+    save();
+  });
+}
+
+function urlB64(s) {
+  var pad = "=".repeat((4 - (s.length % 4)) % 4);
+  var raw = atob((s + pad).replace(/-/g, "+").replace(/_/g, "/"));
+  var out = new Uint8Array(raw.length);
+  for (var i = 0; i < raw.length; i++) out[i] = raw.charCodeAt(i);
+  return out;
+}
+
+function pushSend(path, body) {
+  if (!pushOn()) return Promise.resolve(null);
+  return fetch(pushUrl() + path, {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+  }).then(function (r) { return r.json(); }).catch(function () { return null; });
+}
+
+/* Подписаться и сообщить службе время напоминаний */
+function pushSubscribe() {
+  if (!pushOn() || !("serviceWorker" in navigator) || !("PushManager" in window)) return Promise.resolve(false);
+  if (!window.Notification || Notification.permission !== "granted") return Promise.resolve(false);
+  return navigator.serviceWorker.ready.then(function (reg) {
+    return reg.pushManager.getSubscription().then(function (sub) {
+      return sub || reg.pushManager.subscribe({ userVisibleOnly: true,
+        applicationServerKey: urlB64(VAPID_PUBLIC) });
+    });
+  }).then(function (sub) {
+    var j = sub.toJSON();
+    var tz = "UTC";
+    try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (e) {}
+    return pushSend("/sub", { endpoint: j.endpoint, keys: j.keys, times: S.rem.times, tz: tz })
+      .then(function (r) { return !!(r && r.saved); });
+  }).catch(function () { return false; });
+}
+
+function pushUnsubscribe() {
+  if (!pushOn() || !("serviceWorker" in navigator)) return Promise.resolve(false);
+  return navigator.serviceWorker.ready.then(function (reg) {
+    return reg.pushManager.getSubscription();
+  }).then(function (sub) {
+    if (!sub) return false;
+    var ep = sub.endpoint;
+    return sub.unsubscribe().then(function () { return pushSend("/unsub", { endpoint: ep }); })
+      .then(function () { return true; });
+  }).catch(function () { return false; });
+}
+
+/* Сообщить службе, что день закрыт — чтобы не будила зря */
+function pushDone() {
+  if (!pushOn() || !("serviceWorker" in navigator)) return;
+  navigator.serviceWorker.ready.then(function (reg) {
+    return reg.pushManager.getSubscription();
+  }).then(function (sub) {
+    if (sub) pushSend("/done", { endpoint: sub.endpoint, date: today() });
+  }).catch(function () {});
+}
+
 /* Фразы для напоминаний. Показываются по кругу без повторов: к своим
    строкам добавляются мысли из уже открытых хроник — тогда напоминание
    перекликается с тем, что человек уже прочитал. */
@@ -3919,6 +4051,7 @@ function remMark(list) {
     if (S.rem.shown.hasOwnProperty(k) && keep.indexOf(k) < 0) delete S.rem.shown[k];
   }
   save();
+  remSync();
 }
 
 /* Каждое напоминание — своё уведомление со своей фразой: при трёх в день
@@ -3940,7 +4073,8 @@ function remFire() {
 function remHead() { return "Кузница: сегодня " + gname(groupToday()).toLowerCase(); }
 
 function remToast() {
-  toast(remHead().replace("Кузница: ", "") + ", день не отмечен. " + remPhrase(remLine()));
+  var g = gname(groupToday());
+  toast("Сегодня " + g.toLowerCase() + ", день не отмечен. " + remPhrase(remLine()));
   return true;
 }
 
@@ -3984,6 +4118,57 @@ function remAsk() {
   } catch (e) { toast("Не получилось спросить разрешение"); }
 }
 
+/* ── Служба напоминаний в настройках ── */
+function pushStatus() {
+  if (!pushUrl()) return "не подключена — напомним при входе в игру";
+  return "подключена";
+}
+
+function askPushUrl() {
+  var cur = pushUrl();
+  openModal(
+    '<div class="sys-label">[ Служба напоминаний ]</div><div class="sys-rule"></div>' +
+    '<h3 style="text-align:center">Уведомления при закрытой игре</h3>' +
+    "<p>Телефон не запускает закрытое веб-приложение сам. Чтобы напоминание приходило и тогда, " +
+    "нужен адрес службы —она будит телефон в нужное время. Как её завести, написано в руководстве, " +
+    "раздел «Напоминания».</p>" +
+    '<input class="big" id="purl" placeholder="https://…workers.dev" value="' + esc(cur) + '">' +
+    '<div class="remnote">Служба знает только время напоминаний, часовой пояс и дату последней ' +
+    "тренировки. Фразы и то, что вы делали, остаются на телефоне.</div>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+      '<button class="btn primary" onclick="savePushUrl()">Сохранить</button></div>'
+  );
+}
+
+function savePushUrl() {
+  var el = document.getElementById("purl"), u = el ? el.value.trim() : "";
+  if (u && !/^https:\/\/[^\s]+$/.test(u)) { toast("Адрес должен начинаться с https://"); return; }
+  setPushUrl(u.replace(/\/+$/, ""));
+  closeModal(); renderProfile();
+  if (!u) { pushUnsubscribe(); toast("Служба отключена"); return; }
+  pushSubscribe().then(function (ok) {
+    remSync();
+    toast(ok ? "Служба подключена" : "Служба не ответила — проверьте адрес и разрешение на уведомления");
+  });
+}
+
+/* Проверка: показать уведомление прямо сейчас */
+function remTest() {
+  if (!window.Notification || Notification.permission !== "granted") {
+    toast("Сначала разрешите уведомления"); return;
+  }
+  var g = gname(groupToday()).toLowerCase();
+  var line = remPhrase(remLine());
+  save(); remSync();
+  navigator.serviceWorker.ready.then(function (r) {
+    r.showNotification("Кузница: сегодня " + g, {
+      body: line + "\n\n" + "Так выглядит напоминание",
+      icon: "./icon-192.png", badge: "./icon-192.png", tag: "forge-test", renotify: true
+    });
+    toast("Уведомление отправлено — посмотрите шторку");
+  }).catch(function () { toast("Не получилось показать уведомление"); });
+}
+
 /* ── окно настройки ── */
 function askRem() {
   remDraft = { n: S.rem.n, times: S.rem.times.slice() };
@@ -4010,8 +4195,11 @@ function remModalHtml() {
       "не записано ни одного подхода. Отметили тренировку — на сегодня тишина.</p>" +
     '<div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center;margin-bottom:6px">' + chips + "</div>" +
     fields +
-    (needAsk ? '<div style="margin-top:14px;text-align:center">' +
-                 '<button class="btn sm" onclick="remAsk()">Разрешить уведомления</button></div>' : "") +
+    '<div style="margin-top:14px;text-align:center;display:flex;gap:8px;justify-content:center;flex-wrap:wrap">' +
+      (needAsk ? '<button class="btn sm" onclick="remAsk()">Разрешить уведомления</button>' : "") +
+      (n > 0 && window.Notification && Notification.permission === "granted"
+        ? '<button class="btn sm" onclick="remTest()">Проверить</button>' : "") +
+    "</div>" +
     '<div class="remsample">«' + esc(remSample()) + '»<div class="remsample-s">у каждого напоминания своя фраза: при трёх в день за сутки придут три разные. В запасе ' +
       (REM_LINES.length + REM_PROVERBS.length) + " фраз и пословиц плюс мысли из открытых хроник — повторов не будет</div></div>" +
     '<div class="remnote"><b style="color:var(--gray2)">' + esc(remNote()) + "</b></div>" +
@@ -4046,6 +4234,13 @@ function remSave() {
   S.rem.shown = {};
   remMark(remDue());            /* только что настроили — прошедшее время сегодня не дёргаем */
   save(); closeModal(); renderProfile(); remStart();
+  if (S.rem.n) pushSubscribe().then(function (ok) {
+    remSync();
+    if (pushOn() && !ok && window.Notification && Notification.permission === "granted") {
+      toast("Служба напоминаний не ответила — напомним при входе в игру");
+    }
+  });
+  else pushUnsubscribe().then(remSync);
   toast(S.rem.n ? "Напоминания: " + S.rem.times.join(", ") : "Напоминания выключены");
 }
 
@@ -4116,6 +4311,9 @@ function renderProfile() {
       '<div class="set-row"><div><b>Напоминания</b><div class="set-s">' + remText() +
         " — " + remNoteShort() + '</div></div>' +
         '<button class="btn sm" onclick="askRem()">Настроить</button></div>' +
+      '<div class="set-row"><div><b>Служба напоминаний</b><div class="set-s">' + pushStatus() +
+        " — нужна, чтобы уведомление приходило при закрытой игре</div></div>" +
+        '<button class="btn sm" onclick="askPushUrl()">Настроить</button></div>' +
       '<div class="set-row"><div><b>Потолок снаряда</b><div class="set-s">' + fmtW(S.maxW) +
         " кг на гантель — на этом весе игра начинает считать рекорды по повторам</div></div>" +
         '<button class="btn sm" onclick="askMaxW()">Изменить</button></div>' +
@@ -4364,6 +4562,7 @@ function boot() {
 
   remStart();
   document.addEventListener("visibilitychange", remFire);
+  remPullSeen().then(remSync);          /* фоновый показ мог потратить фразы */
 
   if (!S.name && !workoutCount()) {
     setTimeout(function () {

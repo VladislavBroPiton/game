@@ -2,7 +2,7 @@
    Стратегия: сеть первой для страницы (чтобы не застрять на старой версии),
    кэш первым для иконок. Без сети всё берётся из кэша. */
 
-var CACHE = "forge-body-v5";   /* имя новое: старый кэш игры-плана сносится сам */
+var CACHE = "forge-body-v6";   /* имя новое: старый кэш игры-плана сносится сам */
 var ASSETS = [
   "./",
   "./index.html",
@@ -84,3 +84,70 @@ self.addEventListener("notificationclick", function (e) {
     })
   );
 });
+
+/* ── Напоминание по сигналу службы ─────────────────────────────────
+   Сигнал приходит пустым: ни фразы, ни группы мышц в нём нет. Всё это
+   лежит в общей памяти (IndexedDB), которую заполняет само приложение,
+   поэтому наружу данные о тренировках не уходят. */
+
+function remState(write) {
+  return new Promise(function (res) {
+    var q = indexedDB.open("forge", 1);
+    q.onupgradeneeded = function () { q.result.createObjectStore("rem"); };
+    q.onerror = function () { res(null); };
+    q.onsuccess = function () {
+      var db = q.result;
+      if (!write) {
+        var r = db.transaction("rem", "readonly").objectStore("rem").get("state");
+        r.onsuccess = function () { res(r.result || null); };
+        r.onerror = function () { res(null); };
+        return;
+      }
+      var t = db.transaction("rem", "readwrite");
+      t.objectStore("rem").put(write, "state");
+      t.oncomplete = function () { res(true); };
+      t.onerror = function () { res(false); };
+    };
+  });
+}
+
+function hhmm() {
+  var d = new Date(), h = d.getHours(), m = d.getMinutes();
+  return (h < 10 ? "0" : "") + h + (m < 10 ? "0" : "") + m;
+}
+
+function todayLocal() {
+  var d = new Date(), m = d.getMonth() + 1, day = d.getDate();
+  return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
+}
+
+self.addEventListener("push", function (e) { e.waitUntil(remPush()); });
+
+/* вынесено отдельно, чтобы поведение можно было проверить тестом */
+function remPush() {
+  return remState().then(function (st) {
+    if (!st || !st.phrases || !st.phrases.length) return;
+    if (st.done === todayLocal()) return;            /* день уже закрыт — молчим */
+
+    var seen = st.seen || [], left = [], i;
+    for (i = 0; i < st.phrases.length; i++) {
+      if (seen.indexOf(st.phrases[i].k) < 0) left.push(st.phrases[i]);
+    }
+    if (!left.length) { seen = []; left = st.phrases; }   /* круг пройден */
+    var p = left[Math.floor(Math.random() * left.length)];
+    seen = seen.concat([p.k]);
+    if (seen.length > st.phrases.length) seen = seen.slice(seen.length - st.phrases.length);
+
+    var group = (st.dayNames || [])[new Date().getDay()] || "тренировка";
+    var line = p.t + (p.sig ? " \u00b7 " + p.sig : "");
+
+    st.seen = seen;
+    return remState(st).then(function () {
+      return self.registration.showNotification((st.head || "Кузница: сегодня ") + group.toLowerCase(), {
+        body: line + "\n\n" + "План на сегодня не отмечен",
+        icon: "./icon-192.png", badge: "./icon-192.png",
+        tag: "forge-push-" + hhmm(), renotify: true
+      });
+    });
+  });
+}
