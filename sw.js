@@ -2,7 +2,7 @@
    Стратегия: сеть первой для страницы (чтобы не застрять на старой версии),
    кэш первым для иконок. Без сети всё берётся из кэша. */
 
-var CACHE = "forge-body-v15";   /* имя новое: старый кэш игры-плана сносится сам */
+var CACHE = "forge-body-v16";   /* имя новое: старый кэш игры-плана сносится сам */
 var ASSETS = [
   "./",
   "./index.html",
@@ -130,7 +130,20 @@ self.addEventListener("push", function (e) { e.waitUntil(remPush()); });
 /* вынесено отдельно, чтобы поведение можно было проверить тестом */
 function remPush() {
   return remState().then(function (st) {
-    if (!st || !st.phrases || !st.phrases.length) return;
+    if (!st) return;
+
+    /* проверка доставки: показываем всегда, даже если день уже отмечен */
+    if (st.test) {
+      st.test = 0;
+      return remState(st).then(function () {
+        return self.registration.showNotification("Кузница: связь со службой работает", {
+          body: "Сигнал дошёл. Напоминания будут приходить и при закрытой игре.",
+          icon: "./icon-192.png", badge: "./icon-192.png", tag: "forge-ping", renotify: true
+        });
+      });
+    }
+
+    if (!st.phrases || !st.phrases.length) return;
     if (st.done === todayLocal()) return;            /* день уже закрыт — молчим */
 
     var seen = st.seen || [], left = [], i;

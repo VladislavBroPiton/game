@@ -3944,8 +3944,15 @@ function pushSubscribe() {
     var tz = "UTC";
     try { tz = Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"; } catch (e) {}
     return pushSend("/sub", { endpoint: j.endpoint, keys: j.keys, times: S.rem.times, tz: tz })
-      .then(function (r) { return !!(r && r.saved); });
-  }).catch(function () { return false; });
+      .then(function (r) {
+        var ok = !!(r && r.saved);
+        try { localStorage.setItem("forge_push_ok", ok ? today() : ""); } catch (e) {}
+        return ok;
+      });
+  }).catch(function () {
+    try { localStorage.setItem("forge_push_ok", ""); } catch (e) {}
+    return false;
+  });
 }
 
 function pushUnsubscribe() {
@@ -4446,6 +4453,7 @@ function remStart() {
 function remAsk() {
   if (!window.Notification) { toast("Браузер не умеет уведомления"); return; }
   function done(p) {
+    if (p === "granted" && pushOn() && remOn()) pushSubscribe().then(function () { remSync(); });
     setModal(remModalHtml());
     toast(p === "granted" ? "Уведомления разрешены"
                           : "Уведомления запрещены — напомним при входе в игру");
@@ -4459,7 +4467,9 @@ function remAsk() {
 /* ── Служба напоминаний в настройках ── */
 function pushStatus() {
   if (!pushUrl()) return "не подключена — напомним при входе в игру";
-  return "подключена";
+  if (!window.Notification || Notification.permission !== "granted") return "адрес указан, но уведомления не разрешены";
+  if (!remOn()) return "адрес указан, но напоминания выключены";
+  return pushRegistered() ? "подключена, телефон зарегистрирован" : "адрес указан, телефон ещё не зарегистрирован";
 }
 
 function askPushUrl() {
@@ -4487,6 +4497,39 @@ function savePushUrl() {
   pushSubscribe().then(function (ok) {
     remSync();
     toast(ok ? "Служба подключена" : "Служба не ответила — проверьте адрес и разрешение на уведомления");
+  });
+}
+
+function pushRegistered() {
+  try { return !!localStorage.getItem("forge_push_ok"); } catch (e) { return false; }
+}
+
+/* Настоящая проверка: служба шлёт сигнал этому телефону прямо сейчас.
+   Отличается от кнопки «Проверить» — та показывает уведомление сама,
+   не трогая ни интернет, ни службу. */
+function pushPing() {
+  if (!pushOn()) { toast("Сначала укажите адрес службы"); return; }
+  if (!window.Notification || Notification.permission !== "granted") { toast("Сначала разрешите уведомления"); return; }
+  toast("Проверяю доставку…");
+  pushSubscribe().then(function (ok) {
+    renderProfile();
+    if (!ok) { toast("Телефон не удалось зарегистрировать в службе — проверьте адрес"); return; }
+    return idbGet().then(function (st) {
+      st = st || {};
+      st.test = 1;                       /* пусть обработчик покажет именно проверку */
+      return idbPut(st);
+    }).then(function () {
+      return navigator.serviceWorker.ready;
+    }).then(function (reg) {
+      return reg.pushManager.getSubscription();
+    }).then(function (sub) {
+      if (!sub) { toast("Подписка не создалась"); return; }
+      return pushSend("/ping", { endpoint: sub.endpoint }).then(function (r) {
+        if (!r) { toast("Служба не ответила"); return; }
+        if (r.sent) toast("Служба отправила сигнал. Уведомление должно прийти через несколько секунд");
+        else toast("Служба не смогла доставить: " + (r.why || ("код " + r.code)));
+      });
+    });
   });
 }
 
@@ -4537,6 +4580,8 @@ function remModalHtml() {
       (needAsk ? '<button class="btn sm" onclick="remAsk()">Разрешить уведомления</button>' : "") +
       (n > 0 && window.Notification && Notification.permission === "granted"
         ? '<button class="btn sm" onclick="remTest()">Проверить</button>' : "") +
+      (n > 0 && pushOn() && window.Notification && Notification.permission === "granted"
+        ? '<button class="btn sm holo" onclick="pushPing()">Проверить доставку</button>' : "") +
     "</div>" +
     '<div class="remsample">«' + esc(remSample()) + '»<div class="remsample-s">у каждого напоминания своя фраза: при трёх в день за сутки придут три разные. В запасе ' +
       (REM_LINES.length + REM_PROVERBS.length) + " фраз и пословиц плюс мысли из открытых хроник — повторов не будет</div></div>" +
@@ -4907,6 +4952,11 @@ function boot() {
   remStart();
   document.addEventListener("visibilitychange", remFire);
   remPullSeen().then(remSync);          /* фоновый показ мог потратить фразы */
+  /* Регистрируем телефон в службе при каждом запуске: подписка могла
+     не создаться раньше или протухнуть, а заметить это иначе нельзя. */
+  if (pushOn() && remOn() && window.Notification && Notification.permission === "granted") {
+    pushSubscribe().then(function () { remSync(); });
+  }
 
   if (!S.name && !workoutCount()) {
     setTimeout(function () {
