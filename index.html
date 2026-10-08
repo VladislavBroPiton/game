@@ -1088,6 +1088,9 @@
 .holocv:active { cursor: grabbing; }
 .holohint { text-align: center; font-size: 11px; color: var(--gray); margin-top: 6px; }
 
+.lgmore { display: flex; justify-content: center; margin-top: 12px; }
+.lgmore .btn { min-width: 210px; justify-content: center; }
+
 /* Цели дня: босс, тень, подземелье */
 .bossfx { display: block; width: 100%; height: 132px; margin: -4px 0 8px; }
 @media (prefers-reduced-motion: reduce) { .bossfx { display: none; } }
@@ -2682,10 +2685,23 @@ function legendNextLine() {
                     : "следующая — через " + need + " " + plural(need, "тренировку", "тренировки", "тренировок");
 }
 
-/* Коллекция в профиле */
+/* Коллекция в профиле: показываем по четыре, остальные — по кнопке.
+   Иначе на экран вываливаются полторы сотни карточек. */
+var LG_STEP = 4;
+var LG_SHOWN = LG_STEP;
+
+function legendsMore() {
+  LG_SHOWN += LG_STEP;
+  renderProfile();
+  var btn = document.getElementById("lg-more");
+  if (btn) btn.scrollIntoView({ block: "center" });
+}
+
+function legendsReset() { LG_SHOWN = LG_STEP; }
+
 function legendsHtml() {
-  var open = legendsOpen(), h = "";
-  for (var i = 0; i < LEGENDS.length; i++) {
+  var open = legendsOpen(), h = "", limit = Math.min(LEGENDS.length, LG_SHOWN);
+  for (var i = 0; i < limit; i++) {
     var L = LEGENDS[i], isOpen = i < open;
     h += '<div class="lgcard' + (isOpen ? "" : " lock") + '"' +
          (isOpen ? ' onclick="showLegend(' + jsq(L.id) + ')"' : "") + ">" +
@@ -2695,6 +2711,18 @@ function legendsHtml() {
          "</div>";
   }
   return h;
+}
+
+/* Кнопка «Показать ещё»: пока показаны не все записи */
+function legendsMoreHtml() {
+  if (LG_SHOWN >= LEGENDS.length) {
+    return LEGENDS.length > LG_STEP
+      ? '<div class="lgmore"><button type="button" class="btn sm" onclick="legendsReset(); renderProfile();">Свернуть</button></div>'
+      : "";
+  }
+  var left = LEGENDS.length - LG_SHOWN;
+  return '<div class="lgmore"><button type="button" class="btn sm" id="lg-more" onclick="legendsMore()">' +
+    "Показать ещё " + Math.min(LG_STEP, left) + " · осталось " + left + "</button></div>";
 }
 
 /* ═══════════════════════════════════════════════
@@ -4678,6 +4706,7 @@ function renderProfile() {
       '<div style="color:var(--gray);font-size:13px;margin-bottom:12px">Истории тех, кто вытащил себя ежедневной работой. Новая запись открывается по мере тренировок: открыто ' +
       legendsOpen() + " из " + LEGENDS.length + '.</div>' +
       '<div class="lggrid">' + legendsHtml() + "</div>" +
+      legendsMoreHtml() +
     "</div>" +
 
     '<div class="card" style="margin-bottom:14px"><h3>Боссы групп</h3>' +
@@ -4895,6 +4924,10 @@ function go(name, noPush) {
   for (var j = 0; j < tabs.length; j++) {
     var on = tabs[j].getAttribute("data-go") === name;
     tabs[j].className = tabs[j].className.replace(" active", "") + (on ? " active" : "");
+  }
+  if (name === "profile") {                  /* заходим в профиль — снова четыре записи */
+    legendsReset();
+    renderProfile();
   }
   window.scrollTo(0, 0);
   if (!noPush) pushNav({ scr: name });
