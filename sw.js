@@ -2,7 +2,7 @@
    Стратегия: сеть первой для страницы (чтобы не застрять на старой версии),
    кэш первым для иконок. Без сети всё берётся из кэша. */
 
-var CACHE = "forge-body-v17";   /* имя новое: старый кэш игры-плана сносится сам */
+var CACHE = "forge-body-v18";   /* имя новое: старый кэш игры-плана сносится сам */
 var ASSETS = [
   "./",
   "./index.html",
@@ -115,11 +115,6 @@ function remState(write) {
   });
 }
 
-function hhmm() {
-  var d = new Date(), h = d.getHours(), m = d.getMinutes();
-  return (h < 10 ? "0" : "") + h + (m < 10 ? "0" : "") + m;
-}
-
 function todayLocal() {
   var d = new Date(), m = d.getMonth() + 1, day = d.getDate();
   return d.getFullYear() + "-" + (m < 10 ? "0" : "") + m + "-" + (day < 10 ? "0" : "") + day;
@@ -163,7 +158,8 @@ function remPush() {
       return self.registration.showNotification((st.head || "Кузница: сегодня ") + group.toLowerCase(), {
         body: line + "\n\n" + "План на сегодня не отмечен",
         icon: "./icon-192.png", badge: "./icon-192.png",
-        tag: "forge-push-" + hhmm(), renotify: true
+        tag: "forge-rem", renotify: true   /* один и тот же ярлык: новое напоминание
+                                              заменяет прежнее и шторка не копит их пачками */
       });
     });
   });
