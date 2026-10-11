@@ -2,7 +2,7 @@
    Стратегия: сеть первой для страницы (чтобы не застрять на старой версии),
    кэш первым для иконок. Без сети всё берётся из кэша. */
 
-var CACHE = "forge-body-v18";   /* имя новое: старый кэш игры-плана сносится сам */
+var CACHE = "forge-body-v19";   /* имя новое: старый кэш игры-плана сносится сам */
 var ASSETS = [
   "./",
   "./index.html",
@@ -42,6 +42,8 @@ self.addEventListener("activate", function (e) {
 self.addEventListener("fetch", function (e) {
   var req = e.request;
   if (req.method !== "GET") return;
+  /* чужие адреса (служба рейда и напоминаний) — мимо кэша, всегда свежие */
+  if (new URL(req.url).origin !== self.location.origin) return;
 
   var isPage = req.mode === "navigate" ||
                (req.headers.get("accept") || "").indexOf("text/html") > -1;

@@ -1321,6 +1321,84 @@
 /* Кнопка возврата над содержимым экрана */
 .backbtn { margin-bottom: 12px; }
 
+
+/* ═══════════════ Карта года, постеры, карта месяца, рейд ═══════════════ */
+.card-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; margin-bottom: 6px; }
+.card-head h3 { margin: 0; }
+.seg { display: inline-flex; border: 1px solid var(--border2); border-radius: 3px; overflow: hidden; }
+.seg-b { background: transparent; border: 0; padding: 6px 12px; font-size: 12.5px; color: var(--gray2); cursor: pointer; }
+.seg-b + .seg-b { border-left: 1px solid var(--border2); }
+.seg-b.on { background: var(--fire-dim); color: var(--fire-soft); font-weight: 700; }
+
+.heat.year, .heat-months.year { gap: 2px; max-width: 100%; }
+.heat-months.year { overflow: hidden; }
+.heat-wrap > div:first-child { min-width: 0; max-width: 100%; }   /* год шире экрана — крутится внутри, а не вся страница */
+.heat.year .heat-week { gap: 2px; }
+.heat.year .heat-cell { width: 10px; height: 10px; min-height: 10px; max-height: 10px; flex-basis: 10px; }
+.heat-months.year .heat-month { width: 10px; font-size: 10px; }
+.heat-cell.in-run { border-color: rgba(240,180,41,.75); }
+.heat-cell.fail { background: rgba(255,77,109,.45); border-color: var(--red); }
+.heat-legend .heat-cell.in-run { background: #1D5488; }
+
+.poster-img { display: block; width: 100%; max-width: 360px; margin: 6px auto 4px; border: 1px solid var(--border2); border-radius: 3px; }
+.pl-sub { font-size: 11.5px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--gray); margin-bottom: 8px; }
+.mchips { display: flex; flex-wrap: wrap; gap: 7px; }
+.mchip { background: var(--card2); border: 1px solid var(--border2); color: var(--white); border-radius: 3px; padding: 7px 12px; font-size: 13px; cursor: pointer; }
+.mchip:hover { border-color: var(--fire); color: var(--fire-soft); }
+.rk-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 7px; }
+.rk-item { display: flex; flex-direction: column; align-items: center; gap: 5px; padding: 10px 6px; background: var(--card2);
+  border: 1px solid var(--border2); border-radius: 3px; color: var(--white); cursor: pointer; font-size: 12.5px; }
+.rk-item:hover { border-color: var(--fire); }
+.rk-item.off { opacity: .4; cursor: default; }
+.rk-t { font-weight: 700; }
+.rk-d { color: var(--gray); font-size: 11.5px; }
+
+.mp-head { display: flex; align-items: center; justify-content: center; gap: 14px; margin-bottom: 6px; }
+.mp-title { font-weight: 800; letter-spacing: .5px; min-width: 150px; text-align: center; }
+.mp-nav { background: var(--card2); border: 1px solid var(--border2); color: var(--white); width: 34px; height: 34px; border-radius: 3px; font-size: 18px; cursor: pointer; }
+.mp-nav:disabled { opacity: .3; cursor: default; }
+.mp-svg { display: block; width: 100%; max-width: 460px; margin: 0 auto; background: rgba(5,7,12,.55); border: 1px solid var(--border); border-radius: 3px; }
+.mp-cor { stroke: #2E80C9; stroke-width: 6; stroke-linecap: round; opacity: .55; }
+.mp-cor.broken { stroke: #FF4D6D; stroke-dasharray: 3 5; opacity: .45; }
+.mp-cor.fog { stroke: #2A3A50; stroke-dasharray: 2 6; opacity: .5; }
+.mp-room { stroke-width: 1.5; }
+.mp-room.lit { fill: #12314F; stroke: #4DA6FF; }
+.mp-room.lit.l2 { fill: #1D5488; }
+.mp-room.lit.l3 { fill: #2E80C9; }
+.mp-room.lit.l4 { fill: #4DA6FF; filter: drop-shadow(0 0 6px rgba(77,166,255,.7)); }
+.mp-room.fall { fill: #1A0C12; stroke: #5A2232; }
+.mp-crack { fill: none; stroke: #FF4D6D; stroke-width: 1.4; opacity: .7; }
+.mp-room.fog { fill: transparent; stroke: #2A3A50; stroke-dasharray: 3 3; }
+.mp-ic { font-size: 14px; text-anchor: middle; }
+.mp-chest { font-size: 11px; fill: var(--gold); text-anchor: middle; }
+.mp-day { font-size: 7.5px; fill: var(--gray2); }
+.mp-tag { font-size: 8px; fill: var(--gray); text-anchor: middle; letter-spacing: 1px; }
+.mp-hero { fill: var(--gold); filter: drop-shadow(0 0 4px rgba(240,180,41,.9)); }
+.mp-g { cursor: pointer; }
+.mp-sum { text-align: center; color: var(--gray2); font-size: 13px; margin-top: 8px; }
+.mp-legend { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px 14px; font-size: 11.5px; color: var(--gray); margin-top: 8px; }
+.mp-legend .lg { display: inline-block; width: 11px; height: 11px; margin-right: 5px; vertical-align: -1px; border-radius: 2px; font-style: normal; }
+.lg.lit { background: #2E80C9; } .lg.fall { background: #1A0C12; border: 1px solid #FF4D6D; }
+.lg.fog { border: 1px dashed #2A3A50; } .lg.chest { color: var(--gold); width: auto; height: auto; }
+
+.raid-top { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.raid-txt { color: var(--gray2); font-size: 13.5px; line-height: 1.5; margin-top: 8px; }
+.raid-code { background: var(--fire-dim); border: 1px solid #17304F; color: var(--fire-soft); border-radius: 3px; padding: 5px 10px;
+  font-size: 12.5px; letter-spacing: 1.5px; font-weight: 700; cursor: pointer; }
+.raid-goal { margin: 10px 0 8px; font-size: 14px; color: var(--gray2); }
+.raid-goal b { color: var(--white); font-size: 20px; }
+.raid-big { height: 9px; }
+.raid-big.done i { background: linear-gradient(90deg, var(--green), #9FF5C8); box-shadow: 0 0 10px rgba(61,214,140,.5); }
+.raid-list { margin-top: 12px; display: grid; gap: 7px; }
+.raid-m { display: grid; grid-template-columns: minmax(0, 1.2fr) 1fr auto; gap: 10px; align-items: center; font-size: 13.5px; }
+.raid-m.me .raid-n { color: var(--fire-soft); font-weight: 700; }
+.raid-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.raid-bar { height: 5px; background: var(--card2); border-radius: 3px; overflow: hidden; }
+.raid-bar i { display: block; height: 100%; background: var(--fire); }
+.raid-r { font-weight: 700; min-width: 40px; text-align: right; }
+.raid-foot { display: flex; justify-content: space-between; margin-top: 12px; }
+.rlnk { background: none; border: 0; color: var(--gray); font-size: 12.5px; text-decoration: underline; cursor: pointer; padding: 4px 0; }
+.rlnk:hover { color: var(--fire-soft); }
 </style>
 </head>
 <body>
@@ -1421,6 +1499,7 @@
       </div>
     </div>
 
+    <div class="card" id="raid-card" style="margin-bottom:16px"></div>
     <div class="card" id="legend-card" style="margin-bottom:16px"></div>
 
     <div class="card">
@@ -1694,6 +1773,9 @@ var S = {
   bg: 1,             // 1 — врата на фоне
   bosses: {},        // сколько боссов повержено в каждой группе
   dng: { last: "", wins: 0, best: 0, run: null },   // подземелье: попытки и рекорд
+  raid: { code: "", member: "", sent: {}, won: "" },   // рейд: код, кто я, что уже отправлено, какую неделю взяли
+  posterSeen: "",    // за какой месяц уже показан постер итогов
+  heatYear: false,   // календарь в профиле: год вместо 12 недель
   rem: { n: 0, times: [], shown: {}, seen: [] }  // напоминания: сколько раз, во сколько, что показали, какие фразы уже были
 };
 
@@ -1733,6 +1815,9 @@ function load() {
     if (p.rem && typeof p.rem === "object") S.rem = p.rem;
     if (p.bosses && typeof p.bosses === "object") S.bosses = p.bosses;
     if (p.dng && typeof p.dng === "object") S.dng = p.dng;
+    if (p.raid && typeof p.raid === "object") S.raid = p.raid;
+    if (typeof p.posterSeen === "string") S.posterSeen = p.posterSeen;
+    if (typeof p.heatYear === "boolean") S.heatYear = p.heatYear;
   } catch (e) {}
 }
 
@@ -1787,6 +1872,9 @@ function normalizeState() {
   if (S.rem.times.length !== S.rem.n) S.rem.times = S.rem.n ? REM_PRESETS[S.rem.n].slice() : [];
   if (!S.rem.shown || typeof S.rem.shown !== "object") S.rem.shown = {};
   if (!isArr(S.rem.seen)) S.rem.seen = [];
+  if (!S.raid || typeof S.raid !== "object") S.raid = { code: "", member: "", sent: {}, won: "" };
+  if (!S.raid.sent || typeof S.raid.sent !== "object") S.raid.sent = {};
+  if (typeof S.posterSeen !== "string") S.posterSeen = "";
 }
 
 /* ═══════════════════════════════════════════════
@@ -2305,6 +2393,7 @@ function finishWorkout() {
   save();
   renderAll();
   go("home");
+  raidPush();
   confetti(recs ? 90 : 55);
   showResult(c, xp, recs, before, after, newLegend, rankUp, extras);
 }
@@ -2807,7 +2896,8 @@ function showRankUp(lvl) {
     '<div class="rank-up-glow">' + rankBadge(lvl, "big") + "</div>" +
     '<h3 style="text-align:center">Ранг ' + R.letter + " · " + esc(R.title) + "</h3>" +
     '<p style="text-align:center;color:var(--gray2)">' + esc(R.desc) + "</p>" +
-    '<div class="modal-btns"><button class="btn primary" onclick="afterRank()">Принять</button></div>'
+    '<div class="modal-btns"><button class="btn" onclick="openRankPoster(\'' + R.letter + '\', \'afterRank()\')">🎖 Плакат</button>' +
+    '<button class="btn primary" onclick="afterRank()">Принять</button></div>'
   );
 }
 
@@ -3161,6 +3251,7 @@ function renderHome() {
 
   renderWeek();
   renderWeekChallenge();
+  renderRaid();
   renderLegendCard();
   renderLogList();
 }
@@ -3810,6 +3901,10 @@ function setsOn(date) {
 function renderHeat() {
   var el = document.getElementById("heatmap");
   if (!el) return;
+  if (S.heatYear) { renderHeatYear(); return; }
+  el.className = "heat";
+  var mr0 = document.getElementById("heat-months");
+  if (mr0) mr0.className = "heat-months";
   var t = today();
   var dt = new Date(t + "T00:00:00");
   var shift = (dt.getDay() + 6) % 7;              // понедельник = 0
@@ -3857,6 +3952,712 @@ function renderHeat() {
         plural(totalDays, "тренировка", "тренировки", "тренировок") + "</div></div>" +
       '<div class="hs"><div class="n">' + (avg || "—") + '</div><div class="l">подходов за тренировку</div></div>';
   }
+}
+
+/* ═══════════════════════════════════════════════
+   СЕРИИ И ПРОВАЛЫ — общий подсчёт для карты года и итогов
+   Правило то же, что у серии в игре: один пропуск серию не рвёт,
+   два дня подряд без тренировки — провал.
+   ═══════════════════════════════════════════════ */
+
+function pad2(n) { return (n < 10 ? "0" : "") + n; }
+
+function runsBetween(from, to) {
+  var runs = [], cur = null, a = allDates(), i;
+  for (i = 0; i < a.length; i++) {
+    var d = a[i];
+    if (d < from || d > to) continue;
+    if (cur && daysBetween(cur.end, d) <= 2) { cur.end = d; cur.len++; }
+    else { if (cur) runs.push(cur); cur = { start: d, end: d, len: 1 }; }
+  }
+  if (cur) runs.push(cur);
+  return runs;
+}
+
+/* Провал — день, когда серия от трёх тренировок оборвалась (второй пустой день подряд) */
+function failsBetween(from, to) {
+  var runs = runsBetween(shiftDate(from, -400), to), out = {}, t = today(), i;
+  for (i = 0; i < runs.length; i++) {
+    if (runs[i].len < 3) continue;
+    var f = shiftDate(runs[i].end, 2);
+    var next = runs[i + 1];
+    if (f > t || f > to || f < from) continue;
+    if (next && next.start <= f) continue;
+    out[f] = runs[i].len;
+  }
+  return out;
+}
+
+/* ═══════════════════════════════════════════════
+   ТЕПЛОВАЯ КАРТА ГОДА
+   ═══════════════════════════════════════════════ */
+
+function setHeatYear(on) {
+  S.heatYear = !!on;
+  save();
+  renderProfile();
+}
+
+function heatTabsHtml() {
+  return '<div class="seg" role="tablist">' +
+    '<button class="seg-b' + (S.heatYear ? "" : " on") + '" onclick="setHeatYear(false)">12 недель</button>' +
+    '<button class="seg-b' + (S.heatYear ? " on" : "") + '" onclick="setHeatYear(true)">Год</button></div>';
+}
+
+function renderHeatYear() {
+  var el = document.getElementById("heatmap");
+  if (!el) return;
+  var t = today(), dt = new Date(t + "T00:00:00");
+  var lastMonday = shiftDate(t, -((dt.getDay() + 6) % 7));
+  var WEEKS = 53, first = shiftDate(lastMonday, -(WEEKS - 1) * 7);
+  var from = shiftDate(t, -364);
+
+  /* дни внутри длинных серий (от 7 тренировок) — с золотой рамкой */
+  var runs = runsBetween(shiftDate(first, -60), t), inRun = {}, i, best = 0;
+  for (i = 0; i < runs.length; i++) {
+    var r = runs[i];
+    if (r.end >= from) best = Math.max(best, r.len);
+    if (r.len < 7) continue;
+    for (var d = r.start; d <= r.end; d = shiftDate(d, 1)) inRun[d] = 1;
+  }
+  var fails = failsBetween(first, t), failN = 0;
+  for (var fk in fails) if (fails.hasOwnProperty(fk)) failN++;   /* столько же, сколько красных клеток */
+
+  var h = "", months = "", prevMonth = "", days = 0, sets = 0;
+  for (var w = 0; w < WEEKS; w++) {
+    var wd = shiftDate(first, w * 7), mm = wd.split("-")[1];
+    months += '<div class="heat-month">' + (mm !== prevMonth ? MONTHS_SHORT[parseInt(mm, 10) - 1] : "") + "</div>";
+    prevMonth = mm;
+    h += '<div class="heat-week">';
+    for (var k = 0; k < 7; k++) {
+      var date = shiftDate(first, w * 7 + k);
+      if (date > t) { h += '<div class="heat-cell" style="opacity:.2"></div>'; continue; }
+      var n = setsOn(date);
+      if (n > 0 && date >= from) { days++; sets += n; }
+      var lvl = n === 0 ? "" : n < 3 ? " l1" : n < 5 ? " l2" : n < 8 ? " l3" : " l4";
+      var tip = dateLabel(date) + (n ? " · " + n + " " + plural(n, "подход", "подхода", "подходов") : " · пусто");
+      if (fails[date]) tip += " · провал: оборвалась серия из " + fails[date];
+      h += '<div class="heat-cell' + lvl + (inRun[date] ? " in-run" : "") + (fails[date] ? " fail" : "") +
+           (date === t ? " is-today" : "") + '" title="' + tip + '"></div>';
+    }
+    h += "</div>";
+  }
+  el.className = "heat year";
+  el.innerHTML = h;
+  var mrow = document.getElementById("heat-months");
+  if (mrow) { mrow.className = "heat-months year"; mrow.innerHTML = months; }
+  el.scrollLeft = el.scrollWidth;                     /* сегодняшняя неделя — справа */
+  if (mrow) mrow.scrollLeft = mrow.scrollWidth;
+
+  var sum = document.getElementById("heat-summary");
+  if (sum) sum.textContent = days ? Math.round(days / 365 * 100) + "% дней года с тренировкой" : "";
+  var hs = document.getElementById("heat-stats");
+  if (hs) hs.innerHTML =
+    '<div class="hs"><div class="n">' + days + '</div><div class="l">' + plural(days, "день", "дня", "дней") + " с тренировкой за год</div></div>" +
+    '<div class="hs"><div class="n" style="color:var(--gold)">' + best + '</div><div class="l">лучшая серия за год</div></div>' +
+    '<div class="hs"><div class="n" style="color:' + (failN ? "var(--red)" : "var(--green)") + '">' + failN + '</div><div class="l">' +
+      plural(failN, "провал", "провала", "провалов") + " серий</div></div>" +
+    '<div class="hs"><div class="n">' + fmt(sets) + '</div><div class="l">' + plural(sets, "подход", "подхода", "подходов") + " за год</div></div>";
+}
+
+/* ═══════════════════════════════════════════════
+   ИТОГИ МЕСЯЦА — подсчёт
+   ═══════════════════════════════════════════════ */
+
+var MONTHS_FULL = ["Январь","Февраль","Март","Апрель","Май","Июнь","Июль","Август","Сентябрь","Октябрь","Ноябрь","Декабрь"];
+var MONTHS_GEN = ["января","февраля","марта","апреля","мая","июня","июля","августа","сентября","октября","ноября","декабря"];
+
+function ymOf(date) { return date.slice(0, 7); }
+function ymShift(ym, delta) {
+  var y = +ym.slice(0, 4), m = +ym.slice(5, 7) - 1 + delta;
+  y += Math.floor(m / 12); m = ((m % 12) + 12) % 12;
+  return y + "-" + pad2(m + 1);
+}
+function ymLabel(ym) { return MONTHS_FULL[+ym.slice(5, 7) - 1] + " " + ym.slice(0, 4); }
+function daysInMonth(ym) { return new Date(+ym.slice(0, 4), +ym.slice(5, 7), 0).getDate(); }
+
+function monthStats(ym) {
+  var t = today(), dim = daysInMonth(ym), st = {
+    ym: ym, dim: dim, workouts: 0, sets: 0, reps: 0, ton: 0, recs: 0, xp: 0, sec: 0,
+    missed: 0, groups: {}, ex: {}, bestDay: null, bestDayTon: 0, cal: []
+  };
+  for (var d = 1; d <= dim; d++) {
+    var date = ym + "-" + pad2(d), rec = S.days[date];
+    if (date > t) { st.cal.push(-1); continue; }
+    if (!rec) { st.missed++; st.cal.push(0); continue; }
+    var n = daySets(rec), tn = dayTonnage(rec);
+    st.cal.push(n);
+    st.workouts++; st.sets += n; st.ton += tn;
+    st.recs += rec.recs || 0; st.xp += rec.xp || 0; st.sec += rec.sec || 0;
+    st.groups[rec.g] = (st.groups[rec.g] || 0) + 1;
+    for (var i = 0; i < rec.items.length; i++) {
+      var it = rec.items[i];
+      st.ex[it.ex] = (st.ex[it.ex] || 0) + it.sets.length;
+      for (var j = 0; j < it.sets.length; j++) st.reps += it.sets[j].r;
+    }
+    if (tn > st.bestDayTon) { st.bestDayTon = tn; st.bestDay = date; }
+  }
+  var runs = runsBetween(ym + "-01", ym + "-" + pad2(dim)), best = 0;
+  for (var r = 0; r < runs.length; r++) best = Math.max(best, runs[r].len);
+  st.bestRun = best;
+  var top = null;
+  for (var e in st.ex) if (st.ex.hasOwnProperty(e) && (!top || st.ex[e] > st.ex[top])) top = e;
+  st.topEx = top;
+  return st;
+}
+
+/* месяцы, где была хоть одна тренировка, новые первыми */
+function activeMonths() {
+  var a = allDates(), seen = {}, out = [];
+  for (var i = a.length - 1; i >= 0; i--) {
+    var ym = ymOf(a[i]);
+    if (!seen[ym]) { seen[ym] = 1; out.push(ym); }
+  }
+  return out;
+}
+
+/* ═══════════════════════════════════════════════
+   РИСОВАНИЕ КАРТИНОК (постер месяца, плакат ранга)
+   Холст 1080×1350 — формат поста, сохраняется в PNG.
+   ═══════════════════════════════════════════════ */
+
+var RANK_COLORS = { E: "#8892A6", D: "#3DD68C", C: "#4DA6FF", B: "#A98BF0", A: "#F0B429", S: "#FF4D6D" };
+var POSTER_FONT = 'system-ui, -apple-system, "Segoe UI", Roboto, sans-serif';
+
+function cvBase(accent) {
+  var c = document.createElement("canvas");
+  c.width = 1080; c.height = 1350;
+  var x = c.getContext("2d");
+  var g = x.createLinearGradient(0, 0, 1080, 1350);
+  g.addColorStop(0, "#0B1220"); g.addColorStop(1, "#04060B");
+  x.fillStyle = g; x.fillRect(0, 0, 1080, 1350);
+  /* сетка Системы */
+  x.strokeStyle = "rgba(77,166,255,.06)"; x.lineWidth = 1;
+  for (var i = 0; i <= 1080; i += 54) { x.beginPath(); x.moveTo(i, 0); x.lineTo(i, 1350); x.stroke(); }
+  for (i = 0; i <= 1350; i += 54) { x.beginPath(); x.moveTo(0, i); x.lineTo(1080, i); x.stroke(); }
+  /* свечение сверху */
+  var rg = x.createRadialGradient(540, 0, 10, 540, 0, 760);
+  rg.addColorStop(0, hexA(accent, .28)); rg.addColorStop(1, "rgba(0,0,0,0)");
+  x.fillStyle = rg; x.fillRect(0, 0, 1080, 800);
+  /* рамка */
+  x.strokeStyle = hexA(accent, .55); x.lineWidth = 3;
+  x.strokeRect(36, 36, 1008, 1278);
+  x.strokeStyle = hexA(accent, .18); x.lineWidth = 1;
+  x.strokeRect(50, 50, 980, 1250);
+  return { c: c, x: x };
+}
+
+function hexA(hex, a) {
+  var n = parseInt(hex.slice(1), 16);
+  return "rgba(" + (n >> 16 & 255) + "," + (n >> 8 & 255) + "," + (n & 255) + "," + a + ")";
+}
+
+function cvText(x, s, px, cx, y, color, weight, align, maxW) {
+  x.font = (weight || 700) + " " + px + "px " + POSTER_FONT;
+  x.fillStyle = color || "#E8EEF8";
+  x.textAlign = align || "center";
+  x.textBaseline = "alphabetic";
+  var size = px;
+  while (maxW && x.measureText(s).width > maxW && size > 14) {   /* длинное имя ужимаем, а не обрезаем */
+    size -= 2; x.font = (weight || 700) + " " + size + "px " + POSTER_FONT;
+  }
+  x.fillText(s, cx, y);
+}
+
+function cvStat(x, cx, y, num, label, color) {
+  cvText(x, String(num), 76, cx, y, color || "#E8EEF8", 800, "center", 300);
+  cvText(x, label, 27, cx, y + 44, "#9FADC4", 500, "center", 300);
+}
+
+function cvFooter(x, accent) {
+  x.fillStyle = hexA(accent, .5);
+  x.fillRect(440, 1236, 200, 2);
+  cvText(x, "КУЗНИЦА · СИСТЕМА ТРЕНИРОВОК", 24, 540, 1276, "#7C89A3", 600);
+}
+
+/* Показ готовой картинки: просмотр, «Сохранить», «Поделиться» */
+var POSTER_BLOB = null, POSTER_NAME = "kuznica.png", POSTER_URL = null;
+
+function showPoster(canvas, fileName, title, nextBtn) {
+  POSTER_NAME = fileName;
+  canvas.toBlob(function (blob) {
+    POSTER_BLOB = blob;
+    if (POSTER_URL) URL.revokeObjectURL(POSTER_URL);
+    POSTER_URL = URL.createObjectURL(blob);
+    var share = navigator.canShare && navigator.canShare({ files: [new File([blob], fileName, { type: "image/png" })] });
+    openModal(
+      '<div class="sys-label">[ ' + esc(title) + " ]</div><div class=\"sys-rule\"></div>" +
+      '<img class="poster-img" src="' + POSTER_URL + '" alt="' + esc(title) + '">' +
+      '<div class="modal-btns">' +
+        '<button class="btn" onclick="posterSave()">Сохранить</button>' +
+        (share ? '<button class="btn" onclick="posterShare()">Поделиться</button>' : "") +
+        '<button class="btn primary" onclick="' + (nextBtn || "closeModal()") + '">' + (nextBtn ? "Дальше" : "Закрыть") + "</button>" +
+      "</div>"
+    );
+  }, "image/png");
+}
+
+function posterSave() {
+  if (!POSTER_URL) return;
+  var a = document.createElement("a");
+  a.href = POSTER_URL; a.download = POSTER_NAME;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+
+function posterShare() {
+  if (!POSTER_BLOB || !navigator.share) return;
+  navigator.share({ files: [new File([POSTER_BLOB], POSTER_NAME, { type: "image/png" })] }).catch(function () {});
+}
+
+/* ── Постер итогов месяца ── */
+
+function drawMonthPoster(ym) {
+  var st = monthStats(ym), L = levelOf(totalXP()), R = rankOf(L.lvl);
+  var acc = "#4DA6FF", b = cvBase(acc), x = b.x;
+
+  cvText(x, "[ ИТОГИ МЕСЯЦА ]", 30, 540, 132, acc, 700);
+  cvText(x, ymLabel(ym).toUpperCase(), 92, 540, 236, "#E8EEF8", 900, "center", 900);
+  cvText(x, (S.name || "Охотник") + " · Ранг " + R.letter + " · " + R.title, 34, 540, 296, "#9FADC4", 600, "center", 900);
+
+  /* шесть чисел */
+  var cols = [220, 540, 860];
+  cvStat(x, cols[0], 430, st.workouts, plural(st.workouts, "тренировка", "тренировки", "тренировок"), acc);
+  cvStat(x, cols[1], 430, fmt(st.sets), plural(st.sets, "подход", "подхода", "подходов"));
+  cvStat(x, cols[2], 430, fmt(st.reps), plural(st.reps, "повтор", "повтора", "повторов"));
+  cvStat(x, cols[0], 600, tons(st.ton), "поднято за месяц");
+  cvStat(x, cols[1], 600, st.recs, plural(st.recs, "рекорд", "рекорда", "рекордов"), "#F0B429");
+  cvStat(x, cols[2], 600, st.bestRun, "лучшая серия", "#FF8A3D");
+
+  /* календарь месяца */
+  var first = new Date(+ym.slice(0, 4), +ym.slice(5, 7) - 1, 1);
+  var shift = (first.getDay() + 6) % 7, cell = 92, gap = 12, gx = 540 - (7 * cell + 6 * gap) / 2, gy = 740;
+  var wd = ["пн", "вт", "ср", "чт", "пт", "сб", "вс"];
+  for (var i = 0; i < 7; i++) cvText(x, wd[i], 24, gx + i * (cell + gap) + cell / 2, gy - 14, "#7C89A3", 600);
+  for (var d = 0; d < st.dim; d++) {
+    var pos = shift + d, cxp = gx + (pos % 7) * (cell + gap), cyp = gy + Math.floor(pos / 7) * (cell * .62 + gap);
+    var n = st.cal[d], h = cell * .62;
+    x.fillStyle = n < 0 ? "rgba(255,255,255,.03)" : n === 0 ? "#121A26" : n < 3 ? "#12314F" : n < 5 ? "#1D5488" : n < 8 ? "#2E80C9" : acc;
+    x.fillRect(cxp, cyp, cell, h);
+    if (n >= 8) { x.shadowColor = acc; x.shadowBlur = 18; x.fillRect(cxp, cyp, cell, h); x.shadowBlur = 0; }
+    cvText(x, String(d + 1), 26, cxp + cell / 2, cyp + h / 2 + 9, n > 0 ? "#E8EEF8" : "#3A475C", 700);
+  }
+
+  var y = 1140;
+  if (st.topEx) cvText(x, "Главное упражнение: " + st.topEx + " — " + st.ex[st.topEx] + " " +
+    plural(st.ex[st.topEx], "подход", "подхода", "подходов"), 32, 540, y, "#E8EEF8", 600, "center", 940);
+  cvText(x, st.missed ? "Пропущено дней: " + st.missed + " · опыт за месяц: +" + fmt(st.xp) + " XP"
+                      : "Ни одного пропуска · опыт за месяц: +" + fmt(st.xp) + " XP",
+    28, 540, y + 50, st.missed ? "#9FADC4" : "#3DD68C", 600, "center", 940);
+  cvFooter(x, acc);
+  return b.c;
+}
+
+function openMonthPoster(ym, nextBtn) {
+  showPoster(drawMonthPoster(ym), "kuznica-" + ym + ".png", "Итоги · " + ymLabel(ym), nextBtn);
+}
+
+/* Первого числа — сам: при первом заходе в новом месяце показываем итоги прошлого */
+function monthPosterAuto() {
+  var prev = ymShift(ymOf(today()), -1);
+  if (S.posterSeen === prev || S.posterSeen > prev) return;
+  if (!monthStats(prev).workouts) return;
+  if (document.getElementById("overlay").className.indexOf("show") > -1) return;   /* не перебиваем другое окно */
+  S.posterSeen = prev;
+  save();
+  openMonthPoster(prev);
+}
+
+/* ── Плакат ранга ── */
+
+/* Когда брался каждый ранг: прогоняем опыт по дням */
+function rankHistory() {
+  var a = allDates(), xp = 0, sets = 0, ton = 0, cur = "E", out = [{ letter: "E", date: a[0] || today(), workouts: a.length ? 1 : 0, ton: 0, sets: 0, lvl: 1 }];
+  for (var i = 0; i < a.length; i++) {
+    var rec = S.days[a[i]];
+    xp += rec.xp || 0; sets += daySets(rec); ton += dayTonnage(rec);
+    var L = levelOf(xp).lvl, r = rankOf(L).letter;
+    if (r !== cur) { cur = r; out.push({ letter: r, date: a[i], workouts: i + 1, ton: ton, sets: sets, lvl: L }); }
+  }
+  return out;
+}
+
+function drawRankPoster(h) {
+  var R = null;
+  for (var i = 0; i < RANKS.length; i++) if (RANKS[i].letter === h.letter) R = RANKS[i];
+  var acc = RANK_COLORS[h.letter] || "#4DA6FF", b = cvBase(acc), x = b.x;
+
+  cvText(x, "[ ПОВЫШЕНИЕ РАНГА ]", 30, 540, 132, acc, 700);
+  cvText(x, (S.name || "Охотник").toUpperCase(), 64, 540, 222, "#E8EEF8", 900, "center", 900);
+
+  /* большая буква ранга в гексагоне */
+  var cx = 540, cy = 520, rad = 210;
+  x.save();
+  x.shadowColor = acc; x.shadowBlur = 60;
+  x.beginPath();
+  for (i = 0; i < 6; i++) {
+    var ang = Math.PI / 6 + i * Math.PI / 3;
+    var px = cx + rad * Math.cos(ang), py = cy + rad * Math.sin(ang);
+    if (i) x.lineTo(px, py); else x.moveTo(px, py);
+  }
+  x.closePath();
+  x.fillStyle = hexA(acc, .12); x.fill();
+  x.lineWidth = 8; x.strokeStyle = acc; x.stroke();
+  x.restore();
+  cvText(x, h.letter, 300, cx, cy + 106, acc, 900);
+
+  cvText(x, "РАНГ " + h.letter + " · " + (R ? R.title.toUpperCase() : ""), 56, 540, 836, "#E8EEF8", 900, "center", 940);
+  if (R) cvText(x, R.desc, 32, 540, 890, "#9FADC4", 500, "center", 900);
+  var dd = new Date(h.date + "T00:00:00");
+  cvText(x, "получен " + dd.getDate() + " " + MONTHS_GEN[dd.getMonth()] + " " + dd.getFullYear(), 32, 540, 950, acc, 600);
+
+  cvStat(x, 220, 1080, h.workouts, plural(h.workouts, "тренировка", "тренировки", "тренировок"));
+  cvStat(x, 540, 1080, tons(h.ton), "поднято к рангу");
+  cvStat(x, 860, 1080, h.lvl, "уровень");
+  cvFooter(x, acc);
+  return b.c;
+}
+
+function openRankPoster(letter, nextBtn) {
+  var hist = rankHistory(), h = null;
+  for (var i = 0; i < hist.length; i++) if (hist[i].letter === letter) h = hist[i];
+  if (!h) { toast("Этот ранг ещё не взят"); return; }
+  showPoster(drawRankPoster(h), "kuznica-rank-" + letter + ".png", "Плакат ранга " + letter, nextBtn);
+}
+
+function ranksHtml() {
+  var hist = rankHistory(), got = {}, i, out = "";
+  for (i = 0; i < hist.length; i++) got[hist[i].letter] = hist[i];
+  for (i = 0; i < RANKS.length; i++) {
+    var R = RANKS[i], h = got[R.letter];
+    if (h) {
+      var dd = new Date(h.date + "T00:00:00");
+      out += '<button class="rk-item" onclick="openRankPoster(\'' + R.letter + '\')">' +
+             '<span class="rank-badge rank-' + R.letter.toLowerCase() + '">' + R.letter + "</span>" +
+             '<span class="rk-t">' + esc(R.title) + "</span>" +
+             '<span class="rk-d">' + dd.getDate() + " " + MONTHS_SHORT[dd.getMonth()] + "</span></button>";
+    } else {
+      out += '<div class="rk-item off"><span class="rank-badge">' + R.letter + "</span>" +
+             '<span class="rk-t">' + esc(R.title) + '</span><span class="rk-d">с ' + R.min + " ур.</span></div>";
+    }
+  }
+  return '<div class="rk-grid">' + out + "</div>";
+}
+
+function postersCardHtml() {
+  var ms = activeMonths().slice(0, 12), chips = "";
+  for (var i = 0; i < ms.length; i++) {
+    chips += '<button class="mchip" onclick="openMonthPoster(\'' + ms[i] + '\')">' +
+             MONTHS_FULL[+ms[i].slice(5, 7) - 1] + (ms[i].slice(0, 4) !== today().slice(0, 4) ? " " + ms[i].slice(0, 4) : "") + "</button>";
+  }
+  return '<div class="card" style="margin-bottom:14px"><h3>Постеры и плакаты</h3>' +
+    '<div style="color:var(--gray);font-size:13px;margin-bottom:12px">Итоги месяца одной картинкой — первого числа открываются сами. Плакат ранга рисуется в день, когда ранг взят. Картинку можно сохранить или отправить.</div>' +
+    '<div class="pl-sub">Итоги месяцев</div>' +
+    (chips ? '<div class="mchips">' + chips + "</div>" : '<div style="color:var(--gray);font-size:13px">Появятся после первой тренировки.</div>') +
+    '<div class="pl-sub" style="margin-top:16px">Плакаты рангов</div>' + ranksHtml() +
+  "</div>";
+}
+
+/* ═══════════════════════════════════════════════
+   КАРТА МЕСЯЦА КАК ПОДЗЕМЕЛЬЕ
+   Месяц — подземелье: каждый день — комната. Тренировка — освещённая
+   комната со знаком группы, рекорд — сундук, пропуск — обвал,
+   будущие дни — в тумане. Раскладка одна и та же для месяца:
+   генератор берёт зерно из названия месяца.
+   ═══════════════════════════════════════════════ */
+
+var MAP_YM = null;
+
+function seedRng(str) {
+  var h = 1779033703 ^ str.length;
+  for (var i = 0; i < str.length; i++) { h = Math.imul(h ^ str.charCodeAt(i), 3432918353); h = h << 13 | h >>> 19; }
+  var a = h >>> 0;
+  return function () {                      /* mulberry32 */
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    var t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
+  };
+}
+
+/* Раскладка: каждая новая комната пристраивается к прошлой, а если вокруг
+   занято — к любой из прежних (так появляются развилки) */
+function dungeonLayout(ym, n) {
+  var W = 9, H = 7, rnd = seedRng("forge-map-" + ym), taken = {}, rooms = [];
+  var key = function (x, y) { return x + ":" + y; };
+  var start = { x: Math.floor(rnd() * 3) + 3, y: H - 1, parent: -1 };
+  rooms.push(start); taken[key(start.x, start.y)] = 1;
+  var dirs = [[1, 0], [-1, 0], [0, -1], [0, 1]];
+  for (var i = 1; i < n; i++) {
+    var placed = false;
+    for (var back = i - 1; back >= 0 && !placed; back = (back === i - 1 ? Math.floor(rnd() * i) : back - 1)) {
+      var p = rooms[back], opts = [];
+      for (var d = 0; d < 4; d++) {
+        var nx = p.x + dirs[d][0], ny = p.y + dirs[d][1];
+        if (nx < 0 || ny < 0 || nx >= W || ny >= H || taken[key(nx, ny)]) continue;
+        opts.push({ x: nx, y: ny, w: dirs[d][1] === -1 ? 2.2 : 1 });   /* тянемся вглубь — вверх */
+      }
+      if (opts.length) {
+        var sum = 0, k; for (k = 0; k < opts.length; k++) sum += opts[k].w;
+        var pick = rnd() * sum;
+        for (k = 0; k < opts.length; k++) { pick -= opts[k].w; if (pick <= 0) break; }
+        var o = opts[Math.min(k, opts.length - 1)];
+        rooms.push({ x: o.x, y: o.y, parent: back });
+        taken[key(o.x, o.y)] = 1; placed = true;
+      }
+      if (back === 0 && !placed) break;
+    }
+    if (!placed) break;
+  }
+  return { W: W, H: H, rooms: rooms };
+}
+
+function mapShift(delta) {
+  var cur = MAP_YM || ymOf(today()), nxt = ymShift(cur, delta);
+  if (nxt > ymOf(today())) return;
+  MAP_YM = nxt;
+  var el = document.getElementById("month-map");
+  if (el) el.innerHTML = monthMapInner();
+}
+
+function monthMapInner() {
+  var ym = MAP_YM || ymOf(today()), st = monthStats(ym), t = today();
+  var lay = dungeonLayout(ym, st.dim), C = 44, R = 15, pad = 22;
+  var w = lay.W * C + pad * 2, h = lay.H * C + pad * 2, s = "", i;
+  var P = function (r) { return { x: pad + r.x * C + C / 2, y: pad + r.y * C + C / 2 }; };
+
+  /* коридоры */
+  for (i = 1; i < lay.rooms.length; i++) {
+    var a = P(lay.rooms[i]), b = P(lay.rooms[lay.rooms[i].parent]);
+    var date = ym + "-" + pad2(i + 1), n = st.cal[i];
+    var cls = n < 0 ? "mp-cor fog" : n === 0 ? "mp-cor broken" : "mp-cor";
+    s += '<line class="' + cls + '" x1="' + b.x + '" y1="' + b.y + '" x2="' + a.x + '" y2="' + a.y + '"/>';
+  }
+  /* комнаты */
+  for (i = 0; i < lay.rooms.length; i++) {
+    var p = P(lay.rooms[i]), dte = ym + "-" + pad2(i + 1), rec = S.days[dte], nn = st.cal[i];
+    var tip = dateLabel(dte), body = "";
+    if (nn < 0) {
+      body = '<rect class="mp-room fog" x="' + (p.x - R) + '" y="' + (p.y - R) + '" width="' + R * 2 + '" height="' + R * 2 + '" rx="3"/>';
+      tip += " · впереди";
+    } else if (!rec) {
+      body = '<rect class="mp-room fall" x="' + (p.x - R) + '" y="' + (p.y - R) + '" width="' + R * 2 + '" height="' + R * 2 + '" rx="3"/>' +
+             '<path class="mp-crack" d="M' + (p.x - 9) + " " + (p.y - 10) + " L" + (p.x - 2) + " " + (p.y - 1) + " L" + (p.x - 7) + " " + (p.y + 4) +
+             " L" + (p.x + 2) + " " + (p.y + 11) + " M" + (p.x + 10) + " " + (p.y - 8) + " L" + (p.x + 3) + " " + (p.y - 2) + '"/>';
+      tip += " · обвал: дня без тренировки";
+    } else {
+      var lvl = nn < 3 ? 1 : nn < 5 ? 2 : nn < 8 ? 3 : 4;
+      body = '<rect class="mp-room lit l' + lvl + '" x="' + (p.x - R) + '" y="' + (p.y - R) + '" width="' + R * 2 + '" height="' + R * 2 + '" rx="3"/>' +
+             '<text class="mp-ic" x="' + p.x + '" y="' + (p.y + 5) + '">' + gicon(rec.g) + "</text>";
+      if (rec.recs) body += '<text class="mp-chest" x="' + (p.x + R - 2) + '" y="' + (p.y - R + 7) + '">✦</text>';
+      tip += " · " + gname(rec.g) + " · " + nn + " " + plural(nn, "подход", "подхода", "подходов") + (rec.recs ? " · рекорд" : "");
+    }
+    if (i === 0) body += '<text class="mp-tag" x="' + p.x + '" y="' + (p.y + R + 13) + '">вход</text>';
+    if (dte === t) body += '<circle class="mp-hero" cx="' + p.x + '" cy="' + (p.y - R - 6) + '" r="4"/>';
+    s += '<g class="mp-g" onclick="toast(\'' + jsq(tip).slice(1, -1) + '\')"><title>' + esc(tip) + "</title>" + body +
+         '<text class="mp-day" x="' + (p.x - R + 2) + '" y="' + (p.y + R - 3) + '">' + (i + 1) + "</text></g>";
+  }
+
+  var head = '<div class="mp-head"><button class="mp-nav" onclick="mapShift(-1)" aria-label="Прошлый месяц">‹</button>' +
+    '<div class="mp-title">' + ymLabel(ym) + "</div>" +
+    '<button class="mp-nav" onclick="mapShift(1)" aria-label="Следующий месяц"' + (ym >= ymOf(t) ? " disabled" : "") + ">›</button></div>";
+  var legend = '<div class="mp-legend"><span><i class="lg lit"></i>тренировка</span><span><i class="lg fall"></i>обвал — пропуск</span>' +
+    '<span><i class="lg chest">✦</i>рекорд</span><span><i class="lg fog"></i>впереди</span></div>';
+  var sum = '<div class="mp-sum">' + st.workouts + " " + plural(st.workouts, "комната зачищена", "комнаты зачищены", "комнат зачищено") +
+    (st.missed ? " · " + st.missed + " " + plural(st.missed, "обвал", "обвала", "обвалов") : " · ни одного обвала") + "</div>";
+  return head + '<svg class="mp-svg" viewBox="0 0 ' + w + " " + h + '" role="img" aria-label="Карта месяца">' + s + "</svg>" + sum + legend;
+}
+
+function monthMapCardHtml() {
+  return '<div class="card" style="margin-bottom:14px"><h3>Карта месяца</h3>' +
+    '<div style="color:var(--gray);font-size:13px;margin-bottom:10px">Месяц как подземелье: каждый день — комната. Тренировка освещает комнату, пропуск обрушивает её. Нажмите на комнату — покажет день.</div>' +
+    '<div id="month-map">' + monthMapInner() + "</div></div>";
+}
+
+/* ═══════════════════════════════════════════════
+   РЕЙД НА НЕСКОЛЬКИХ
+   Общая цель на неделю: например, тысяча повторов на всех.
+   Каждый вносит повторы своих тренировок, счётчик живёт в службе
+   Кузницы на Cloudflare. Повторы за день отправляются целиком
+   (а не прибавкой), поэтому повторная отправка ничего не задваивает.
+   ═══════════════════════════════════════════════ */
+
+var SERVICE_DEFAULT = "https://forge-push.griha4395.workers.dev";
+var RAID_INFO = null, RAID_TS = 0, RAID_BUSY = false;
+
+function raidUrl() { return (pushUrl() || SERVICE_DEFAULT).replace(/\/+$/, ""); }
+function raidMember() {
+  if (!S.raid.member) {
+    var a = "abcdefghijkmnpqrstuvwxyz23456789", s = "";
+    for (var i = 0; i < 16; i++) s += a.charAt(Math.floor(Math.random() * a.length));
+    S.raid.member = s; save();
+  }
+  return S.raid.member;
+}
+function raidWho() { return (S.name || "Охотник").slice(0, 24); }
+function repsOn(date) {
+  var rec = S.days[date], n = 0;
+  if (!rec) return 0;
+  for (var i = 0; i < rec.items.length; i++) for (var j = 0; j < rec.items[i].sets.length; j++) n += rec.items[i].sets[j].r;
+  return n;
+}
+
+function raidCall(path, body) {
+  return fetch(raidUrl() + path, body ? {
+    method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body)
+  } : undefined).then(function (r) {
+    return r.json().then(function (j) { if (!r.ok) throw new Error(j.error || ("ошибка " + r.status)); return j; });
+  });
+}
+
+/* Отправить повторы за сегодня и вчера (если вчера та же неделя) — вдруг вчера не было сети */
+function raidPush() {
+  if (!S.raid.code) return Promise.resolve();
+  var t = today(), wk = mondayOf(t), days = {}, y = shiftDate(t, -1);
+  days[t] = repsOn(t);
+  if (mondayOf(y) === wk && repsOn(y) !== (S.raid.sent[y] || 0)) days[y] = repsOn(y);
+  return raidCall("/raid/add", { code: S.raid.code, member: raidMember(), who: raidWho(), week: wk, days: days })
+    .then(function (j) {
+      for (var d in days) if (days.hasOwnProperty(d)) S.raid.sent[d] = days[d];
+      var keep = {}; for (var k in S.raid.sent) if (S.raid.sent.hasOwnProperty(k) && k >= shiftDate(t, -8)) keep[k] = S.raid.sent[k];
+      S.raid.sent = keep; save();
+      if (j && j.raid) { raidTakeInfo(j.raid); }
+    }).catch(function () {});
+}
+
+function raidTakeInfo(info) {
+  var wasDone = RAID_INFO && RAID_INFO.week === info.week && RAID_INFO.total >= RAID_INFO.goal;
+  RAID_INFO = info; RAID_TS = Date.now();
+  if (!wasDone && info.total >= info.goal && S.raid.won !== info.week) {
+    S.raid.won = info.week; save();
+    confetti(110);
+    toast("Рейд выполнен: " + fmt(info.total) + " из " + fmt(info.goal) + " повторов!", true);
+  }
+  renderRaid();
+}
+
+function raidPull(force) {
+  if (!S.raid.code || RAID_BUSY) return;
+  if (!force && Date.now() - RAID_TS < 60000) return;
+  RAID_BUSY = true;
+  raidCall("/raid/info?code=" + encodeURIComponent(S.raid.code) + "&week=" + mondayOf(today()))
+    .then(function (j) { RAID_BUSY = false; raidTakeInfo(j); })
+    .catch(function (e) {
+      RAID_BUSY = false;
+      if (/не найден/.test(String(e.message))) { RAID_INFO = { missing: true }; renderRaid(); }
+    });
+}
+
+function renderRaid() {
+  var el = document.getElementById("raid-card");
+  if (!el) return;
+  if (!S.raid.code) {
+    el.innerHTML = '<div class="raid-top"><h3 style="margin:0">⚔ Рейд недели</h3></div>' +
+      '<div class="raid-txt">Общая цель на нескольких: например, тысяча повторов за неделю на всех. Каждый вносит повторы своих тренировок.</div>' +
+      '<div class="modal-btns" style="margin-top:12px"><button class="btn" onclick="askRaidJoin()">Вступить по коду</button>' +
+      '<button class="btn primary" onclick="askRaidNew()">Создать рейд</button></div>';
+    return;
+  }
+  var I = RAID_INFO;
+  if (!I) { el.innerHTML = '<div class="raid-top"><h3 style="margin:0">⚔ Рейд недели</h3></div><div class="raid-txt">Загружаем рейд…</div>'; raidPull(true); return; }
+  if (I.missing) {
+    el.innerHTML = '<div class="raid-top"><h3 style="margin:0">⚔ Рейд недели</h3></div><div class="raid-txt">Рейд ' + esc(S.raid.code) + ' не найден в службе.</div>' +
+      '<div class="modal-btns" style="margin-top:12px"><button class="btn" onclick="raidLeave()">Выйти</button></div>';
+    return;
+  }
+  var pct = Math.min(100, Math.round(I.total / I.goal * 100)), rows = "", me = raidMember();
+  var list = I.members.slice().sort(function (a, b) { return b.reps - a.reps; });
+  for (var i = 0; i < list.length; i++) {
+    var m = list[i], share = I.total ? Math.round(m.reps / I.total * 100) : 0;
+    rows += '<div class="raid-m' + (m.member === me ? " me" : "") + '"><span class="raid-n">' + esc(m.who) + (m.member === me ? " (вы)" : "") + "</span>" +
+            '<span class="raid-bar"><i style="width:' + share + '%"></i></span><span class="raid-r">' + fmt(m.reps) + "</span></div>";
+  }
+  var left = 7 - daysBetween(I.week, today());
+  el.innerHTML =
+    '<div class="raid-top"><h3 style="margin:0">⚔ ' + esc(I.name) + "</h3>" +
+      '<button class="raid-code" onclick="raidShare()" title="Пригласить">код ' + esc(S.raid.code) + " ⧉</button></div>" +
+    '<div class="raid-goal"><b>' + fmt(I.total) + "</b> из " + fmt(I.goal) + " повторов" +
+      (pct >= 100 ? ' · <span style="color:var(--green)">цель взята</span>' : " · осталось " + left + " " + plural(left, "день", "дня", "дней")) + "</div>" +
+    '<div class="wgoal-bar raid-big' + (pct >= 100 ? " done" : "") + '"><i style="width:' + pct + '%"></i></div>' +
+    '<div class="raid-list">' + (rows || '<div class="raid-txt">Пока никто не вносил повторы на этой неделе.</div>') + "</div>" +
+    '<div class="raid-foot"><button class="rlnk" onclick="raidPull(true)">обновить</button>' +
+      '<button class="rlnk" onclick="askRaidLeave()">выйти из рейда</button></div>';
+}
+
+function askRaidNew() {
+  openModal('<div class="sys-label">[ Новый рейд ]</div><div class="sys-rule"></div>' +
+    '<p>Придумайте название и общую цель на неделю. Потом отправите код тем, кто идёт с вами.</p>' +
+    '<input class="big" id="rd-name" maxlength="40" placeholder="Название, например «Братство гантели»">' +
+    '<div style="margin-top:10px;color:var(--gray2);font-size:13px">Цель — повторов за неделю на всех:</div>' +
+    '<input class="big" id="rd-goal" type="number" min="50" max="100000" step="50" value="1000">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="raidCreate()">Создать</button></div>');
+}
+
+function raidCreate() {
+  var name = (document.getElementById("rd-name").value || "").trim() || "Рейд " + raidWho();
+  var goal = parseInt(document.getElementById("rd-goal").value, 10) || 1000;
+  goal = Math.max(50, Math.min(100000, goal));
+  raidCall("/raid/new", { name: name.slice(0, 40), goal: goal, member: raidMember(), who: raidWho() })
+    .then(function (j) {
+      S.raid.code = j.code; S.raid.sent = {}; save();
+      closeModal(); RAID_INFO = null;
+      raidPush().then(function () { raidPull(true); });
+      renderRaid();
+      toast("Рейд создан. Код: " + j.code, true);
+    })
+    .catch(function (e) { toast("Не получилось создать рейд: " + e.message); });
+}
+
+function askRaidJoin(code) {
+  openModal('<div class="sys-label">[ Вступить в рейд ]</div><div class="sys-rule"></div>' +
+    '<p>Введите код, который вам прислали.</p>' +
+    '<input class="big" id="rd-code" maxlength="6" placeholder="Код из 6 знаков" style="text-transform:uppercase;letter-spacing:3px" value="' + esc(code || "") + '">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="raidJoin()">Вступить</button></div>');
+}
+
+function raidJoin() {
+  var code = (document.getElementById("rd-code").value || "").trim().toUpperCase();
+  if (!/^[A-Z2-9]{6}$/.test(code)) { toast("Код — шесть букв и цифр"); return; }
+  raidCall("/raid/join", { code: code, member: raidMember(), who: raidWho() })
+    .then(function (j) {
+      S.raid.code = code; S.raid.sent = {}; save();
+      closeModal(); RAID_INFO = null;
+      raidPush().then(function () { raidPull(true); });
+      renderRaid();
+      toast("Вы в рейде «" + j.name + "»", true);
+    })
+    .catch(function (e) { toast("Не получилось вступить: " + e.message); });
+}
+
+function askRaidLeave() {
+  openModal('<div class="sys-label">[ Выйти из рейда ]</div><div class="sys-rule"></div>' +
+    '<p>Ваши повторы этой недели останутся в общем счёте. Вернуться можно по тому же коду.</p>' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Остаться</button>' +
+    '<button class="btn primary" onclick="raidLeave()">Выйти</button></div>');
+}
+
+function raidLeave() {
+  S.raid.code = ""; S.raid.sent = {}; save();
+  RAID_INFO = null; closeModal(); renderRaid();
+}
+
+function raidShare() {
+  var link = location.origin + location.pathname + "?raid=" + S.raid.code;
+  var text = "Присоединяйся к рейду в Кузнице: код " + S.raid.code + " — " + link;
+  if (navigator.share) { navigator.share({ title: "Рейд в Кузнице", text: text }).catch(function () {}); return; }
+  if (navigator.clipboard) navigator.clipboard.writeText(text).then(function () { toast("Приглашение скопировано"); }, function () { toast(text); });
+  else toast(text);
+}
+
+/* Открыли игру по ссылке-приглашению ?raid=КОД */
+function raidFromLink() {
+  var m = /[?&]raid=([A-Za-z2-9]{6})/.exec(location.search);
+  if (!m) return;
+  try { history.replaceState(null, "", location.pathname); } catch (e) {}
+  var code = m[1].toUpperCase();
+  if (S.raid.code === code) return;
+  setTimeout(function () { askRaidJoin(code); }, 600);
 }
 
 /* ═══════════════════════════════════════════════
@@ -4465,7 +5266,7 @@ function remNotify(slot) {
     r.showNotification(remHead(), {
       body: line + "\n\n" + "План на сегодня не отмечен",
       icon: "./icon-192.png", badge: "./icon-192.png",
-      tag: "forge-rem-" + slot, renotify: true
+      tag: "forge-rem", renotify: true        /* как и в фоне: одно актуальное напоминание */
     });
   }).catch(function () {});
   return true;
@@ -4686,14 +5487,20 @@ function renderProfile() {
   }
 
   el.innerHTML =
-    '<div class="card" style="margin-bottom:14px"><h3>Календарь тренировок</h3>' +
-      '<div style="color:var(--gray);font-size:13px;margin-bottom:14px">Последние 12 недель. Чем ярче клетка — тем больше подходов в тот день.</div>' +
+    '<div class="card" style="margin-bottom:14px"><div class="card-head"><h3>Календарь тренировок</h3>' + heatTabsHtml() + "</div>" +
+      '<div style="color:var(--gray);font-size:13px;margin-bottom:14px">' + (S.heatYear
+        ? "Последние 365 дней. Золотая рамка — длинная серия, от семи тренировок. Красная клетка — провал: два дня подряд без тренировки оборвали серию."
+        : "Последние 12 недель. Чем ярче клетка — тем больше подходов в тот день.") + "</div>" +
       '<div class="heat-wrap"><div><div class="heat-months" id="heat-months"></div><div class="heat" id="heatmap"></div></div>' +
       '<div class="heat-stats" id="heat-stats"></div></div>' +
       '<div class="heat-legend"><span>пусто</span><span class="heat-cell"></span><span class="heat-cell l1"></span>' +
       '<span class="heat-cell l2"></span><span class="heat-cell l3"></span><span class="heat-cell l4"></span>' +
       '<span>8 подходов и больше</span><span style="margin-left:auto" id="heat-summary"></span></div>' +
+      (S.heatYear ? '<div class="heat-legend"><span class="heat-cell in-run"></span><span>серия</span>' +
+        '<span class="heat-cell fail" style="margin-left:10px"></span><span>провал</span></div>' : "") +
     "</div>" +
+    monthMapCardHtml() +
+    postersCardHtml() +
 
     '<div class="card" style="margin-bottom:14px">' +
       '<div class="ach-head"><h3 style="margin:0">Достижения</h3>' +
@@ -4985,6 +5792,10 @@ function boot() {
   remStart();
   document.addEventListener("visibilitychange", remFire);
   remPullSeen().then(remSync);          /* фоновый показ мог потратить фразы */
+  raidFromLink();
+  if (S.raid.code) raidPush().then(function () { raidPull(true); });
+  document.addEventListener("visibilitychange", function () { if (!document.hidden) raidPull(false); });
+  setTimeout(monthPosterAuto, 1500);    /* первого числа — итоги прошлого месяца */
   /* Регистрируем телефон в службе при каждом запуске: подписка могла
      не создаться раньше или протухнуть, а заметить это иначе нельзя. */
   if (pushOn() && remOn() && window.Notification && Notification.permission === "granted") {
