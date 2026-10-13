@@ -133,14 +133,16 @@ var Holo = (function () {
     "  if (z < 0.09) {",
     "    r = smin2(r, vec2(sdEll(p - vec3(0.0,1.164,0.010), vec3(0.152,0.180,0.104)), 0.0), 0.08);",
     "    r = smin2(r, vec2(sdRC(q, vec3(0.020,1.310,0.050), vec3(0.180,1.294,0.026), 0.012, 0.016), 0.0), 0.024);",
-    "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.070,1.196,0.084), -0.14, 0.0), vec3(0.098,0.072,0.032)), 1.0), 0.038);",
+    "    r = smin2(r, vec2(sdRB(rot2(q - vec3(0.076,1.192,0.066), -0.15, 0.0), vec3(0.042,0.020,0.006), 0.040), 1.0), 0.055);",
     "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.092,1.344,-0.014), 0.22, 0.0), vec3(0.092,0.032,0.052)), 4.0), 0.026);",
     "    r = smin2(r, vec2(sdEll(q - vec3(0.058,1.240,-0.066), vec3(0.064,0.066,0.034)), 4.0), 0.026);",
+    "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.136,1.096,0.030), 0.55, 0.0), vec3(0.030,0.014,0.040)), 3.0), 0.020);",
+    "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.132,1.050,0.034), 0.55, 0.0), vec3(0.028,0.013,0.038)), 3.0), 0.020);",
+    "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.124,1.006,0.036), 0.55, 0.0), vec3(0.026,0.012,0.036)), 3.0), 0.020);",
     "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.128,1.104,-0.058), 0.34, 0.0), vec3(0.048,0.082,0.046)), 10.0), 0.022);",
     "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.106,0.994,-0.062), 0.46, 0.0), vec3(0.042,0.080,0.044)), 10.0), 0.022);",
     "    if (p.z > 0.02) {",
     "      r.x = carve(r.x, sdCap(p, vec3(0.0,1.258,0.090), vec3(0.0,1.134,0.088), 0.008), 0.032);",
-    "      r.x = carve(r.x, sdEll(p - vec3(0.0,1.120,0.094), vec3(0.096,0.004,0.022)), 0.050);",
     "    }",
     "  } else r.x = min(r.x, z);",
 
@@ -149,10 +151,10 @@ var Holo = (function () {
     "  if (z < 0.09) {",
     "    r = smin2(r, vec2(sdEll(p - vec3(0.0,0.900,0.004), vec3(0.112,0.140,0.082)), 0.0), 0.09);",
     "    r = smin2(r, vec2(sdEll(p - vec3(0.0,0.740,-0.008), vec3(0.136,0.112,0.100)), 0.0), 0.08);",
-    "    r = smin2(r, vec2(sdRB(vec3(q.x-0.030,q.y-1.014,q.z-0.086), vec3(0.021,0.018,0.012), 0.013), 2.0), 0.016);",
-    "    r = smin2(r, vec2(sdRB(vec3(q.x-0.030,q.y-0.950,q.z-0.088), vec3(0.022,0.018,0.013), 0.013), 2.0), 0.016);",
-    "    r = smin2(r, vec2(sdRB(vec3(q.x-0.029,q.y-0.888,q.z-0.088), vec3(0.021,0.017,0.013), 0.013), 2.0), 0.016);",
-    "    r = smin2(r, vec2(sdRB(vec3(q.x-0.027,q.y-0.832,q.z-0.082), vec3(0.019,0.015,0.011), 0.012), 2.0), 0.016);",
+    "    r = smin2(r, vec2(sdRB(vec3(q.x-0.032,q.y-1.014,q.z-0.086), vec3(0.020,0.013,0.007), 0.017), 2.0), 0.018);",
+    "    r = smin2(r, vec2(sdRB(vec3(q.x-0.032,q.y-0.950,q.z-0.088), vec3(0.021,0.013,0.008), 0.017), 2.0), 0.018);",
+    "    r = smin2(r, vec2(sdRB(vec3(q.x-0.031,q.y-0.888,q.z-0.088), vec3(0.020,0.012,0.008), 0.016), 2.0), 0.018);",
+    "    r = smin2(r, vec2(sdRB(vec3(q.x-0.029,q.y-0.832,q.z-0.082), vec3(0.018,0.011,0.007), 0.015), 2.0), 0.018);",
     "    r = smin2(r, vec2(sdRB(p - vec3(0.0,0.788,0.074), vec3(0.030,0.016,0.012), 0.015), 2.0), 0.022);",
     "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.104,0.956,0.026), 0.30, 0.0), vec3(0.032,0.070,0.050)), 3.0), 0.024);",
     "    r = smin2(r, vec2(sdEll(rot2(q - vec3(0.100,0.862,0.018), 0.38, 0.0), vec3(0.030,0.060,0.048)), 3.0), 0.024);",
@@ -165,9 +167,9 @@ var Holo = (function () {
     "  z = sdSph(q - vec3(0.230,1.170,0.000), 0.230);",
     "  if (z < 0.09) {",
     "    r = smin2(r, vec2(sdRC(q, vec3(0.215,1.272,0.0), vec3(0.245,1.020,0.010), 0.046, 0.030), 7.0), 0.06);",
-    "    r = smin2(r, vec2(sdRC(q, vec3(0.186,1.306,0.042), vec3(0.230,1.166,0.030), 0.044, 0.020), 5.0), 0.050);",
-    "    r = smin2(r, vec2(sdRC(q, vec3(0.212,1.312,0.000), vec3(0.244,1.158,0.004), 0.050, 0.022), 5.0), 0.050);",
-    "    r = smin2(r, vec2(sdRC(q, vec3(0.188,1.302,-0.044), vec3(0.232,1.168,-0.032), 0.044, 0.020), 6.0), 0.050);",
+    "    r = smin2(r, vec2(sdRC(q, vec3(0.192,1.308,0.044), vec3(0.236,1.164,0.030), 0.048, 0.022), 5.0), 0.050);",
+    "    r = smin2(r, vec2(sdRC(q, vec3(0.220,1.314,0.000), vec3(0.250,1.156,0.004), 0.054, 0.024), 5.0), 0.050);",
+    "    r = smin2(r, vec2(sdRC(q, vec3(0.194,1.304,-0.046), vec3(0.238,1.166,-0.032), 0.048, 0.022), 6.0), 0.050);",
     "    r = smin2(r, vec2(sdRC(q, vec3(0.224,1.252,0.034), vec3(0.234,1.148,0.044), 0.016, 0.034), 7.0), 0.020);",
     "    r = smin2(r, vec2(sdRC(q, vec3(0.234,1.148,0.044), vec3(0.246,1.036,0.030), 0.034, 0.013), 7.0), 0.020);",
     "    r = smin2(r, vec2(sdRC(q, vec3(0.212,1.240,0.038), vec3(0.228,1.120,0.042), 0.014, 0.028), 7.0), 0.020);",
@@ -288,9 +290,11 @@ var Holo = (function () {
     "    if (t > 6.0) break;",
     "  }",
 
-    /* ── мимо тела: сетка пола и ореол вокруг силуэта ── */
+    /* ── мимо тела: студийный фон, пол и мягкий ореол силуэта ── */
     "  if (!hit) {",
-    "    vec4 bg = vec4(0.0);",
+    "    float vg = length(uv);",
+    "    vec3 bgc = mix(vec3(0.07,0.14,0.30), vec3(0.015,0.03,0.09), clamp(vg * 0.75, 0.0, 1.0));",
+    "    float ba = smoothstep(1.45, 0.15, vg) * 0.96;",
     "    if (rd.y < -0.001) {",
     "      float tp = -ro.y / rd.y;",
     "      if (tp > 0.0 && tp < 14.0) {",
@@ -300,16 +304,14 @@ var Holo = (function () {
     "        float w = fwidth(gp.x) * 1.6 + 0.01;",
     "        float ln = 1.0 - smoothstep(0.0, w, min(gf.x, gf.y));",
     "        float fade = exp(-length(pf.xz) * 0.85);",
-    "        float pool = exp(-dot(pf.xz, pf.xz) * 4.0) * 0.42;",   /* пятно света под фигурой */
-    "        float pulseRing = exp(-pow((length(pf.xz) - mod(uTime * 0.5, 2.2)) * 5.0, 2.0)) * 0.22;",
-    "        float a0 = (ln * 0.55 + pool + pulseRing) * fade;",
-    "        bg = vec4(vec3(0.22, 0.55, 1.0) * (0.7 + ln * 0.8), a0);",
+    "        float pool = exp(-dot(pf.xz, pf.xz) * 4.0) * 0.5;",
+    "        bgc += vec3(0.25, 0.55, 1.0) * (ln * 0.30 + pool) * fade;",
+    "        ba = max(ba, (ln * 0.45 + pool) * fade);",
     "      }",
     "    }",
-    "    float halo = exp(-near * 90.0);",                 /* мягкий край: он же сглаживание */
-    "    bg.rgb = mix(bg.rgb, vec3(0.40, 0.72, 1.0), halo);",
-    "    bg.a = clamp(bg.a + halo * 0.55, 0.0, 1.0);",
-    "    gl_FragColor = bg;",
+    "    float halo = exp(-near * 80.0);",
+    "    bgc = mix(bgc, vec3(0.50, 0.72, 1.0), halo * 0.45);",
+    "    gl_FragColor = vec4(bgc, clamp(ba + halo * 0.45, 0.0, 1.0));",
     "    return;",
     "  }",
 
@@ -319,39 +321,36 @@ var Holo = (function () {
     "  float on = onOf(id);",
     "  float work = on * (0.55 + 0.45 * uPulse);",   /* такт движения: усилие ярче возврата */
 
-    /* ── рельеф: волокна поперёк направления мышцы ── */
+    /* ── рельеф: лёгкая штриховка волокон, поверхность гладкая ── */
     "  vec3 fd = fiberDir(id);",
     "  vec3 tg = normalize(fd - n * dot(n, fd) + vec3(0.0001));",
     "  vec3 bt = cross(n, tg);",
-    "  float fib = sin(dot(p, bt) * 165.0);",
-    "  float fib2 = sin(dot(p, bt) * 61.0 + dot(p, tg) * 7.0);",
-    "  vec3 nb = normalize(n + bt * (fib * 0.030 + fib2 * 0.055) + tg * fib2 * 0.015);",
+    "  float fib = sin(dot(p, bt) * 78.0);",
+    "  vec3 nb = normalize(n + bt * fib * 0.007);",
 
-    /* ── свет: основной, заполняющий и контурный ── */
+    /* ── затенение в углублениях: именно оно рисует борозды ── */
     "  float ao = uQ > 2.5 ? 0.86 : occ(p, n);",
-    "  float cav = pow(ao, 1.7);",                      /* борозды между пучками */
-    "  float fres = pow(1.0 - max(dot(nb, v), 0.0), 2.6);",
-    /* свет считаем в осях камеры: иначе при повороте фигура уходит в тень */
+    "  float cav = pow(ao, 1.7);",
+
+    /* ── студийный свет в осях камеры: ключевой сверху-сбоку,
+       заполняющий с другой стороны, контровой из-за фигуры ── */
     "  vec3 cr = normalize(cross(vec3(0.0, 1.0, 0.0), v));",
     "  vec3 cu = cross(v, cr);",
-    "  vec3 lkey = normalize(v + cr * 0.62 + cu * 0.78);",
-    "  vec3 lfil = normalize(v - cr * 0.90 - cu * 0.22);",
-    "  float lam = max(dot(nb, lkey), 0.0);",
-    "  float fill = max(dot(nb, lfil), 0.0) * 0.38;",
-    "  float rim = pow(1.0 - max(dot(n, v), 0.0), 3.5) * 1.2;",
-    "  vec3 hv = normalize(lkey + v);",
-    "  float spec = pow(max(dot(nb, hv), 0.0), 34.0) * 0.55;",
+    "  vec3 lkey = normalize(v + cr * 0.72 + cu * 0.92);",
+    "  vec3 lfil = normalize(v - cr * 1.05 + cu * 0.12);",
+    "  vec3 lrim = normalize(-v + cu * 0.55);",
+    "  float k1 = max(dot(nb, lkey), 0.0);",
+    "  float k2 = max(dot(nb, lfil), 0.0);",
+    "  float k3 = pow(max(dot(nb, lrim), 0.0), 1.8);",
+    "  float sp1 = pow(max(dot(nb, normalize(lkey + v)), 0.0), 88.0);",
+    "  float sp2 = pow(max(dot(nb, normalize(lfil + v)), 0.0), 22.0) * 0.16;",
+    "  float fres = pow(1.0 - max(dot(nb, v), 0.0), 3.2);",
 
-    /* ── просвет сквозь объём: тонкие места светятся сильнее ── */
-    "  float sss = pow(1.0 - abs(dot(n, v)), 1.4) * (0.35 + 0.65 * ao);",
+    /* отражение окружения: сверху светлое небо студии, снизу холодный пол */
+    "  vec3 rfl = reflect(-v, nb);",
+    "  vec3 envc = mix(vec3(0.08,0.14,0.30), vec3(0.80,0.86,0.96), clamp(rfl.y * 0.5 + 0.5, 0.0, 1.0));",
 
-    /* ── служебная разметка поверх ── */
-    "  float scan = 0.5 + 0.5 * sin(p.y * 64.0 - uTime * 2.6);",
-    "  float sweepY = mod(uTime * 0.42, 2.6) - 0.3;",
-    "  float sweep = exp(-pow((p.y - sweepY) * 13.0, 2.0));",
-    "  float grid = smoothstep(0.78, 1.0, scan) * 0.10;",
-
-    /* ── граница между мышцами: светящийся контур, как обводка в атласе ── */
+    /* ── тонкая тёмная линия на границе мышц ── */
     "  vec3 e1 = normalize(cross(n, vec3(0.0, 1.0, 0.07)));",
     "  vec3 e2 = cross(n, e1);",
     "  float ed = 0.0;",
@@ -361,26 +360,30 @@ var Holo = (function () {
     "  }",
     "  float edge = clamp(ed * 0.52, 0.0, 1.0);",
 
-    /* у каждой группы свой оттенок — иначе мышцы не отличить друг от друга */
-    "  float tint = fract(id * 0.173);",
-    "  vec3 cold = vec3(0.13 + tint * 0.14, 0.44 + tint * 0.22, 0.86 + tint * 0.14);",
-    "  vec3 deep = vec3(0.04, 0.11, 0.28);",            /* цвет в глубине борозды */
-    "  vec3 hot = vec3(1.0, 0.45, 0.14);",
-    "  vec3 base = mix(cold, hot, work);",
-    "  vec3 col = mix(deep, base, 0.45 + 0.55 * cav);",
-    "  col = mix(col, vec3(0.70, 0.90, 1.0), edge * 0.34 * (1.0 - work));",
-    "  col = mix(col, vec3(1.0, 0.85, 0.55), edge * 0.34 * work);",
-    "  float lit = 0.40 + lam * 0.78 + fill + fres * 1.15 + rim * 0.42",
-    "            + spec + sss * 0.45 + grid * 1.5 + work * 0.30 + sweep * 0.85;",
-    "  lit *= (0.52 + 0.48 * ao) * (1.0 + work * 0.45);",                       /* тень в углублениях */
-    "  lit += fib * 0.022 * (0.4 + work);",             /* блики по волокнам */
-    "  lit += edge * 0.20;",
-    "  float a = 0.52 + fres * 0.42 + lam * 0.20 + work * 0.26 + sweep * 0.22 + edge * 0.07 - (1.0 - cav) * 0.10;",
-    /* мягкое ограничение яркости: без него светлые места выбеливаются */
-    "  vec3 outc = col * lit;",
-    "  outc = outc / (1.0 + outc * 0.40);",
-    "  outc = mix(outc, base * 0.95, work * 0.42);",
-    "  gl_FragColor = vec4(outc * 1.52, clamp(a, 0.0, 0.98));",
+    /* ── цвет: гипсово-белая скульптура ── */
+    "  vec3 alb = vec3(0.90, 0.905, 0.930);",
+    "  vec3 col = alb * (0.12 + k1 * 0.94 + k2 * 0.24);",
+    "  col += alb * k3 * 0.36;",
+    "  col += envc * (0.10 + fres * 0.45);",
+    "  col += vec3(1.0) * (sp1 * 0.85 + sp2);",
+    "  col *= 0.32 + 0.68 * ao;",
+    "  col = mix(col * 0.62, col, cav);",
+    "  col += fib * 0.005;",
+
+    /* ── рабочая мышца: тёплая заливка поверх белого, дышит в такт ── */
+    "  vec3 hotc = vec3(1.0, 0.24, 0.20);",
+    "  float wmix = work * work * 0.88;",
+    "  col = mix(col, col * 0.40 + hotc * (0.60 + 0.40 * uPulse), wmix);",
+    "  col += hotc * fres * wmix * 0.60;",
+
+    /* ── служебное: бегущая полоса осмотра и линии между мышцами ── */
+    "  float sweepY = mod(uTime * 0.42, 2.6) - 0.3;",
+    "  float sweep = exp(-pow((p.y - sweepY) * 13.0, 2.0));",
+    "  col += vec3(0.40, 0.68, 1.0) * sweep * 0.12;",
+    "  col *= 1.0 - edge * 0.26;",
+
+    "  vec3 outc = col / (1.0 + col * 0.14);",
+    "  gl_FragColor = vec4(outc, 1.0);",
     "}"
   ].join("\n");
 
@@ -446,7 +449,7 @@ var Holo = (function () {
       for (i = 0; i < 16; i++) lit[i] = 0;
       for (i = 0; i < GKEYS.length; i++) {
         if (a.indexOf(GKEYS[i]) >= 0) lit[i + 1] = 1;
-        else if (b.indexOf(GKEYS[i]) >= 0) lit[i + 1] = 0.45;
+        else if (b.indexOf(GKEYS[i]) >= 0) lit[i + 1] = 0.30;
       }
     }
     setGroups(on, on2);
