@@ -39,6 +39,7 @@ var Holo = (function () {
   ].join("\n");
 
   var FS = [
+    "#extension GL_OES_standard_derivatives : enable",
     "precision highp float;",
     "varying vec2 vUv;",
     "uniform vec2 uRes;",
@@ -56,6 +57,13 @@ var Holo = (function () {
     /* Конус со скруглёнными концами: кость или мышца, которая к одному
        концу толще, чем к другому. Прямая капсула даёт «трубу», этот —
        естественное сужение к суставу. */
+    /* Скруглённый параллелепипед: кубики пресса — плиты с фасками,
+       эллипсоид на их месте читается как ряд шариков. */
+    "float sdRB(vec3 p, vec3 b, float r){",
+    "  vec3 d = abs(p) - b;",
+    "  return length(max(d, 0.0)) + min(max(d.x, max(d.y, d.z)), 0.0) - r;",
+    "}",
+
     "float sdRC(vec3 p, vec3 a, vec3 b, float r1, float r2){",
     "  vec3 ba = b - a; float l2 = dot(ba, ba);",
     "  float rr = r1 - r2; float a2 = l2 - rr * rr; float il2 = 1.0 / l2;",
@@ -95,17 +103,27 @@ var Holo = (function () {
 
     /* ── остов. Пропорции по канону: рост около семи с половиной голов,
        плечи втрое шире головы, кости сужаются к суставам. ── */
-    "  vec2 r = vec2(sdEll(p - vec3(0.0,1.596,0.026), vec3(0.084,0.112,0.104)), 0.0);",
+    /* голова: череп, лицевая часть книзу уже, скулы, нос и уши —
+       иначе сверху читается просто яйцо */
+    "  vec2 r = vec2(sdEll(p - vec3(0.0,1.608,0.020), vec3(0.082,0.098,0.098)), 0.0);",
+    "  r = smin2(r, vec2(sdEll(p - vec3(0.0,1.546,0.042), vec3(0.062,0.058,0.082)), 0.0), 0.045);",
+    "  r = smin2(r, vec2(sdEll(q - vec3(0.052,1.580,0.070), vec3(0.028,0.020,0.030)), 0.0), 0.030);",
+    "  r = smin2(r, vec2(sdEll(p - vec3(0.0,1.566,0.104), vec3(0.015,0.026,0.020)), 0.0), 0.022);",
+    "  r = smin2(r, vec2(sdEll(q - vec3(0.084,1.594,0.004), vec3(0.010,0.024,0.018)), 0.0), 0.016);",
     "  r = smin2(r, vec2(sdRC(p, vec3(0.0,1.385,-0.005), vec3(0.0,1.515,0.0), 0.050, 0.036), 0.0), 0.05);",
     "  r = smin2(r, vec2(sdEll(p - vec3(0.0,1.164,0.010), vec3(0.152,0.180,0.104)), 0.0), 0.08);",
     "  r = smin2(r, vec2(sdEll(p - vec3(0.0,0.900,0.004), vec3(0.112,0.140,0.082)), 0.0), 0.09);",
     "  r = smin2(r, vec2(sdEll(p - vec3(0.0,0.740,-0.008), vec3(0.136,0.112,0.100)), 0.0), 0.08);",
     "  r = smin2(r, vec2(sdRC(q, vec3(0.215,1.272,0.0), vec3(0.245,1.020,0.010), 0.046, 0.030), 7.0), 0.06);",
     "  r = smin2(r, vec2(sdRC(q, vec3(0.245,1.020,0.010), vec3(0.272,0.800,0.020), 0.038, 0.021), 9.0), 0.05);",
-    "  r = smin2(r, vec2(sdEll(q - vec3(0.278,0.722,0.020), vec3(0.034,0.054,0.022)), 0.0), 0.035);",
+    /* кисть: ладонь, сомкнутые пальцы и большой палец отдельно */
+    "  r = smin2(r, vec2(sdEll(q - vec3(0.280,0.736,0.020), vec3(0.030,0.038,0.019)), 0.0), 0.030);",
+    "  r = smin2(r, vec2(sdRC(q, vec3(0.284,0.712,0.021), vec3(0.292,0.652,0.024), 0.021, 0.013), 0.0), 0.022);",
+    "  r = smin2(r, vec2(sdRC(q, vec3(0.258,0.722,0.030), vec3(0.248,0.684,0.040), 0.012, 0.008), 0.0), 0.018);",
     "  r = smin2(r, vec2(sdRC(q, vec3(0.078,0.720,-0.004), vec3(0.092,0.400,0.004), 0.062, 0.040), 13.0), 0.08);",
     "  r = smin2(r, vec2(sdRC(q, vec3(0.092,0.400,0.004), vec3(0.092,0.070,0.014), 0.042, 0.024), 15.0), 0.05);",
-    "  r = smin2(r, vec2(sdEll(q - vec3(0.092,0.035,0.045), vec3(0.050,0.032,0.098)), 0.0), 0.04);",
+    "  r = smin2(r, vec2(sdEll(q - vec3(0.092,0.032,0.048), vec3(0.046,0.028,0.098)), 0.0), 0.04);",
+    "  r = smin2(r, vec2(sdEll(q - vec3(0.092,0.072,-0.004), vec3(0.034,0.034,0.038)), 0.0), 0.035);",
 
     /* ── мышцы: не монолиты, а отдельные пучки. Маленький радиус слияния
        оставляет между ними борозду — так же, как на анатомической модели. ── */
@@ -114,16 +132,16 @@ var Holo = (function () {
     "  r = smin2(r, vec2(sdRC(q, vec3(0.020,1.310,0.050), vec3(0.180,1.294,0.026), 0.012, 0.016), 0.0), 0.024);",
 
     /* грудь: ключичный пучок выше и уже, грудинный — крупный веер */
-    "  r = smin2(r, vec2(sdEll(rot2(q - vec3(0.076,1.252,0.072), -0.30, 0.0), vec3(0.082,0.028,0.034)), 1.0), 0.022);",
-    "  r = smin2(r, vec2(sdEll(rot2(q - vec3(0.082,1.192,0.078), -0.10, 0.0), vec3(0.088,0.052,0.038)), 1.0), 0.022);",
-    "  r = smin2(r, vec2(sdEll(rot2(q - vec3(0.076,1.128,0.080), 0.08, 0.0), vec3(0.084,0.034,0.036)), 1.0), 0.022);",
+    /* грудная — один цельный щит: три отдельных пучка давали ступеньку
+       по внутреннему краю. Деление на пучки ниже сделано бороздами. */
+    "  r = smin2(r, vec2(sdEll(rot2(q - vec3(0.070,1.196,0.084), -0.14, 0.0), vec3(0.098,0.072,0.032)), 1.0), 0.038);",
 
     /* пресс: четыре ряда кубиков и нижний сегмент */
-    "  r = smin2(r, vec2(sdEll(vec3(q.x-0.030,q.y-1.014,q.z-0.084), vec3(0.030,0.026,0.022)), 2.0), 0.015);",
-    "  r = smin2(r, vec2(sdEll(vec3(q.x-0.030,q.y-0.950,q.z-0.086), vec3(0.031,0.026,0.023)), 2.0), 0.015);",
-    "  r = smin2(r, vec2(sdEll(vec3(q.x-0.029,q.y-0.888,q.z-0.086), vec3(0.030,0.025,0.023)), 2.0), 0.015);",
-    "  r = smin2(r, vec2(sdEll(vec3(q.x-0.027,q.y-0.830,q.z-0.080), vec3(0.028,0.023,0.021)), 2.0), 0.015);",
-    "  r = smin2(r, vec2(sdEll(p - vec3(0.0,0.786,0.072), vec3(0.048,0.030,0.030)), 2.0), 0.022);",
+    "  r = smin2(r, vec2(sdRB(vec3(q.x-0.030,q.y-1.014,q.z-0.086), vec3(0.021,0.018,0.012), 0.013), 2.0), 0.016);",
+    "  r = smin2(r, vec2(sdRB(vec3(q.x-0.030,q.y-0.950,q.z-0.088), vec3(0.022,0.018,0.013), 0.013), 2.0), 0.016);",
+    "  r = smin2(r, vec2(sdRB(vec3(q.x-0.029,q.y-0.888,q.z-0.088), vec3(0.021,0.017,0.013), 0.013), 2.0), 0.016);",
+    "  r = smin2(r, vec2(sdRB(vec3(q.x-0.027,q.y-0.832,q.z-0.082), vec3(0.019,0.015,0.011), 0.012), 2.0), 0.016);",
+    "  r = smin2(r, vec2(sdRB(p - vec3(0.0,0.788,0.074), vec3(0.030,0.016,0.012), 0.015), 2.0), 0.022);",
 
     /* косые живота — наискось к тазу */
     "  r = smin2(r, vec2(sdEll(rot2(q - vec3(0.104,0.956,0.026), 0.30, 0.0), vec3(0.032,0.070,0.050)), 3.0), 0.024);",
@@ -180,8 +198,10 @@ var Holo = (function () {
     "  r = smin2(r, vec2(sdEll(q - vec3(0.072,0.300,0.030), vec3(0.018,0.080,0.022)), 15.0), 0.020);",
 
     /* ── борозды между группами ── */
-    "  r.x = carve(r.x, sdCap(p, vec3(0.0,1.268,0.084), vec3(0.0,1.126,0.082), 0.013), 0.034);",   /* середина груди */
-    "  r.x = carve(r.x, sdEll(p - vec3(0.0,1.104,0.090), vec3(0.078,0.006,0.026)), 0.052);",       /* под грудными */
+    "  r.x = carve(r.x, sdEll(q - vec3(0.034,1.600,0.092), vec3(0.022,0.013,0.016)), 0.018);",   /* глазницы */
+    "  r.x = carve(r.x, sdCap(p, vec3(-0.020,1.524,0.090), vec3(0.020,1.524,0.090), 0.004), 0.012);", /* линия рта */
+    "  r.x = carve(r.x, sdCap(p, vec3(0.0,1.258,0.090), vec3(0.0,1.134,0.088), 0.008), 0.032);",   /* середина груди */
+    "  r.x = carve(r.x, sdEll(p - vec3(0.0,1.120,0.094), vec3(0.096,0.004,0.022)), 0.050);",       /* под грудными */
     "  r.x = carve(r.x, sdCap(p, vec3(0.0,1.040,0.088), vec3(0.0,0.800,0.078), 0.010), 0.022);",   /* белая линия живота */
     "  r.x = carve(r.x, sdCap(q, vec3(0.150,1.300,0.052), vec3(0.196,1.196,0.044), 0.013), 0.026);", /* желобок дельты */
     "  r.x = carve(r.x, sdCap(p, vec3(0.0,1.320,-0.096), vec3(0.0,0.820,-0.074), 0.017), 0.034);", /* позвоночник */
@@ -243,16 +263,41 @@ var Holo = (function () {
     "  rd.xz = mat2(cy, -sy, sy, cy) * rd.xz;",
     "  ro += uTarget;",
 
-    "  float t = 0.0, id = 0.0;",
+    "  float t = 0.0, id = 0.0, near = 1.0;",
     "  bool hit = false;",
     "  for (int i = 0; i < 72; i++) {",
     "    vec3 pp = ro + rd * t;",
     "    vec2 d = map(pp);",
+    "    near = min(near, d.x / max(t, 0.3));",           /* насколько близко луч прошёл мимо */
     "    if (d.x < 0.0016) { id = d.y; hit = true; break; }",
     "    t += d.x * 0.92;",
     "    if (t > 6.0) break;",
     "  }",
-    "  if (!hit) { gl_FragColor = vec4(0.0); return; }",
+
+    /* ── мимо тела: сетка пола и ореол вокруг силуэта ── */
+    "  if (!hit) {",
+    "    vec4 bg = vec4(0.0);",
+    "    if (rd.y < -0.001) {",
+    "      float tp = -ro.y / rd.y;",
+    "      if (tp > 0.0 && tp < 14.0) {",
+    "        vec3 pf = ro + rd * tp;",
+    "        vec2 gp = pf.xz * 3.2;",
+    "        vec2 gf = abs(fract(gp) - 0.5);",
+    "        float w = fwidth(gp.x) * 1.6 + 0.01;",
+    "        float ln = 1.0 - smoothstep(0.0, w, min(gf.x, gf.y));",
+    "        float fade = exp(-length(pf.xz) * 0.85);",
+    "        float pool = exp(-dot(pf.xz, pf.xz) * 4.0) * 0.42;",   /* пятно света под фигурой */
+    "        float pulseRing = exp(-pow((length(pf.xz) - mod(uTime * 0.5, 2.2)) * 5.0, 2.0)) * 0.22;",
+    "        float a0 = (ln * 0.55 + pool + pulseRing) * fade;",
+    "        bg = vec4(vec3(0.22, 0.55, 1.0) * (0.7 + ln * 0.8), a0);",
+    "      }",
+    "    }",
+    "    float halo = exp(-near * 90.0);",                 /* мягкий край: он же сглаживание */
+    "    bg.rgb = mix(bg.rgb, vec3(0.40, 0.72, 1.0), halo);",
+    "    bg.a = clamp(bg.a + halo * 0.55, 0.0, 1.0);",
+    "    gl_FragColor = bg;",
+    "    return;",
+    "  }",
 
     "  vec3 p = ro + rd * t;",
     "  vec3 n = norm(p);",
@@ -316,11 +361,12 @@ var Holo = (function () {
     "  lit *= (0.52 + 0.48 * ao) * (1.0 + work * 0.45);",                       /* тень в углублениях */
     "  lit += fib * 0.022 * (0.4 + work);",             /* блики по волокнам */
     "  lit += edge * 0.20;",
-    "  float a = 0.44 + fres * 0.42 + lam * 0.20 + work * 0.26 + sweep * 0.22 + edge * 0.07 - (1.0 - cav) * 0.10;",
+    "  float a = 0.52 + fres * 0.42 + lam * 0.20 + work * 0.26 + sweep * 0.22 + edge * 0.07 - (1.0 - cav) * 0.10;",
     /* мягкое ограничение яркости: без него светлые места выбеливаются */
     "  vec3 outc = col * lit;",
     "  outc = outc / (1.0 + outc * 0.40);",
-    "  gl_FragColor = vec4(outc * 1.35, clamp(a, 0.0, 0.98));",
+    "  outc = mix(outc, base * 0.95, work * 0.42);",
+    "  gl_FragColor = vec4(outc * 1.52, clamp(a, 0.0, 0.98));",
     "}"
   ].join("\n");
 
@@ -337,8 +383,14 @@ var Holo = (function () {
     try { gl = cv.getContext("webgl", { alpha: true, antialias: false, premultipliedAlpha: false }); } catch (e) {}
     if (!gl) return null;
 
-    if (!gl) return null;
-    var vs = compile(gl, gl.VERTEX_SHADER, VS), fs = compile(gl, gl.FRAGMENT_SHADER, FS);
+    /* fwidth нужен для ровных линий пола; где расширения нет — берём
+       постоянную толщину, иначе шейдер просто не соберётся */
+    var src = FS;
+    if (!gl.getExtension("OES_standard_derivatives")) {
+      src = src.replace("#extension GL_OES_standard_derivatives : enable", "")
+               .replace("fwidth(gp.x) * 1.6", "0.030");
+    }
+    var vs = compile(gl, gl.VERTEX_SHADER, VS), fs = compile(gl, gl.FRAGMENT_SHADER, src);
     if (!vs || !fs) return null;
     var p = gl.createProgram();
     gl.attachShader(p, vs); gl.attachShader(p, fs); gl.linkProgram(p);
@@ -395,18 +447,60 @@ var Holo = (function () {
     }
     size();
 
-    function down(e) { drag = { x: e.clientX, y: e.clientY }; auto = 0; try { cv.setPointerCapture(e.pointerId); } catch (err) {} }
+    var pts = {}, pinch = 0;                            /* пальцы на экране и расстояние между ними */
+
+    function zoom(k) {
+      to = null;                                        /* ручное приближение отменяет доводку камеры */
+      auto = 0;
+      dist = Math.max(0.32, Math.min(2.60, dist * k));
+    }
+    function spread() {
+      var k = [], id;
+      for (id in pts) if (pts.hasOwnProperty(id)) k.push(pts[id]);
+      if (k.length < 2) return 0;
+      return Math.sqrt(Math.pow(k[0].x - k[1].x, 2) + Math.pow(k[0].y - k[1].y, 2));
+    }
+    function down(e) {
+      pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+      pinch = spread();
+      drag = pinch ? null : { x: e.clientX, y: e.clientY };
+      auto = 0;
+      try { cv.setPointerCapture(e.pointerId); } catch (err) {}
+    }
     function move(e) {
+      if (pts[e.pointerId]) { pts[e.pointerId].x = e.clientX; pts[e.pointerId].y = e.clientY; }
+      var sp = spread();
+      if (sp && pinch) {                                /* два пальца — щипок, приближаем */
+        zoom(pinch / sp);
+        pinch = sp;
+        return;
+      }
       if (!drag) return;
       yaw -= (e.clientX - drag.x) * 0.012;
       pitch = Math.max(-0.5, Math.min(0.5, pitch - (e.clientY - drag.y) * 0.006));
       drag.x = e.clientX; drag.y = e.clientY;
     }
-    function up() { drag = null; }
+    function up(e) {
+      if (e && e.pointerId !== undefined) delete pts[e.pointerId];
+      pinch = spread();
+      drag = null;
+    }
+    function wheel(e) {
+      e.preventDefault();
+      zoom(1 + (e.deltaY > 0 ? 1 : -1) * 0.09);
+    }
+    var tapT = 0;
+    function tap() {                                    /* двойное нажатие — вернуться к обзору */
+      var n = Date.now();
+      if (n - tapT < 320) { to = { t: WIDE.t.slice(), d: WIDE.d, yaw: null, pitch: WIDE.pitch }; }
+      tapT = n;
+    }
     cv.addEventListener("pointerdown", down);
     cv.addEventListener("pointermove", move);
     cv.addEventListener("pointerup", up);
     cv.addEventListener("pointercancel", up);
+    cv.addEventListener("wheel", wheel, { passive: false });
+    cv.addEventListener("pointerup", tap);
 
     var slow = 0, tLast = 0;
     function frame(now) {
