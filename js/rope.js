@@ -116,9 +116,11 @@ var Chains = (function () {
     }
   }
 
+  var frn = 0, slowDraw = (typeof window !== "undefined" && window.innerWidth < 760);
   function loop(t) {
     if (!live) return;
-    step(t || 0); draw();
+    step(t || 0);
+    if (!slowDraw || !(++frn & 1)) draw();            /* на телефоне перерисовка через кадр */
     raf = requestAnimationFrame(loop);
   }
 

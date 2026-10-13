@@ -192,9 +192,11 @@ var HoloMarks = (function () {
       ctx.fillText(move.l, lx, ly);
     }
 
+    var fr = 0, half = window.innerWidth < 760;         /* на телефоне рисуем через кадр */
     function frame() {
       if (!live || !cv.isConnected) { live = false; return; }
       if (document.visibilityState !== "visible") { requestAnimationFrame(frame); return; }
+      if (half && (++fr & 1)) { requestAnimationFrame(frame); return; }
       var s = size();
       ctx.clearRect(0, 0, s.w, s.h);
 
