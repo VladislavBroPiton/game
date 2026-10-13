@@ -532,7 +532,8 @@ var Holo = (function () {
 
     function grade(ms) {                                 /* ms — среднее время одного кадра */
       if (hold > 0) { hold--; return; }                  /* пауза считается в проверках, не в кадрах */
-      if (ms > 23 && qi < 3) { qi++; scale = QUAL[qi].s; size(); hold = 2; }
+      var step = ms > 48 ? 2 : 1;                        /* совсем медленно — прыгаем через ступень */
+      if (ms > 23 && qi < 3) { qi = Math.min(3, qi + step); scale = QUAL[qi].s; size(); hold = 2; }
       else if (ms < 12 && qi > 0) { qi--; scale = QUAL[qi].s; size(); hold = 8; }
     }
 
@@ -570,7 +571,7 @@ var Holo = (function () {
 
       if (tLast) {                                       /* среднее за полсекунды */
         acc += (now - tLast) / QUAL[qi].hz; accN++;
-        if (accN >= 30) { grade(acc / accN); acc = 0; accN = 0; }
+        if (accN >= (qi === 0 && hold === 0 ? 12 : 30)) { grade(acc / accN); acc = 0; accN = 0; }
       }
       tLast = now;
 
