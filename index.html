@@ -1084,7 +1084,9 @@
   color: var(--gray2); background: rgba(80,150,255,.07); border: 1px solid var(--border2);
 }
 .vtab.on { color: var(--white); background: rgba(80,150,255,.20); border-color: var(--fire); }
+.holobox { position: relative; }
 .holocv { display: block; width: 100%; height: min(46vh, 380px); touch-action: none; cursor: grab; }
+.holoov { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; }
 .holocv:active { cursor: grabbing; }
 .holohint { text-align: center; font-size: 11px; color: var(--gray); margin-top: 6px; }
 
@@ -1682,6 +1684,7 @@ var EXERCISES = {
 
 </script>
 <script src="js/legends.js"></script>
+<script src="js/overlay.js"></script>
 <script src="js/holo.js"></script>
 <script src="js/boss.js"></script>
 <script src="js/rope.js"></script>
@@ -2169,6 +2172,7 @@ function openModal(html) {
 function closeModal() {
   document.getElementById("overlay").className = "overlay";
   if (HOLO) { HOLO.stop(); HOLO = null; }
+  if (MARKS) { MARKS.stop(); MARKS = null; }
   if (window.Chains) Chains.detach();
 }
 
@@ -3108,8 +3112,11 @@ function showBody(ex) {
       "</div>" +
     "</div>" +
     '<div id="view-holo" style="display:none">' +
-      '<canvas id="holocv" class="holocv" aria-label="Объёмная проекция тела"></canvas>' +
-      '<div class="holohint">тяните пальцем, чтобы повернуть</div>' +
+      '<div class="holobox">' +
+        '<canvas id="holocv" class="holocv" aria-label="Объёмная проекция тела"></canvas>' +
+        '<canvas id="holoov" class="holoov" aria-hidden="true"></canvas>' +
+      "</div>" +
+      '<div class="holohint">тяните пальцем, чтобы повернуть · камера наведена на рабочую зону</div>' +
     "</div>" +
     '<div class="zoombar">' +
       '<button type="button" class="zbtn" onclick="zoomStep(-1)" aria-label="Уменьшить">&minus;</button>' +
@@ -3126,7 +3133,7 @@ function showBody(ex) {
   HOLO_ON = on; HOLO_ON2 = on2;
 }
 
-var HOLO = null, HOLO_ON = [], HOLO_ON2 = [];
+var HOLO = null, MARKS = null, HOLO_ON = [], HOLO_ON2 = [];
 
 /* Открыть окно сразу на объёмной проекции — минуя атлас */
 function showBody3D(ex) {
@@ -3145,6 +3152,7 @@ function showAtlas() {
   document.getElementById("view-atlas").style.display = "";
   document.getElementById("view-holo").style.display = "none";
   zoomBarShow(true);
+  if (MARKS) { MARKS.stop(); MARKS = null; }
   document.getElementById("vt-atlas").className = "vtab on";
   document.getElementById("vt-holo").className = "vtab";
   if (HOLO) { HOLO.stop(); HOLO = null; }
@@ -3159,8 +3167,11 @@ function showHolo() {
   document.getElementById("vt-holo").className = "vtab on";
   if (!window.Holo || !Holo.supported()) { toast("Браузер не умеет объёмную графику"); showAtlas(); return; }
   if (HOLO) HOLO.stop();
+  if (MARKS) { MARKS.stop(); MARKS = null; }
   HOLO = Holo.mount(document.getElementById("holocv"), HOLO_ON, HOLO_ON2);
-  if (!HOLO) { toast("Не удалось запустить проекцию"); showAtlas(); }
+  if (!HOLO) { toast("Не удалось запустить проекцию"); showAtlas(); return; }
+  HOLO.focus(HOLO_ON && HOLO_ON.length ? HOLO_ON[0] : null);   /* камера наводится на рабочую зону */
+  if (window.HoloMarks) MARKS = HoloMarks.mount(document.getElementById("holoov"), HOLO, HOLO_ON);
 }
 
 /* Блок «Как выполнять»: схема, список мышц, шаги, частая ошибка */

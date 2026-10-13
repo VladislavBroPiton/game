@@ -11,6 +11,27 @@ var Holo = (function () {
                "biceps", "triceps", "forearms", "lats", "lowback",
                "glutes", "quads", "hams", "calves"];
 
+  /* Куда поворачивать и приближать камеру под каждую группу:
+     цель, поворот вокруг вертикали, наклон и расстояние. */
+  var FOCUS = {
+    chest:      { t: [0, 1.16, 0.05],   yaw: 0.10, pitch: 0.05, d: 0.90 },
+    abs:        { t: [0, 0.94, 0.05],   yaw: 0.10, pitch: 0.05, d: 0.82 },
+    obliques:   { t: [0.12, 0.92, 0],   yaw: 0.75, pitch: 0.05, d: 0.82 },
+    traps:      { t: [0, 1.32, -0.03],  yaw: 3.05, pitch: -0.18, d: 0.86 },
+    delts:      { t: [0.24, 1.27, 0],   yaw: 0.55, pitch: 0.02, d: 0.74 },
+    delts_rear: { t: [0.24, 1.27, -0.04], yaw: 2.60, pitch: 0.02, d: 0.74 },
+    biceps:     { t: [0.27, 1.12, 0.03], yaw: 0.45, pitch: 0.02, d: 0.70 },
+    triceps:    { t: [0.27, 1.12, -0.04], yaw: 2.70, pitch: 0.02, d: 0.70 },
+    forearms:   { t: [0.30, 0.92, 0],   yaw: 0.55, pitch: 0.05, d: 0.66 },
+    lats:       { t: [0.16, 1.05, -0.05], yaw: 2.95, pitch: 0.02, d: 0.90 },
+    lowback:    { t: [0, 0.88, -0.07],  yaw: 3.14, pitch: 0.05, d: 0.82 },
+    glutes:     { t: [0.10, 0.72, -0.07], yaw: 2.95, pitch: 0.12, d: 0.82 },
+    quads:      { t: [0.10, 0.56, 0.05], yaw: 0.20, pitch: 0.10, d: 0.94 },
+    hams:       { t: [0.10, 0.56, -0.06], yaw: 2.95, pitch: 0.10, d: 0.94 },
+    calves:     { t: [0.10, 0.26, -0.05], yaw: 2.90, pitch: 0.18, d: 0.74 }
+  };
+  var WIDE = { t: [0, 0.88, 0], yaw: 0.5, pitch: 0.0, d: 1.85 };
+
   var VS = [
     "attribute vec2 aPos;",
     "varying vec2 vUv;",
@@ -21,7 +42,8 @@ var Holo = (function () {
     "precision highp float;",
     "varying vec2 vUv;",
     "uniform vec2 uRes;",
-    "uniform float uTime, uYaw, uPitch;",
+    "uniform float uTime, uYaw, uPitch, uDist, uPulse;",
+    "uniform vec3 uTarget;",
     "uniform float uOn[16];",
 
     "float sdSph(vec3 p, float r){ return length(p) - r; }",
@@ -86,12 +108,13 @@ var Holo = (function () {
     "  vec2 uv = vUv;",
     "  uv.x *= uRes.x / uRes.y;",
     "  float cy = cos(uYaw), sy = sin(uYaw), cp = cos(uPitch), sp = sin(uPitch);",
-    "  vec3 ro = vec3(0.0, 0.88, 1.85);",
+    "  vec3 ro = vec3(0.0, 0.0, uDist);",
     "  vec3 rd = normalize(vec3(uv * 0.72, -1.0));",
-    "  ro.yz = mat2(cp, -sp, sp, cp) * (ro.yz - vec2(0.88, 0.0)) + vec2(0.88, 0.0);",
+    "  ro.yz = mat2(cp, -sp, sp, cp) * ro.yz;",
     "  rd.yz = mat2(cp, -sp, sp, cp) * rd.yz;",
     "  ro.xz = mat2(cy, -sy, sy, cy) * ro.xz;",
     "  rd.xz = mat2(cy, -sy, sy, cy) * rd.xz;",
+    "  ro += uTarget;",
 
     "  float t = 0.0, id = 0.0;",
     "  bool hit = false;",
@@ -108,6 +131,7 @@ var Holo = (function () {
     "  vec3 n = norm(p);",
     "  vec3 v = normalize(ro - p);",
     "  float on = onOf(id);",
+    "  float work = on * (0.55 + 0.45 * uPulse);",   /* такт движения: усилие ярче возврата */
 
     "  float fres = pow(1.0 - max(dot(n, v), 0.0), 2.6);",
     "  float lam = max(dot(n, normalize(vec3(0.5, 0.9, 0.7))), 0.0);",
@@ -119,9 +143,9 @@ var Holo = (function () {
 
     "  vec3 cold = vec3(0.16, 0.52, 1.0);",
     "  vec3 hot = vec3(1.0, 0.45, 0.14);",
-    "  vec3 col = mix(cold, hot, on);",
-    "  float lit = 0.26 + lam * 0.55 + fres * 1.15 + rim * 0.40 + grid * 1.6 + on * 0.75 + sweep * 0.9;",
-    "  float a = 0.46 + fres * 0.45 + lam * 0.22 + on * 0.25 + sweep * 0.25;",
+    "  vec3 col = mix(cold, hot, work);",
+    "  float lit = 0.26 + lam * 0.55 + fres * 1.15 + rim * 0.40 + grid * 1.6 + work * 0.75 + sweep * 0.9;",
+    "  float a = 0.46 + fres * 0.45 + lam * 0.22 + work * 0.25 + sweep * 0.25;",
     "  gl_FragColor = vec4(col * lit, clamp(a, 0.0, 0.98));",
     "}"
   ].join("\n");
@@ -139,6 +163,7 @@ var Holo = (function () {
     try { gl = cv.getContext("webgl", { alpha: true, antialias: false, premultipliedAlpha: false }); } catch (e) {}
     if (!gl) return null;
 
+    if (!gl) return null;
     var vs = compile(gl, gl.VERTEX_SHADER, VS), fs = compile(gl, gl.FRAGMENT_SHADER, FS);
     if (!vs || !fs) return null;
     var p = gl.createProgram();
@@ -159,6 +184,8 @@ var Holo = (function () {
     return { gl: gl, u: {
       res: gl.getUniformLocation(p, "uRes"), time: gl.getUniformLocation(p, "uTime"),
       yaw: gl.getUniformLocation(p, "uYaw"), pitch: gl.getUniformLocation(p, "uPitch"),
+      dist: gl.getUniformLocation(p, "uDist"), pulse: gl.getUniformLocation(p, "uPulse"),
+      target: gl.getUniformLocation(p, "uTarget"),
       on: gl.getUniformLocation(p, "uOn[0]")
     } };
   }
@@ -166,7 +193,10 @@ var Holo = (function () {
   function mount(cv, on, on2) {
     var g = create(cv);
     if (!g) return null;
-    var gl = g.gl, yaw = 0.5, pitch = 0.0, drag = null, live = true, auto = 1;
+    var gl = g.gl, yaw = WIDE.yaw, pitch = WIDE.pitch, drag = null, live = true, auto = 1;
+    var tgt = WIDE.t.slice(), dist = WIDE.d;            /* куда смотрим и с какого расстояния */
+    var to = null;                                      /* цель наезда, пока камера едет */
+    var pulse = 0, beat = 0;                            /* такт движения: усилие и возврат */
     var t0 = (window.performance ? performance.now() : Date.now());
     var lit = new Float32Array(16), scale = 1;
 
@@ -212,6 +242,29 @@ var Holo = (function () {
       var t = ((window.performance ? performance.now() : Date.now()) - t0) / 1000;
       if (auto) yaw += 0.0045;
 
+      /* плавный переезд к выбранной зоне */
+      if (to) {
+        var k = 0.08, done = 1;
+        for (var ax = 0; ax < 3; ax++) {
+          tgt[ax] += (to.t[ax] - tgt[ax]) * k;
+          if (Math.abs(to.t[ax] - tgt[ax]) > 0.002) done = 0;
+        }
+        dist += (to.d - dist) * k;
+        pitch += (to.pitch - pitch) * k;
+        if (Math.abs(to.d - dist) > 0.004 || Math.abs(to.pitch - pitch) > 0.004) done = 0;
+        if (to.yaw !== null) {
+          var dy = ((to.yaw - yaw + Math.PI * 3) % (Math.PI * 2)) - Math.PI;
+          yaw += dy * k;
+          if (Math.abs(dy) > 0.01) done = 0;
+        }
+        if (done) to = null;
+      }
+
+      /* такт: 0.6 с усилие, 0.9 с возврат — мышца разгорается в нужной фазе */
+      beat = (t % 1.5) / 1.5;
+      pulse = beat < 0.4 ? Math.sin(beat / 0.4 * Math.PI * 0.5)
+                         : Math.cos((beat - 0.4) / 0.6 * Math.PI * 0.5);
+
       /* кадры идут тяжело — один раз снижаем разрешение */
       if (tLast && now - tLast > 34) slow++;
       tLast = now;
@@ -225,16 +278,50 @@ var Holo = (function () {
       gl.uniform1f(g.u.time, t);
       gl.uniform1f(g.u.yaw, yaw);
       gl.uniform1f(g.u.pitch, pitch);
+      gl.uniform1f(g.u.dist, dist);
+      gl.uniform1f(g.u.pulse, pulse);
+      gl.uniform3f(g.u.target, tgt[0], tgt[1], tgt[2]);
       gl.uniform1fv(g.u.on, lit);
       gl.drawArrays(gl.TRIANGLES, 0, 3);
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
 
+    /* Та же математика, что в шейдере, но в обратную сторону: по точке
+       на фигуре даёт место на экране — чтобы рисовать поверх подписи и стрелки. */
+    function project(p) {
+      var cy = Math.cos(yaw), sy = Math.sin(yaw), cp = Math.cos(pitch), sp = Math.sin(pitch);
+      var ro = [0, 0, dist];
+      var y1 = cp * ro[1] - sp * ro[2], z1 = sp * ro[1] + cp * ro[2];
+      ro[1] = y1; ro[2] = z1;
+      var x2 = cy * ro[0] - sy * ro[2], z2 = sy * ro[0] + cy * ro[2];
+      ro[0] = x2 + tgt[0]; ro[1] += tgt[1]; ro[2] = z2 + tgt[2];
+
+      var v = [p[0] - ro[0], p[1] - ro[1], p[2] - ro[2]];
+      var ix = cy * v[0] + sy * v[2], iz = -sy * v[0] + cy * v[2];     /* обратный поворот вокруг вертикали */
+      v[0] = ix; v[2] = iz;
+      var iy = cp * v[1] + sp * v[2]; iz = -sp * v[1] + cp * v[2];     /* обратный наклон */
+      v[1] = iy; v[2] = iz;
+
+      if (v[2] > -0.05) return null;                                   /* точка за камерой */
+      var W = cv.clientWidth, H = cv.clientHeight, asp = W / Math.max(1, H);
+      var ux = (v[0] / -v[2]) / 0.72 / asp, uy = (v[1] / -v[2]) / 0.72;
+      return { x: (ux + 1) / 2 * W, y: (1 - uy) / 2 * H, z: -v[2] };
+    }
+
     return {
       stop: function () { live = false; },
       set: function (a, b) { setGroups(a, b); },
-      reset: function () { yaw = 0.5; pitch = 0; auto = 1; }
+      reset: function () { to = { t: WIDE.t.slice(), d: WIDE.d, yaw: WIDE.yaw, pitch: WIDE.pitch }; auto = 1; },
+      focus: function (key) {
+        var f = key && FOCUS[key];
+        to = f ? { t: f.t.slice(), d: f.d, yaw: f.yaw, pitch: f.pitch }
+               : { t: WIDE.t.slice(), d: WIDE.d, yaw: WIDE.yaw, pitch: WIDE.pitch };
+        auto = 0;
+      },
+      project: project,
+      beat: function () { return { pulse: pulse, phase: beat }; },
+      size: function () { return { w: cv.clientWidth, h: cv.clientHeight }; }
     };
   }
 
