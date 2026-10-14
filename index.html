@@ -3692,7 +3692,7 @@ function saveOwnExercise() {
 var VID_LIST = null;                  /* что лежит в папке приложения */
 var VID_MINE = [];                    /* что добавлено на этом устройстве */
 var VID_CAT = "";                     /* выбранный раздел, пустой — все */
-var VID_URLS = [];                    /* временные ссылки на локальные файлы */
+var VID_URLS = {};                    /* ссылки на локальные файлы: id → адрес */
 
 /* Отдельная база, чтобы не мешать напоминаниям */
 function vdb() {
@@ -3739,10 +3739,10 @@ function vdbDel(id) {
 }
 
 function videoStopAll() {
-  var vs = document.querySelectorAll("#video-body video"), i;
+  var vs = document.querySelectorAll("#video-body video"), i, k;
   for (i = 0; i < vs.length; i++) { try { vs[i].pause(); } catch (e) {} }
-  for (i = 0; i < VID_URLS.length; i++) { try { URL.revokeObjectURL(VID_URLS[i]); } catch (e) {} }
-  VID_URLS = [];
+  for (k in VID_URLS) if (VID_URLS.hasOwnProperty(k)) { try { URL.revokeObjectURL(VID_URLS[k]); } catch (e) {} }
+  VID_URLS = {};
 }
 
 function renderVideo() {
@@ -3775,9 +3775,6 @@ function videoItems() {
 
 function videoDraw() {
   var el = document.getElementById("video-body");
-  /* ссылки прошлой отрисовки больше не нужны: иначе память течёт */
-  for (var u = 0; u < VID_URLS.length; u++) { try { URL.revokeObjectURL(VID_URLS[u]); } catch (e) {} }
-  VID_URLS = [];
   var items = videoItems(), i, cats = [], seen = {};
   for (i = 0; i < items.length; i++) {
     if (!seen[items[i].c]) { seen[items[i].c] = 1; cats.push(items[i].c); }
@@ -3829,15 +3826,24 @@ function videoDraw() {
 
   el.innerHTML = head + tabs + '<div class="vgrid">' + cards + "</div>";
 
-  /* свои ролики подставляем из базы: ссылка живёт, пока открыт раздел */
+  /* свои ролики подставляем из базы. Ссылку на файл делаем один раз и
+     переиспользуем: если пересоздавать её при каждой перерисовке,
+     браузер обрывает начатую загрузку. */
+  var live = {};
   for (i = 0; i < VID_MINE.length; i++) {
     (function (rec) {
       var box = el.querySelector('.vcard[data-id="' + rec.id + '"] video');
       if (!box || !rec.blob) return;
-      var u = URL.createObjectURL(rec.blob);
-      VID_URLS.push(u);
-      box.src = u;
+      if (!VID_URLS[rec.id]) VID_URLS[rec.id] = URL.createObjectURL(rec.blob);
+      live[rec.id] = 1;
+      box.src = VID_URLS[rec.id];
     })(VID_MINE[i]);
+  }
+  for (var k in VID_URLS) {                     /* ссылки удалённых записей освобождаем */
+    if (VID_URLS.hasOwnProperty(k) && !live[k]) {
+      try { URL.revokeObjectURL(VID_URLS[k]); } catch (e) {}
+      delete VID_URLS[k];
+    }
   }
 }
 
@@ -3857,7 +3863,7 @@ function videoAdd(input) {
     rows += '<div class="srow"><div class="srow-d">' + esc(files[i].name) + "</div>" +
             '<input class="srow-s" id="vn-' + i + '" value="' + esc(fileTitle(files[i].name)) + '">' +
             '<input class="srow-s" id="vc-' + i + '" list="vid-cats" placeholder="раздел" value="' +
-              esc(VID_CAT || "") + '"></div>';
+              esc(fileCat(files[i].name) || VID_CAT || "") + '"></div>';
   }
   var dl = '<datalist id="vid-cats">';
   for (i = 0; i < cats.length; i++) dl += '<option value="' + esc(cats[i]) + '">';
@@ -3882,8 +3888,53 @@ function videoCancelAdd() {
   closeModal();
 }
 
+/* Подсказки по имени файла: ролики из сети обычно называются по-английски,
+   поэтому узнаём их по ключевым словам и подставляем название и раздел. */
+var VID_HINTS = [
+  { k: ["triceps"],                 n: "Трицепс: как растить объём",            c: "Трицепс" },
+  { k: ["biceps gap", "fingers"],   n: "Бицепс: длина и просвет у локтя",       c: "Бицепс" },
+  { k: ["hammer curl"],             n: "Молотковые сгибания: без раскачки",     c: "Бицепс" },
+  { k: ["thicker arms"],            n: "Толще руки: взгляд спереди",            c: "Бицепс" },
+  { k: ["abs"],                     n: "Пресс: что мешает ему проявиться",      c: "Пресс" },
+  { k: ["push-up", "push up", "pushup"], n: "Отжимания: три проверки до подхода", c: "Грудь" },
+  { k: ["leg extension", "cable setup"], n: "Разгибание ног без тренажёра",     c: "Ноги" },
+  { k: ["hip flexor"],              n: "Сгибатели бедра: зачем их укреплять",   c: "Ноги" },
+  { k: ["squat", "присед"],         n: "Присед: разбор техники",                c: "Ноги" },
+  { k: ["deadlift", "тяга"],        n: "Тяга: разбор техники",                  c: "Спина" },
+  { k: ["shoulder", "delt", "плеч"], n: "Плечи: разбор",                        c: "Плечи" },
+  { k: ["back", "lat", "спин"],     n: "Спина: разбор",                         c: "Спина" },
+  { k: ["chest", "bench", "груд"],  n: "Грудь: разбор",                         c: "Грудь" },
+  { k: ["forearm", "wrist"],        n: "Предплечья и кисть",                    c: "Предплечья" },
+  { k: ["warm", "mobility", "размин"], n: "Разминка",                           c: "Разминка" },
+  { k: ["stretch", "растяж"],       n: "Растяжка",                              c: "Растяжка" }
+];
+
+function vidHint(name) {
+  var low = String(name).toLowerCase(), i, j;
+  for (i = 0; i < VID_HINTS.length; i++) {
+    for (j = 0; j < VID_HINTS[i].k.length; j++) {
+      if (low.indexOf(VID_HINTS[i].k[j]) >= 0) return VID_HINTS[i];
+    }
+  }
+  return null;
+}
+
 function fileTitle(name) {
-  return String(name).replace(/\.[a-z0-9]+$/i, "").replace(/[._]+/g, " ").slice(0, 60);
+  var h = vidHint(name);
+  if (h) return h.n;
+  /* служебные хвосты сервисов скачивания в названии не нужны */
+  return String(name)
+    .replace(/\.[a-z0-9]+$/i, "")
+    .replace(/\s*\[[^\]]*\]\s*/g, " ")
+    .replace(/[._]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim()
+    .slice(0, 60);
+}
+
+function fileCat(name) {
+  var h = vidHint(name);
+  return h ? h.c : "";
 }
 
 function videoCatList() {
@@ -3902,7 +3953,7 @@ function videoSaveAdd() {
     jobs.push(vdbPut({
       id: "m:" + Date.now() + ":" + i,
       n: (n && n.value.trim()) || fileTitle(files[i].name),
-      c: (c && c.value.trim()) || "Мои ролики",
+      c: (c && c.value.trim()) || fileCat(files[i].name) || "Мои ролики",
       size: files[i].size,
       blob: files[i]
     }));
