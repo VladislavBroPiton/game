@@ -2,7 +2,7 @@
    Стратегия: сеть первой для страницы (чтобы не застрять на старой версии),
    кэш первым для иконок. Без сети всё берётся из кэша. */
 
-var CACHE = "forge-body-v24";   /* имя новое: старый кэш игры-плана сносится сам */
+var CACHE = "forge-body-v25";   /* имя новое: старый кэш игры-плана сносится сам */
 var ASSETS = [
   "./",
   "./index.html",
@@ -13,6 +13,9 @@ var ASSETS = [
   "./js/rope.js",
   "./js/boss.js",
   "./js/holo.js",
+  "./js/model.js",
+  "./model/body.json",
+  "./model/body.bin",
   "./js/overlay.js",
   "./js/legends.js",
   "./img/body-front.webp",

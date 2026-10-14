@@ -1686,6 +1686,7 @@ var EXERCISES = {
 <script src="js/legends.js"></script>
 <script src="js/overlay.js"></script>
 <script src="js/holo.js"></script>
+<script src="js/model.js"></script>
 <script src="js/boss.js"></script>
 <script src="js/rope.js"></script>
 <script>
@@ -3126,7 +3127,8 @@ function showBody(ex) {
     "</div>" +
     '<div class="zoomhint">колесо или два пальца — приблизить, потом тянуть</div>' +
     '<div class="mchips" style="justify-content:center;margin-top:14px">' + chips + "</div>" +
-    '<div class="atlas-credit">Иллюстрация: Jmarchn / Julien Bouglé &middot; Викисклад &middot; CC BY-SA 3.0 &middot; изменена</div>' +
+    '<div class="atlas-credit" id="credit-atlas">Иллюстрация: Jmarchn / Julien Bouglé &middot; Викисклад &middot; CC BY-SA 3.0 &middot; изменена</div>' +
+    '<div class="atlas-credit" id="credit-model" style="display:none">Модель: BodyParts3D &middot; Database Center for Life Science &middot; CC BY-SA 2.1 Japan &middot; упрощена</div>' +
     '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Закрыть</button></div>'
   );
   setupZoom();
@@ -3149,6 +3151,7 @@ function zoomBarShow(on) {
 }
 
 function showAtlas() {
+  creditFor("atlas");
   document.getElementById("view-atlas").style.display = "";
   document.getElementById("view-holo").style.display = "none";
   zoomBarShow(true);
@@ -3159,19 +3162,34 @@ function showAtlas() {
 }
 
 /* Проекция запускается по требованию: пока её не открыли, видеокарта не трогается */
+function creditFor(which) {
+  var a = document.getElementById("credit-atlas"), m = document.getElementById("credit-model");
+  if (!a || !m) return;
+  a.style.display = which === "holo" ? "none" : "";
+  m.style.display = which === "holo" ? "" : "none";
+}
+
 function showHolo() {
   document.getElementById("view-atlas").style.display = "none";
   document.getElementById("view-holo").style.display = "";
+  creditFor("holo");
   zoomBarShow(false);
   document.getElementById("vt-atlas").className = "vtab";
   document.getElementById("vt-holo").className = "vtab on";
-  if (!window.Holo || !Holo.supported()) { toast("Браузер не умеет объёмную графику"); showAtlas(); return; }
+  if (!window.Model || !Model.supported()) { toast("Браузер не умеет объёмную графику"); showAtlas(); return; }
   if (HOLO) HOLO.stop();
   if (MARKS) { MARKS.stop(); MARKS = null; }
-  HOLO = Holo.mount(document.getElementById("holocv"), HOLO_ON, HOLO_ON2);
+  var cv = document.getElementById("holocv");
+  HOLO = Model.mount(cv, HOLO_ON, HOLO_ON2, function (err) {
+    if (err) {                                   /* модель не дошла — рисуем прежнюю фигуру */
+      if (HOLO) HOLO.stop();
+      HOLO = window.Holo && Holo.supported() ? Holo.mount(cv, HOLO_ON, HOLO_ON2) : null;
+      if (!HOLO) { toast("Не удалось запустить проекцию"); showAtlas(); return; }
+    }
+    HOLO.focus(HOLO_ON && HOLO_ON.length ? HOLO_ON[0] : null);
+    if (window.HoloMarks) MARKS = HoloMarks.mount(document.getElementById("holoov"), HOLO, HOLO_ON);
+  });
   if (!HOLO) { toast("Не удалось запустить проекцию"); showAtlas(); return; }
-  HOLO.focus(HOLO_ON && HOLO_ON.length ? HOLO_ON[0] : null);   /* камера наводится на рабочую зону */
-  if (window.HoloMarks) MARKS = HoloMarks.mount(document.getElementById("holoov"), HOLO, HOLO_ON);
 }
 
 /* Блок «Как выполнять»: схема, список мышц, шаги, частая ошибка */
