@@ -50,6 +50,7 @@
     "uniform float uOn;",                     /* 0 — покой, 1 — мышца в работе */
     "uniform float uSkin;",                   /* 1 — рисуем кожу поверх мышц */
     "uniform float uBone;",                   /* 1 — кость: тише и холоднее мышц */
+    "uniform float uAid;",                    /* 1 — мышца помогает, а не ведёт движение */
     "uniform float uTime;",
     "void main(){",
     "  vec3 n = normalize(vN);",
@@ -73,7 +74,7 @@
     "                 clamp(reflect(-v, n).y * 0.5 + 0.5, 0.0, 1.0));",
 
     "  vec3 cold = mix(vec3(0.90, 0.905, 0.930), vec3(0.62, 0.66, 0.74), uBone);",
-    "  vec3 hot  = vec3(1.0, 0.24, 0.20);",
+    "  vec3 hot  = mix(vec3(1.0, 0.24, 0.20), vec3(1.0, 0.63, 0.16), uAid);",
     "  vec3 alb  = mix(cold, hot, uOn * 0.92);",
     "  vec3 c = alb * (0.12 + k1 * 0.94 + k2 * 0.24) + alb * k3 * 0.36;",
     "  c += env * (0.10 + fr * 0.45);",
@@ -251,6 +252,7 @@
               on: gl.getUniformLocation(prog, "uOn"), time: gl.getUniformLocation(prog, "uTime"),
               skin: gl.getUniformLocation(prog, "uSkin"),
               bone: gl.getUniformLocation(prog, "uBone"),
+              aid: gl.getUniformLocation(prog, "uAid"),
               grow: gl.getUniformLocation(prog, "uGrow") };
 
     var parts = [], meta = null, live = true, ready = false;
@@ -260,6 +262,7 @@
     var t0 = (w.performance ? performance.now() : Date.now());
     var scale = 1, qi = (w.innerWidth < 760 ? 1 : 0), hold = 0, acc = 0, accN = 0, tLast = 0;
     var skinOn = true;                      /* кожа включена: фигура не пугает скелетом */
+    var flown = 0;                          /* наезд камеры показываем один раз */
     var QUAL = [1.0, 0.85, 0.7, 0.55];
     var mvp = null, eye = [0, 0, 1];
 
@@ -269,7 +272,7 @@
       for (i = 0; i < 16; i++) lit[i] = 0;
       for (i = 0; i < GKEYS.length; i++) {
         if (a.indexOf(GKEYS[i]) >= 0) lit[i] = 1;
-        else if (b.indexOf(GKEYS[i]) >= 0) lit[i] = 0.3;
+        else if (b.indexOf(GKEYS[i]) >= 0) lit[i] = 0.45;   /* подсобная мышца видна, но тише */
       }
     }
     setGroups(on, on2);
@@ -449,9 +452,10 @@
       gl.uniform1f(U.skin, 0);
       parts.forEach(function (p) {
         if (p.skin) return;
-        var on1 = (p.g >= 0 ? lit[p.g] : 0) * (0.55 + 0.45 * pulse);
-        gl.uniform1f(U.on, on1);
+        var raw = p.g >= 0 ? lit[p.g] : 0;
+        gl.uniform1f(U.on, raw * (0.55 + 0.45 * pulse));
         gl.uniform1f(U.bone, p.g < 0 ? 1 : 0);
+        gl.uniform1f(U.aid, raw > 0 && raw < 0.9 ? 1 : 0);   /* подсобная мышца — янтарная */
         /* работающая мышца в фазе усилия становится толще на пару миллиметров */
         gl.uniform1f(U.grow, p.g >= 0 ? lit[p.g] * pulse * 0.012 : 0);
         drawPart(p);
@@ -461,6 +465,7 @@
         gl.uniform1f(U.skin, 1);
         gl.uniform1f(U.on, 0);
         gl.uniform1f(U.bone, 0);
+        gl.uniform1f(U.aid, 0);
         gl.uniform1f(U.grow, 0);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
@@ -491,6 +496,13 @@
       reset: function () { to = { t: WIDE.t.slice(), d: WIDE.d, yaw: WIDE.yaw, pitch: WIDE.pitch }; auto = 1; },
       focus: function (key) {
         var f = meta && key ? focusOf(meta, key) : null;
+        if (f && !flown) {                             /* первый показ: камера подлетает к мышце */
+          flown = 1;
+          yaw = f.yaw + 0.85;
+          pitch = f.pitch + 0.14;
+          dist = f.d * 1.8;
+          tgt = [f.t[0] * 0.3, f.t[1] + 0.12, f.t[2] * 0.3];
+        }
         try {                                        /* след для проверок: куда встала камера */
           localStorage.setItem("__model", JSON.stringify({ key: key, есть: !!f, f: f }));
         } catch (e) {}

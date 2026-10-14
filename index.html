@@ -4608,12 +4608,109 @@ function cvBase(accent) {
   var rg = x.createRadialGradient(540, 0, 10, 540, 0, 760);
   rg.addColorStop(0, hexA(accent, .28)); rg.addColorStop(1, "rgba(0,0,0,0)");
   x.fillStyle = rg; x.fillRect(0, 0, 1080, 800);
-  /* рамка */
+  /* тёмные края: взгляд сам идёт к центру */
+  var vg = x.createRadialGradient(540, 620, 260, 540, 620, 900);
+  vg.addColorStop(0, "rgba(0,0,0,0)"); vg.addColorStop(1, "rgba(0,0,0,.62)");
+  x.fillStyle = vg; x.fillRect(0, 0, 1080, 1350);
+
+  cvNoise(x, 0.030);
+
+  /* рамка с засечками по углам */
   x.strokeStyle = hexA(accent, .55); x.lineWidth = 3;
   x.strokeRect(36, 36, 1008, 1278);
   x.strokeStyle = hexA(accent, .18); x.lineWidth = 1;
   x.strokeRect(50, 50, 980, 1250);
+  cvCorners(x, accent);
   return { c: c, x: x };
+}
+
+/* Мелкая крупа по всему листу: без неё заливка выглядит пластиковой */
+function cvNoise(x, amount) {
+  var i, px, py, a;
+  x.save();
+  for (i = 0; i < 2600; i++) {
+    px = Math.random() * 1080; py = Math.random() * 1350;
+    a = Math.random() * amount;
+    x.fillStyle = "rgba(255,255,255," + a.toFixed(3) + ")";
+    x.fillRect(px, py, 1, 1);
+  }
+  x.restore();
+}
+
+/* Угловые засечки — приём технических чертежей Системы */
+function cvCorners(x, accent) {
+  var pts = [[36, 36, 1, 1], [1044, 36, -1, 1], [36, 1314, 1, -1], [1044, 1314, -1, -1]];
+  x.save();
+  x.strokeStyle = accent; x.lineWidth = 6; x.lineCap = "square";
+  for (var i = 0; i < 4; i++) {
+    var p = pts[i];
+    x.beginPath();
+    x.moveTo(p[0] + p[2] * 64, p[1]);
+    x.lineTo(p[0], p[1]);
+    x.lineTo(p[0], p[1] + p[3] * 64);
+    x.stroke();
+  }
+  x.restore();
+}
+
+/* Лучи из центра знака */
+function cvRays(x, cx, cy, accent, n, len) {
+  var i, a, g;
+  x.save();
+  x.globalCompositeOperation = "lighter";
+  for (i = 0; i < n; i++) {
+    a = (i / n) * Math.PI * 2 + 0.2;
+    var w = (i % 3 === 0) ? 0.030 : 0.013;
+    var L = len * (i % 3 === 0 ? 1 : 0.62);
+    g = x.createLinearGradient(cx, cy, cx + Math.cos(a) * L, cy + Math.sin(a) * L);
+    g.addColorStop(0, hexA(accent, .40));
+    g.addColorStop(1, "rgba(0,0,0,0)");
+    x.fillStyle = g;
+    x.beginPath();
+    x.moveTo(cx, cy);
+    x.lineTo(cx + Math.cos(a - w) * L, cy + Math.sin(a - w) * L);
+    x.lineTo(cx + Math.cos(a + w) * L, cy + Math.sin(a + w) * L);
+    x.closePath();
+    x.fill();
+  }
+  x.restore();
+}
+
+/* Кольцо с засечками вокруг знака */
+function cvRing(x, cx, cy, rad, accent, ticks, alpha) {
+  var i, a, r1, r2;
+  x.save();
+  x.strokeStyle = hexA(accent, alpha);
+  x.lineWidth = 2;
+  x.beginPath(); x.arc(cx, cy, rad, 0, Math.PI * 2); x.stroke();
+  x.lineWidth = 3;
+  for (i = 0; i < ticks; i++) {
+    a = (i / ticks) * Math.PI * 2;
+    r1 = rad - (i % 5 === 0 ? 16 : 7);
+    r2 = rad + (i % 5 === 0 ? 10 : 4);
+    x.beginPath();
+    x.moveTo(cx + Math.cos(a) * r1, cy + Math.sin(a) * r1);
+    x.lineTo(cx + Math.cos(a) * r2, cy + Math.sin(a) * r2);
+    x.stroke();
+  }
+  x.restore();
+}
+
+/* Искры вокруг знака: ближе к центру гуще */
+function cvSparks(x, cx, cy, accent, n) {
+  var i, a, d, r;
+  x.save();
+  x.globalCompositeOperation = "lighter";
+  for (i = 0; i < n; i++) {
+    a = Math.random() * Math.PI * 2;
+    d = 230 + Math.pow(Math.random(), 1.7) * 320;
+    r = 1 + Math.random() * 3.2;
+    x.fillStyle = hexA(accent, 0.18 + Math.random() * 0.5);
+    x.beginPath();
+    x.arc(cx + Math.cos(a) * d, cy + Math.sin(a) * d, r, 0, Math.PI * 2);
+    x.fill();
+  }
+  x.restore();
 }
 
 function hexA(hex, a) {
@@ -4758,10 +4855,17 @@ function drawRankPoster(h) {
   cvText(x, "[ ПОВЫШЕНИЕ РАНГА ]", 30, 540, 132, acc, 700);
   cvText(x, (S.name || "Охотник").toUpperCase(), 64, 540, 222, "#E8EEF8", 900, "center", 900);
 
-  /* большая буква ранга в гексагоне */
   var cx = 540, cy = 520, rad = 210;
+
+  /* аура: лучи, два кольца с засечками и искры */
+  cvRays(x, cx, cy, acc, 24, 560);
+  cvRing(x, cx, cy, rad + 78, acc, 60, 0.30);
+  cvRing(x, cx, cy, rad + 126, acc, 24, 0.14);
+  cvSparks(x, cx, cy, acc, 90);
+
+  /* знак ранга: шестиугольник со светящимся контуром и внутренним стеклом */
   x.save();
-  x.shadowColor = acc; x.shadowBlur = 60;
+  x.shadowColor = acc; x.shadowBlur = 70;
   x.beginPath();
   for (i = 0; i < 6; i++) {
     var ang = Math.PI / 6 + i * Math.PI / 3;
@@ -4769,19 +4873,75 @@ function drawRankPoster(h) {
     if (i) x.lineTo(px, py); else x.moveTo(px, py);
   }
   x.closePath();
-  x.fillStyle = hexA(acc, .12); x.fill();
+  var gi = x.createLinearGradient(cx, cy - rad, cx, cy + rad);
+  gi.addColorStop(0, hexA(acc, .28));
+  gi.addColorStop(0.55, hexA(acc, .07));
+  gi.addColorStop(1, hexA(acc, .20));
+  x.fillStyle = gi; x.fill();
   x.lineWidth = 8; x.strokeStyle = acc; x.stroke();
   x.restore();
-  cvText(x, h.letter, 300, cx, cy + 106, acc, 900);
 
-  cvText(x, "РАНГ " + h.letter + " · " + (R ? R.title.toUpperCase() : ""), 56, 540, 836, "#E8EEF8", 900, "center", 940);
-  if (R) cvText(x, R.desc, 32, 540, 890, "#9FADC4", 500, "center", 900);
+  /* внутренний контур — тонкая линия по той же форме */
+  x.save();
+  x.beginPath();
+  for (i = 0; i < 6; i++) {
+    var a2 = Math.PI / 6 + i * Math.PI / 3, r2 = rad - 22;
+    var qx = cx + r2 * Math.cos(a2), qy = cy + r2 * Math.sin(a2);
+    if (i) x.lineTo(qx, qy); else x.moveTo(qx, qy);
+  }
+  x.closePath();
+  x.strokeStyle = hexA(acc, .45); x.lineWidth = 2; x.stroke();
+  x.restore();
+
+  /* буква: металл с бликом сверху и тенью снизу */
+  x.save();
+  x.textAlign = "center";
+  x.font = '900 300px ' + POSTER_FONT;
+  var gl = x.createLinearGradient(cx, cy - 150, cx, cy + 120);
+  gl.addColorStop(0, "#FFFFFF");
+  gl.addColorStop(0.42, acc);
+  gl.addColorStop(1, hexA(acc, .55));
+  x.shadowColor = "rgba(0,0,0,.55)"; x.shadowBlur = 18; x.shadowOffsetY = 8;
+  x.fillStyle = gl;
+  x.fillText(h.letter, cx, cy + 106);
+  x.shadowColor = "transparent";
+  x.lineWidth = 3; x.strokeStyle = hexA(acc, .85);
+  x.strokeText(h.letter, cx, cy + 106);
+  x.restore();
+
+  /* лента с названием ранга */
+  var bw = 760, bh = 86, by = 790;
+  x.save();
+  var gb = x.createLinearGradient(540 - bw / 2, 0, 540 + bw / 2, 0);
+  gb.addColorStop(0, "rgba(0,0,0,0)");
+  gb.addColorStop(0.5, hexA(acc, .18));
+  gb.addColorStop(1, "rgba(0,0,0,0)");
+  x.fillStyle = gb; x.fillRect(540 - bw / 2, by, bw, bh);
+  x.strokeStyle = hexA(acc, .55); x.lineWidth = 2;
+  x.beginPath(); x.moveTo(540 - bw / 2, by); x.lineTo(540 + bw / 2, by); x.stroke();
+  x.beginPath(); x.moveTo(540 - bw / 2, by + bh); x.lineTo(540 + bw / 2, by + bh); x.stroke();
+  x.restore();
+
+  cvText(x, "РАНГ " + h.letter + " · " + (R ? R.title.toUpperCase() : ""), 54, 540, by + 58, "#E8EEF8", 900, "center", 700);
+  if (R) cvText(x, R.desc, 32, 540, by + 128, "#9FADC4", 500, "center", 900);
   var dd = new Date(h.date + "T00:00:00");
-  cvText(x, "получен " + dd.getDate() + " " + MONTHS_GEN[dd.getMonth()] + " " + dd.getFullYear(), 32, 540, 950, acc, 600);
+  cvText(x, "получен " + dd.getDate() + " " + MONTHS_GEN[dd.getMonth()] + " " + dd.getFullYear(),
+         32, 540, by + 182, acc, 600);
 
-  cvStat(x, 220, 1080, h.workouts, plural(h.workouts, "тренировка", "тренировки", "тренировок"));
-  cvStat(x, 540, 1080, tons(h.ton), "поднято к рангу");
-  cvStat(x, 860, 1080, h.lvl, "уровень");
+  /* цифры на подложке, чтобы не висели в пустоте */
+  x.save();
+  x.fillStyle = "rgba(255,255,255,.028)";
+  x.fillRect(96, 1016, 888, 150);
+  x.strokeStyle = hexA(acc, .22); x.lineWidth = 1;
+  x.strokeRect(96, 1016, 888, 150);
+  x.fillStyle = hexA(acc, .35);
+  x.fillRect(392, 1046, 1, 92);
+  x.fillRect(688, 1046, 1, 92);
+  x.restore();
+
+  cvStat(x, 244, 1096, h.workouts, plural(h.workouts, "тренировка", "тренировки", "тренировок"));
+  cvStat(x, 540, 1096, tons(h.ton), "поднято к рангу");
+  cvStat(x, 836, 1096, h.lvl, "уровень");
   cvFooter(x, acc);
   return b.c;
 }
