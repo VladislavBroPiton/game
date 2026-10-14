@@ -1061,6 +1061,23 @@
 .prow-s { color: var(--gray); font-size: 11.5px; font-weight: 400; margin-top: 3px; }
 
 /* ═══════════════ Профиль: расписание и настройки ═══════════════ */
+/* ── Видео ── */
+.vcats { display: flex; flex-wrap: wrap; gap: 7px; margin-bottom: 14px; }
+.vcat {
+  background: var(--card2); border: 1px solid var(--border2); color: var(--white);
+  border-radius: 3px; padding: 7px 12px; font-size: 13px; cursor: pointer;
+}
+.vcat:hover { border-color: var(--fire); color: var(--fire-soft); }
+.vcat.on { border-color: var(--fire); color: var(--fire-soft); background: var(--fire-dim); font-weight: 600; }
+.vgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 12px; }
+.vcard { background: var(--card2); border: 1px solid var(--border2); border-radius: 4px; overflow: hidden; }
+.vcard video { width: 100%; display: block; background: #05080f; max-height: 420px; }
+.vcard-in { padding: 10px 12px 12px; }
+.vcard .n { font-weight: 650; font-size: 14.5px; margin-bottom: 4px; }
+.vcard .c { color: var(--fire-soft); font-size: 12px; }
+.vcard .d { color: var(--gray); font-size: 12.5px; margin-top: 5px; line-height: 1.45; }
+.vcard-btns { display: flex; gap: 8px; margin-top: 10px; flex-wrap: wrap; }
+.vempty { color: var(--gray); font-size: 13.5px; line-height: 1.6; }
 .srow { display: flex; align-items: center; gap: 8px; padding: 8px 0; flex-wrap: wrap; }
 .srow + .srow { border-top: 1px solid rgba(28,38,52,.6); }
 .srow-d { flex: 1 0 100%; font-size: 14px; }
@@ -1417,6 +1434,7 @@
   <button class="nav-tab" data-go="train"><span class="ic">⚔️</span>Тренировка</button>
   <button class="nav-tab" data-go="log"><span class="ic">📜</span>Журнал</button>
   <button class="nav-tab" data-go="power"><span class="ic">📈</span>Сила</button>
+  <button class="nav-tab" data-go="video"><span class="ic">🎬</span>Видео</button>
   <button class="nav-tab" data-go="profile"><span class="ic">🎖</span>Профиль</button>
   <div class="nav-right">
     <div class="nav-streak" id="nav-streak"></div>
@@ -1534,6 +1552,13 @@
     <div id="power-body"></div>
   </section>
 
+  <!-- ══════════ ВИДЕО ══════════ -->
+  <section class="section" id="section-video">
+    <h2 class="page-title">Видео</h2>
+    <p class="page-sub">Разборы техники и подсказки. Ролики можно разложить по разделам.</p>
+    <div id="video-body"></div>
+  </section>
+
   <!-- ══════════ ПРОФИЛЬ ══════════ -->
   <section class="section" id="section-profile">
     <h2 class="page-title">Профиль</h2>
@@ -1548,6 +1573,7 @@
   <button class="mnav-item" data-go="train"><span class="ic">⚔️</span>Тренировка</button>
   <button class="mnav-item" data-go="log"><span class="ic">📜</span>Журнал</button>
   <button class="mnav-item" data-go="power"><span class="ic">📈</span>Сила</button>
+  <button class="mnav-item" data-go="video"><span class="ic">🎬</span>Видео</button>
   <button class="mnav-item" data-go="profile"><span class="ic">🎖</span>Профиль</button>
 </div>
 
@@ -3653,6 +3679,293 @@ function saveOwnExercise() {
   if (S.custom[g].indexOf(v) < 0) S.custom[g].push(v);
   save(); closeModal();
   startWorkout(v);
+}
+
+/* ═══════════════════════════════════════════════
+   ВИДЕО: разборы техники
+   ───────────────────────────────────────────────
+   Два источника. Первый — ролики, лежащие в папке video рядом с игрой:
+   их список описан в video/list.json. Второй — свои файлы, добавленные
+   с телефона: они хранятся в браузере и никуда не уходят.
+   ═══════════════════════════════════════════════ */
+
+var VID_LIST = null;                  /* что лежит в папке приложения */
+var VID_MINE = [];                    /* что добавлено на этом устройстве */
+var VID_CAT = "";                     /* выбранный раздел, пустой — все */
+var VID_URLS = [];                    /* временные ссылки на локальные файлы */
+
+/* Отдельная база, чтобы не мешать напоминаниям */
+function vdb() {
+  return new Promise(function (res, rej) {
+    var q = indexedDB.open("forge-video", 1);
+    q.onupgradeneeded = function () {
+      if (!q.result.objectStoreNames.contains("v")) q.result.createObjectStore("v", { keyPath: "id" });
+    };
+    q.onsuccess = function () { res(q.result); };
+    q.onerror = function () { rej(q.error); };
+  });
+}
+function vdbAll() {
+  return vdb().then(function (db) {
+    return new Promise(function (res) {
+      var out = [], c = db.transaction("v", "readonly").objectStore("v").openCursor();
+      c.onsuccess = function (e) {
+        var cur = e.target.result;
+        if (cur) { out.push(cur.value); cur.continue(); } else { res(out); }
+      };
+      c.onerror = function () { res([]); };
+    });
+  }).catch(function () { return []; });
+}
+function vdbPut(rec) {
+  return vdb().then(function (db) {
+    return new Promise(function (res, rej) {
+      var t = db.transaction("v", "readwrite");
+      t.objectStore("v").put(rec);
+      t.oncomplete = function () { res(true); };
+      t.onerror = function () { rej(t.error); };
+    });
+  });
+}
+function vdbDel(id) {
+  return vdb().then(function (db) {
+    return new Promise(function (res) {
+      var t = db.transaction("v", "readwrite");
+      t.objectStore("v")["delete"](id);
+      t.oncomplete = function () { res(true); };
+      t.onerror = function () { res(false); };
+    });
+  }).catch(function () { return false; });
+}
+
+function videoStopAll() {
+  var vs = document.querySelectorAll("#video-body video"), i;
+  for (i = 0; i < vs.length; i++) { try { vs[i].pause(); } catch (e) {} }
+  for (i = 0; i < VID_URLS.length; i++) { try { URL.revokeObjectURL(VID_URLS[i]); } catch (e) {} }
+  VID_URLS = [];
+}
+
+function renderVideo() {
+  var el = document.getElementById("video-body");
+  if (!el) return;
+  el.innerHTML = '<div class="card"><div class="vempty">Загружаем список…</div></div>';
+  var tasks = [vdbAll()];
+  tasks.push(VID_LIST ? Promise.resolve(VID_LIST)
+    : fetch("video/list.json").then(function (r) { return r.ok ? r.json() : []; })["catch"](function () { return []; }));
+  Promise.all(tasks).then(function (r) {
+    VID_MINE = r[0] || [];
+    VID_LIST = isArr(r[1]) ? r[1] : (r[1] && isArr(r[1].items) ? r[1].items : []);
+    videoDraw();
+  });
+}
+
+function videoItems() {
+  var out = [], i, v;
+  for (i = 0; i < VID_LIST.length; i++) {
+    v = VID_LIST[i];
+    out.push({ id: "f:" + (v.f || i), n: v.n || v.f, c: v.c || "Без раздела", d: v.d || "",
+               src: "video/" + v.f, mine: false });
+  }
+  for (i = 0; i < VID_MINE.length; i++) {
+    v = VID_MINE[i];
+    out.push({ id: v.id, n: v.n, c: v.c || "Мои ролики", d: v.d || "", blob: v.blob, mine: true });
+  }
+  return out;
+}
+
+function videoDraw() {
+  var el = document.getElementById("video-body");
+  /* ссылки прошлой отрисовки больше не нужны: иначе память течёт */
+  for (var u = 0; u < VID_URLS.length; u++) { try { URL.revokeObjectURL(VID_URLS[u]); } catch (e) {} }
+  VID_URLS = [];
+  var items = videoItems(), i, cats = [], seen = {};
+  for (i = 0; i < items.length; i++) {
+    if (!seen[items[i].c]) { seen[items[i].c] = 1; cats.push(items[i].c); }
+  }
+  if (VID_CAT && !seen[VID_CAT]) VID_CAT = "";
+
+  var head = '<div class="card" style="margin-bottom:14px">' +
+    '<div class="vcard-btns" style="margin-top:0">' +
+      '<button class="btn primary" onclick="videoPick()">Добавить видео</button>' +
+      (VID_MINE.length ? '<button class="btn sm ghost" onclick="videoHelp()">Как это работает</button>' : "") +
+    "</div>" +
+    '<input type="file" id="vid-file" accept="video/*" multiple style="display:none" onchange="videoAdd(this)">' +
+    "</div>";
+
+  if (!items.length) {
+    el.innerHTML = head + '<div class="card"><div class="vempty">' +
+      "Пока пусто. Нажмите «Добавить видео» и выберите ролики на телефоне — " +
+      "они сохранятся в приложении и будут открываться без интернета.<br><br>" +
+      "Разделы появятся сами: при добавлении можно указать, к чему относится ролик." +
+      "</div></div>";
+    return;
+  }
+
+  var tabs = '<div class="vcats"><button class="vcat' + (VID_CAT ? "" : " on") +
+             '" onclick="videoCat(\'\')">Все · ' + items.length + "</button>";
+  for (i = 0; i < cats.length; i++) {
+    tabs += '<button class="vcat' + (VID_CAT === cats[i] ? " on" : "") +
+            '" onclick="videoCat(' + jsq(cats[i]) + ')">' + esc(cats[i]) + "</button>";
+  }
+  tabs += "</div>";
+
+  var cards = "";
+  for (i = 0; i < items.length; i++) {
+    var v = items[i];
+    if (VID_CAT && v.c !== VID_CAT) continue;
+    var src = v.mine ? "" : v.src;
+    cards += '<div class="vcard" data-id="' + esc(v.id) + '">' +
+      '<video controls preload="metadata" playsinline' + (src ? ' src="' + esc(src) + '"' : "") + "></video>" +
+      '<div class="vcard-in">' +
+        '<div class="n">' + esc(v.n) + "</div>" +
+        '<div class="c">' + esc(v.c) + "</div>" +
+        (v.d ? '<div class="d">' + esc(v.d) + "</div>" : "") +
+        (v.mine ? '<div class="vcard-btns">' +
+            '<button class="btn sm" onclick="videoRename(' + jsq(v.id) + ')">Переименовать</button>' +
+            '<button class="btn sm ghost" onclick="videoDel(' + jsq(v.id) + ')">Удалить</button>' +
+          "</div>" : "") +
+      "</div></div>";
+  }
+
+  el.innerHTML = head + tabs + '<div class="vgrid">' + cards + "</div>";
+
+  /* свои ролики подставляем из базы: ссылка живёт, пока открыт раздел */
+  for (i = 0; i < VID_MINE.length; i++) {
+    (function (rec) {
+      var box = el.querySelector('.vcard[data-id="' + rec.id + '"] video');
+      if (!box || !rec.blob) return;
+      var u = URL.createObjectURL(rec.blob);
+      VID_URLS.push(u);
+      box.src = u;
+    })(VID_MINE[i]);
+  }
+}
+
+function videoCat(c) { VID_CAT = c; videoDraw(); }
+
+function videoPick() {
+  var f = document.getElementById("vid-file");
+  if (f) f.click();
+}
+
+function videoAdd(input) {
+  var files = input.files, i;
+  if (!files || !files.length) return;
+  var cats = videoCatList();
+  var rows = "";
+  for (i = 0; i < files.length; i++) {
+    rows += '<div class="srow"><div class="srow-d">' + esc(files[i].name) + "</div>" +
+            '<input class="srow-s" id="vn-' + i + '" value="' + esc(fileTitle(files[i].name)) + '">' +
+            '<input class="srow-s" id="vc-' + i + '" list="vid-cats" placeholder="раздел" value="' +
+              esc(VID_CAT || "") + '"></div>';
+  }
+  var dl = '<datalist id="vid-cats">';
+  for (i = 0; i < cats.length; i++) dl += '<option value="' + esc(cats[i]) + '">';
+  dl += "</datalist>";
+
+  openModal(
+    '<div class="sys-label">[ Новые ролики ]</div><div class="sys-rule"></div>' +
+    "<p>Название и раздел можно поправить. Раздел — любое слово: «Грудь», «Техника», «Разминка».</p>" +
+    dl + rows +
+    '<div class="modal-btns"><button class="btn" onclick="videoCancelAdd()">Отмена</button>' +
+    '<button class="btn primary" onclick="videoSaveAdd()">Сохранить</button></div>'
+  );
+  VID_PENDING = files;
+}
+
+var VID_PENDING = null;
+
+function videoCancelAdd() {
+  VID_PENDING = null;
+  var f = document.getElementById("vid-file");
+  if (f) f.value = "";
+  closeModal();
+}
+
+function fileTitle(name) {
+  return String(name).replace(/\.[a-z0-9]+$/i, "").replace(/[._]+/g, " ").slice(0, 60);
+}
+
+function videoCatList() {
+  var out = [], seen = {}, items = videoItems(), i;
+  for (i = 0; i < items.length; i++) if (!seen[items[i].c]) { seen[items[i].c] = 1; out.push(items[i].c); }
+  var g;
+  for (g in GROUPS) if (GROUPS.hasOwnProperty(g) && !seen[GROUPS[g].name]) out.push(GROUPS[g].name);
+  return out;
+}
+
+function videoSaveAdd() {
+  var files = VID_PENDING, i, jobs = [];
+  if (!files) { closeModal(); return; }
+  for (i = 0; i < files.length; i++) {
+    var n = document.getElementById("vn-" + i), c = document.getElementById("vc-" + i);
+    jobs.push(vdbPut({
+      id: "m:" + Date.now() + ":" + i,
+      n: (n && n.value.trim()) || fileTitle(files[i].name),
+      c: (c && c.value.trim()) || "Мои ролики",
+      size: files[i].size,
+      blob: files[i]
+    }));
+  }
+  Promise.all(jobs).then(function () {
+    VID_PENDING = null;
+    var f = document.getElementById("vid-file");
+    if (f) f.value = "";
+    closeModal();
+    toast(jobs.length > 1 ? "Ролики добавлены" : "Ролик добавлен");
+    renderVideo();
+  })["catch"](function () {
+    toast("Не поместилось: памяти браузера не хватило");
+  });
+}
+
+function videoRename(id) {
+  var rec = null, i;
+  for (i = 0; i < VID_MINE.length; i++) if (VID_MINE[i].id === id) rec = VID_MINE[i];
+  if (!rec) return;
+  openModal(
+    '<div class="sys-label">[ Название и раздел ]</div><div class="sys-rule"></div>' +
+    '<input class="big" id="vr-n" maxlength="60" value="' + esc(rec.n) + '">' +
+    '<input class="big" id="vr-c" maxlength="30" style="margin-top:10px" value="' + esc(rec.c || "") + '">' +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="videoRenameSave(' + jsq(id) + ')">Сохранить</button></div>'
+  );
+}
+
+function videoRenameSave(id) {
+  var rec = null, i;
+  for (i = 0; i < VID_MINE.length; i++) if (VID_MINE[i].id === id) rec = VID_MINE[i];
+  if (!rec) { closeModal(); return; }
+  var n = document.getElementById("vr-n"), c = document.getElementById("vr-c");
+  rec.n = (n && n.value.trim()) || rec.n;
+  rec.c = (c && c.value.trim()) || rec.c;
+  vdbPut(rec).then(function () { closeModal(); renderVideo(); });
+}
+
+function videoDel(id) {
+  openModal(
+    '<div class="sys-label">[ Удалить ролик ]</div><div class="sys-rule"></div>' +
+    "<p>Запись исчезнет из приложения. Файл на телефоне останется.</p>" +
+    '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
+    '<button class="btn primary" onclick="videoDelYes(' + jsq(id) + ')">Удалить</button></div>'
+  );
+}
+
+function videoDelYes(id) {
+  vdbDel(id).then(function () { closeModal(); toast("Удалено"); renderVideo(); });
+}
+
+function videoHelp() {
+  var mb = 0, i;
+  for (i = 0; i < VID_MINE.length; i++) mb += (VID_MINE[i].size || 0);
+  openModal(
+    '<div class="sys-label">[ О разделе ]</div><div class="sys-rule"></div>' +
+    "<p>Ролики, которые вы добавили, хранятся внутри приложения на этом устройстве: " +
+    "они открываются без интернета и никуда не отправляются.</p>" +
+    "<p>Занято примерно " + (mb / 1048576).toFixed(1) + " МБ. " +
+    "Если браузер очистит данные сайта, записи пропадут — исходные файлы на телефоне останутся.</p>" +
+    '<div class="modal-btns"><button class="btn primary" onclick="closeModal()">Понятно</button></div>'
+  );
 }
 
 /* ═══════════════════════════════════════════════
@@ -5847,6 +6160,8 @@ function go(name, noPush) {
     legendsReset();
     renderProfile();
   }
+  if (name === "video") renderVideo();
+  else videoStopAll();
   window.scrollTo(0, 0);
   if (!noPush) pushNav({ scr: name });
 }
