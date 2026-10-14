@@ -14,7 +14,7 @@
   var BULK = 0.013;   /* прибавка объёма мышц: анатомический препарат слишком худой */
   /* Мелкие мышцы от общей прибавки слипаются в комки, поэтому им меньше.
      Ключ — индекс группы в GKEYS. */
-  var BULK_K = { 1: 0.55, 2: 0.6, 8: 0.75, 15: 0.6 };
+  var BULK_K = { 1: 1.15, 2: 0.6, 8: 0.75, 15: 0.6 };
   var data = null, pending = null;
 
   /* ── загрузка: один раз на страницу ── */
@@ -57,6 +57,7 @@
     "uniform float uSkin;",                   /* 1 — рисуем кожу поверх мышц */
     "uniform float uBone;",                   /* 1 — кость: тише и холоднее мышц */
     "uniform float uAid;",                    /* 1 — мышца помогает, а не ведёт движение */
+    "uniform float uSeg;",                    /* 1 — рисуем перемычки пресса */
     "uniform float uTime;",
     "void main(){",
     "  vec3 n = normalize(vN);",
@@ -91,6 +92,17 @@
     "  float sweepY = mod(uTime * 0.42, 2.6) - 0.3;",
     "  c += vec3(0.40, 0.68, 1.0) * exp(-pow((vP.y - sweepY) * 13.0, 2.0)) * 0.10;",
 
+    /* Перемычки пресса. В анатомической модели прямая мышца живота — две
+       гладкие ленты без сухожильных перемычек, поэтому кубики рисуем сами. */
+    "  if (uSeg > 0.5) {",
+    "    float t = clamp((vP.y - 0.86) / 0.39, 0.0, 1.0);",
+    "    float band = abs(fract(t * 3.6 + 0.12) - 0.5) * 2.0;",
+    "    float cross = smoothstep(0.30, 0.02, band) * step(0.12, t);",
+    "    float mid = smoothstep(0.013, 0.002, abs(vP.x));",
+    "    float groove = max(cross, mid);",
+    "    c *= 1.0 - groove * 0.62;",
+    "    c += vec3(1.0, 0.72, 0.62) * (1.0 - groove) * 0.05;",
+    "  }",
     "  vec3 outc = c / (1.0 + c * 0.14);",
     "  if (uSkin > 0.5) {",                   /* кожа: стекловидная оболочка поверх мышц */
     "    float edge = pow(1.0 - max(dot(n, v), 0.0), 1.6);",
@@ -259,6 +271,7 @@
               skin: gl.getUniformLocation(prog, "uSkin"),
               bone: gl.getUniformLocation(prog, "uBone"),
               aid: gl.getUniformLocation(prog, "uAid"),
+              seg: gl.getUniformLocation(prog, "uSeg"),
               grow: gl.getUniformLocation(prog, "uGrow"),
               bulk: gl.getUniformLocation(prog, "uBulk") };
 
@@ -466,6 +479,7 @@
         gl.uniform1f(U.on, raw * (0.55 + 0.45 * pulse));
         gl.uniform1f(U.bone, p.g < 0 ? 1 : 0);
         gl.uniform1f(U.aid, raw > 0 && raw < 0.9 ? 1 : 0);   /* подсобная мышца — янтарная */
+        gl.uniform1f(U.seg, p.g === 1 ? 1 : 0);              /* пресс делим на кубики */
         /* работающая мышца в фазе усилия становится толще на пару миллиметров */
         gl.uniform1f(U.grow, p.g >= 0 ? lit[p.g] * pulse * 0.012 : 0);
         /* под кожей мышцы держим в анатомических границах, иначе они
@@ -480,6 +494,7 @@
         gl.uniform1f(U.on, 0);
         gl.uniform1f(U.bone, 0);
         gl.uniform1f(U.aid, 0);
+        gl.uniform1f(U.seg, 0);
         gl.uniform1f(U.grow, 0);
         gl.uniform1f(U.bulk, BULK * 0.55);             /* оболочка почти в своих размерах */
         gl.enable(gl.BLEND);
