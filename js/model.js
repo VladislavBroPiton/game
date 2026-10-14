@@ -7,7 +7,8 @@
   "use strict";
 
   var GKEYS = ["chest", "abs", "obliques", "traps", "delts", "delts_rear", "biceps",
-               "triceps", "forearms", "lats", "lowback", "glutes", "quads", "hams", "calves"];
+               "triceps", "forearms", "lats", "lowback", "glutes", "quads", "hams", "calves",
+               "neck"];
 
   var BASE = "model/";
   var data = null, pending = null;
@@ -175,7 +176,7 @@
     delts: -0.85, delts_rear: Math.PI + 0.60, biceps: -0.90,
     triceps: Math.PI - 0.80, forearms: -0.95, lats: Math.PI - 0.40,
     lowback: Math.PI, glutes: Math.PI + 0.20, quads: 0.22,
-    hams: Math.PI, calves: Math.PI + 0.20
+    hams: Math.PI, calves: Math.PI + 0.20, neck: -0.55
   };
 
   /* ── куда смотреть при показе группы ──
