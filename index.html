@@ -3764,7 +3764,7 @@ function videoItems() {
   for (i = 0; i < VID_LIST.length; i++) {
     v = VID_LIST[i];
     out.push({ id: "f:" + (v.f || i), n: v.n || v.f, c: v.c || "Без раздела", d: v.d || "",
-               src: "video/" + v.f, mine: false });
+               src: "video/" + encodeURIComponent(v.f), mine: false });
   }
   for (i = 0; i < VID_MINE.length; i++) {
     v = VID_MINE[i];
@@ -3825,6 +3825,18 @@ function videoDraw() {
   }
 
   el.innerHTML = head + tabs + '<div class="vgrid">' + cards + "</div>";
+
+  /* ролик из папки может быть не залит на сайт — тогда карточку убираем,
+     чтобы не висел пустой чёрный прямоугольник */
+  var boxes = el.querySelectorAll(".vcard video");
+  for (i = 0; i < boxes.length; i++) {
+    (function (b) {
+      b.addEventListener("error", function () {
+        var card = b.parentNode;
+        if (card && card.parentNode) card.parentNode.removeChild(card);
+      }, { once: true });
+    })(boxes[i]);
+  }
 
   /* свои ролики подставляем из базы. Ссылку на файл делаем один раз и
      переиспользуем: если пересоздавать её при каждой перерисовке,

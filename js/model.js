@@ -30,11 +30,13 @@
     "attribute vec3 aPos;",
     "attribute vec3 aNor;",
     "uniform mat4 uMVP;",
+    "uniform float uGrow;",                   /* на сколько раздувается работающая мышца */
     "varying vec3 vN;",
     "varying vec3 vP;",
     "void main(){",
     "  vec3 p = aPos * 2.0;",                 /* позиции сжаты вдвое при упаковке */
     "  vN = aNor;",
+    "  p += aNor * uGrow;",                   /* сокращение: мышца становится толще */
     "  vP = p;",
     "  gl_Position = uMVP * vec4(p, 1.0);",
     "}"
@@ -47,6 +49,7 @@
     "uniform vec3 uEye;",
     "uniform float uOn;",                     /* 0 — покой, 1 — мышца в работе */
     "uniform float uSkin;",                   /* 1 — рисуем кожу поверх мышц */
+    "uniform float uBone;",                   /* 1 — кость: тише и холоднее мышц */
     "uniform float uTime;",
     "void main(){",
     "  vec3 n = normalize(vN);",
@@ -69,7 +72,7 @@
     "  vec3 env = mix(vec3(0.08, 0.14, 0.30), vec3(0.80, 0.86, 0.96),",
     "                 clamp(reflect(-v, n).y * 0.5 + 0.5, 0.0, 1.0));",
 
-    "  vec3 cold = vec3(0.90, 0.905, 0.930);",
+    "  vec3 cold = mix(vec3(0.90, 0.905, 0.930), vec3(0.62, 0.66, 0.74), uBone);",
     "  vec3 hot  = vec3(1.0, 0.24, 0.20);",
     "  vec3 alb  = mix(cold, hot, uOn * 0.92);",
     "  vec3 c = alb * (0.12 + k1 * 0.94 + k2 * 0.24) + alb * k3 * 0.36;",
@@ -246,7 +249,9 @@
     var A = { pos: gl.getAttribLocation(prog, "aPos"), nor: gl.getAttribLocation(prog, "aNor") };
     var U = { mvp: gl.getUniformLocation(prog, "uMVP"), eye: gl.getUniformLocation(prog, "uEye"),
               on: gl.getUniformLocation(prog, "uOn"), time: gl.getUniformLocation(prog, "uTime"),
-              skin: gl.getUniformLocation(prog, "uSkin") };
+              skin: gl.getUniformLocation(prog, "uSkin"),
+              bone: gl.getUniformLocation(prog, "uBone"),
+              grow: gl.getUniformLocation(prog, "uGrow") };
 
     var parts = [], meta = null, live = true, ready = false;
     var yaw = WIDE.yaw, pitch = WIDE.pitch, dist = WIDE.d, tgt = WIDE.t.slice();
@@ -444,13 +449,19 @@
       gl.uniform1f(U.skin, 0);
       parts.forEach(function (p) {
         if (p.skin) return;
-        gl.uniform1f(U.on, (p.g >= 0 ? lit[p.g] : 0) * (0.55 + 0.45 * pulse));
+        var on1 = (p.g >= 0 ? lit[p.g] : 0) * (0.55 + 0.45 * pulse);
+        gl.uniform1f(U.on, on1);
+        gl.uniform1f(U.bone, p.g < 0 ? 1 : 0);
+        /* работающая мышца в фазе усилия становится толще на пару миллиметров */
+        gl.uniform1f(U.grow, p.g >= 0 ? lit[p.g] * pulse * 0.012 : 0);
         drawPart(p);
       });
 
       if (skinOn) {                                  /* кожа поверх: силуэт тела */
         gl.uniform1f(U.skin, 1);
         gl.uniform1f(U.on, 0);
+        gl.uniform1f(U.bone, 0);
+        gl.uniform1f(U.grow, 0);
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.depthMask(false);

@@ -14,7 +14,8 @@ var HoloMarks = (function () {
      Берём правую сторону тела (в модели это отрицательный x). */
   var PARTS = {
     chest:    [["FMA34690", "верх груди"], ["FMA79979", "середина"], ["FMA45874", "низ груди"]],
-    abs:      [["FMA13377", "прямая мышца живота"]],
+    abs:      [["FMA13377", "верх пресса", 0.82], ["FMA13377", "середина", 0.52],
+               ["FMA13377", "низ пресса", 0.18]],
     obliques: [["FMA13336", "косая"], ["FMA13398", "зубчатая"]],
     traps:    [["FMA33586", "верх"], ["FMA33584", "середина"], ["FMA33581", "низ"]],
     delts:    [["FMA34680", "передняя"], ["FMA34682", "средняя"]],
@@ -31,10 +32,13 @@ var HoloMarks = (function () {
   };
 
   /* Точка выноски: центр мышцы, вынесенный к поверхности тела,
-     иначе линия указывает внутрь объёма и выглядит смазанно. */
-  function headPoint(mk) {
+     иначе линия указывает внутрь объёма и выглядит смазанно.
+     Доля f сдвигает точку по высоте мышцы: так у цельной прямой мышцы
+     живота получаются отдельные подписи для верха и низа. */
+  function headPoint(mk, f) {
     var c = mk.c, lo = mk.lo, hi = mk.hi;
     var out = [c[0], c[1], c[2]];
+    if (f !== undefined && f !== null) out[1] = lo[1] + (hi[1] - lo[1]) * f;
     var dx = hi[0] - lo[0], dz = hi[2] - lo[2];
     if (Math.abs(c[2]) > 0.02 || dz > dx) out[2] = c[2] > 0 ? hi[2] * 0.85 : lo[2] * 0.85;
     else out[0] = c[0] > 0 ? hi[0] * 0.85 : lo[0] * 0.85;
@@ -47,7 +51,7 @@ var HoloMarks = (function () {
     var marks = holo.marks(), out = [], i, mk;
     for (i = 0; i < list.length; i++) {
       mk = marks[list[i][0]];
-      if (mk) out.push([list[i][1], headPoint(mk)]);
+      if (mk) out.push([list[i][1], headPoint(mk, list[i][2])]);
     }
     return out.length ? out : null;
   }
