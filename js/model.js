@@ -11,7 +11,10 @@
                "neck"];
 
   var BASE = "model/";
-  var BULK = 0.0075;   /* прибавка объёма мышц: анатомический препарат слишком худой */
+  var BULK = 0.013;   /* прибавка объёма мышц: анатомический препарат слишком худой */
+  /* Мелкие мышцы от общей прибавки слипаются в комки, поэтому им меньше.
+     Ключ — индекс группы в GKEYS. */
+  var BULK_K = { 1: 0.55, 2: 0.6, 8: 0.75, 15: 0.6 };
   var data = null, pending = null;
 
   /* ── загрузка: один раз на страницу ── */
@@ -265,7 +268,7 @@
     var lit = new Float32Array(16), pulse = 0, beat = 0;
     var t0 = (w.performance ? performance.now() : Date.now());
     var scale = 1, qi = (w.innerWidth < 760 ? 1 : 0), hold = 0, acc = 0, accN = 0, tLast = 0;
-    var skinOn = true;                      /* кожа включена: фигура не пугает скелетом */
+    var skinOn = false;                     /* по умолчанию плотная фигура: оболочка включается кнопкой */
     var flown = 0;                          /* наезд камеры показываем один раз */
     var QUAL = [1.0, 0.85, 0.7, 0.55];
     var mvp = null, eye = [0, 0, 1];
@@ -465,7 +468,10 @@
         gl.uniform1f(U.aid, raw > 0 && raw < 0.9 ? 1 : 0);   /* подсобная мышца — янтарная */
         /* работающая мышца в фазе усилия становится толще на пару миллиметров */
         gl.uniform1f(U.grow, p.g >= 0 ? lit[p.g] * pulse * 0.012 : 0);
-        gl.uniform1f(U.bulk, p.g >= 0 ? BULK : BULK * 0.25);   /* кости поднимаем едва-едва */
+        /* под кожей мышцы держим в анатомических границах, иначе они
+           прорываются сквозь оболочку; без кожи даём полный объём */
+        var bk = BULK * (BULK_K[p.g] || 1) * (skinOn ? 0.3 : 1);
+        gl.uniform1f(U.bulk, p.g >= 0 ? bk : BULK * 0.2);
         drawPart(p);
       });
 
@@ -475,7 +481,7 @@
         gl.uniform1f(U.bone, 0);
         gl.uniform1f(U.aid, 0);
         gl.uniform1f(U.grow, 0);
-        gl.uniform1f(U.bulk, BULK * 2.6);              /* кожа идёт поверх раздавшихся мышц */
+        gl.uniform1f(U.bulk, BULK * 0.55);             /* оболочка почти в своих размерах */
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.depthMask(false);
