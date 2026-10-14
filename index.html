@@ -3709,7 +3709,9 @@ function saveOwnExercise() {
    с телефона: они хранятся в браузере и никуда не уходят.
    ═══════════════════════════════════════════════ */
 
+var VID_SERVICE = "https://forge-video.griha4395.workers.dev";   /* своя раздача роликов */
 var VID_LIST = null;                  /* что лежит в папке приложения */
+var VID_NET = null;                   /* что раздаёт служба */
 var VID_MINE = [];                    /* что добавлено на этом устройстве */
 var VID_CAT = "";                     /* выбранный раздел, пустой — все */
 var VID_URLS = {};                    /* ссылки на локальные файлы: id → адрес */
@@ -3772,15 +3774,26 @@ function renderVideo() {
   var tasks = [vdbAll()];
   tasks.push(VID_LIST ? Promise.resolve(VID_LIST)
     : fetch("video/list.json").then(function (r) { return r.ok ? r.json() : []; })["catch"](function () { return []; }));
+  tasks.push(VID_NET ? Promise.resolve(VID_NET)
+    : fetch(VID_SERVICE + "/list").then(function (r) { return r.ok ? r.json() : []; })["catch"](function () { return []; }));
   Promise.all(tasks).then(function (r) {
     VID_MINE = r[0] || [];
     VID_LIST = isArr(r[1]) ? r[1] : (r[1] && isArr(r[1].items) ? r[1].items : []);
+    VID_NET = isArr(r[2]) ? r[2] : [];
     videoDraw();
   });
 }
 
 function videoItems() {
-  var out = [], i, v;
+  var out = [], i, v, have = {};
+  for (i = 0; i < VID_MINE.length; i++) if (VID_MINE[i].key) have[VID_MINE[i].key] = 1;
+  /* ролики из своей раздачи: если такой уже сохранён на устройстве — не повторяем */
+  for (i = 0; i < (VID_NET || []).length; i++) {
+    v = VID_NET[i];
+    if (have[v.k]) continue;
+    out.push({ id: "n:" + v.k, n: v.n || v.k, c: v.c || "Разное", d: "",
+               src: VID_SERVICE + "/v/" + encodeURIComponent(v.k), net: true, key: v.k, mine: false });
+  }
   for (i = 0; i < VID_LIST.length; i++) {
     v = VID_LIST[i];
     out.push({ id: "f:" + (v.f || i), n: v.n || v.f, c: v.c || "Без раздела", d: v.d || "",
@@ -3832,7 +3845,8 @@ function videoDraw() {
     if (VID_CAT && v.c !== VID_CAT) continue;
     var src = v.mine ? "" : v.src;
     cards += '<div class="vcard" data-id="' + esc(v.id) + '">' +
-      '<video controls preload="metadata" playsinline' + (src ? ' src="' + esc(src) + '"' : "") + "></video>" +
+      '<video controls playsinline preload="' + (v.net ? "none" : "metadata") + '"' +
+        (src ? ' src="' + esc(src) + '"' : "") + "></video>" +
       '<div class="vcard-in">' +
         '<div class="n">' + esc(v.n) + "</div>" +
         '<div class="c">' + esc(v.c) + "</div>" +
@@ -3840,7 +3854,10 @@ function videoDraw() {
         (v.mine ? '<div class="vcard-btns">' +
             '<button class="btn sm" onclick="videoRename(' + jsq(v.id) + ')">Переименовать</button>' +
             '<button class="btn sm ghost" onclick="videoDel(' + jsq(v.id) + ')">Удалить</button>' +
-          "</div>" : "") +
+          "</div>"
+         : (v.net ? '<div class="vcard-btns">' +
+            '<button class="btn sm" onclick="videoKeep(' + jsq(v.key) + ')">Сохранить на устройство</button>' +
+          "</div>" : "")) +
       "</div></div>";
   }
 
@@ -4000,6 +4017,22 @@ function videoSaveAdd() {
   })["catch"](function () {
     toast("Не поместилось: памяти браузера не хватило");
   });
+}
+
+/* Скачать ролик из раздачи и положить в приложение: дальше он открывается
+   без интернета и не тратит трафик при каждом просмотре. */
+function videoKeep(key) {
+  var meta = null, i;
+  for (i = 0; i < (VID_NET || []).length; i++) if (VID_NET[i].k === key) meta = VID_NET[i];
+  if (!meta) return;
+  toast("Качаем ролик…");
+  fetch(VID_SERVICE + "/v/" + encodeURIComponent(key))
+    .then(function (r) { if (!r.ok) throw new Error("не скачалось"); return r.blob(); })
+    .then(function (blob) {
+      return vdbPut({ id: "m:" + key, key: key, n: meta.n, c: meta.c, size: blob.size, blob: blob });
+    })
+    .then(function () { toast("Ролик сохранён в приложении"); renderVideo(); })
+    ["catch"](function () { toast("Не получилось сохранить"); });
 }
 
 function videoRename(id) {
