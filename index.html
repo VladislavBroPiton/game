@@ -3118,6 +3118,10 @@ function showBody(ex) {
         '<canvas id="holoov" class="holoov" aria-hidden="true"></canvas>' +
       "</div>" +
       '<div class="holohint">тяните пальцем, чтобы повернуть · камера наведена на рабочую зону</div>' +
+      '<div class="viewtabs" style="margin-top:8px">' +
+        '<button type="button" class="vtab on" id="vt-skin" onclick="toggleSkin()">Кожа</button>' +
+        '<button type="button" class="vtab" id="vt-muscle" onclick="toggleSkin(1)">Только мышцы</button>' +
+      "</div>" +
     "</div>" +
     '<div class="zoombar">' +
       '<button type="button" class="zbtn" onclick="zoomStep(-1)" aria-label="Уменьшить">&minus;</button>' +
@@ -3136,6 +3140,15 @@ function showBody(ex) {
 }
 
 var HOLO = null, MARKS = null, HOLO_ON = [], HOLO_ON2 = [];
+
+/* Кожа поверх мышц: с ней фигура выглядит как тело, без неё — как атлас */
+function toggleSkin(off) {
+  if (!HOLO || !HOLO.skin) return;
+  HOLO.skin(!off);
+  var a = document.getElementById("vt-skin"), b = document.getElementById("vt-muscle");
+  if (a) a.className = off ? "vtab" : "vtab on";
+  if (b) b.className = off ? "vtab on" : "vtab";
+}
 
 /* Открыть окно сразу на объёмной проекции — минуя атлас */
 function showBody3D(ex) {

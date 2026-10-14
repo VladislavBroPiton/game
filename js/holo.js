@@ -479,6 +479,8 @@ var Holo = (function () {
     }
     function down(e) {
       pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+      tapStart = Date.now();
+      tapPos = { x: e.clientX, y: e.clientY };
       pinch = spread();
       drag = pinch ? null : { x: e.clientX, y: e.clientY };
       auto = 0;
@@ -506,8 +508,19 @@ var Holo = (function () {
       e.preventDefault();
       zoom(1 + (e.deltaY > 0 ? 1 : -1) * 0.09);
     }
-    var tapT = 0;
-    function tap() {                                    /* двойное нажатие — вернуться к обзору */
+    var tapT = 0, tapStart = 0, tapPos = null;
+    function tap(e) {
+      /* двойным нажатием считаем только одиночное короткое касание без сдвига:
+         при щипке два пальца отпускаются подряд, и возврат к обзору срабатывал сам */
+      var multi = false, id;
+      for (id in pts) if (pts.hasOwnProperty(id)) multi = true;
+      var moved = tapPos && e ? Math.abs(e.clientX - tapPos.x) + Math.abs(e.clientY - tapPos.y) : 99;
+      var longPress = Date.now() - tapStart > 300;
+      tapPos = null;
+      if (multi || moved > 8 || longPress) { tapT = 0; return; }
+      real();
+    }
+    function real() {                                    /* двойное нажатие — вернуться к обзору */
       var n = Date.now();
       if (n - tapT < 320) { to = { t: WIDE.t.slice(), d: WIDE.d, yaw: null, pitch: WIDE.pitch }; }
       tapT = n;

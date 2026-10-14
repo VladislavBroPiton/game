@@ -46,6 +46,7 @@
     "varying vec3 vP;",
     "uniform vec3 uEye;",
     "uniform float uOn;",                     /* 0 — покой, 1 — мышца в работе */
+    "uniform float uSkin;",                   /* 1 — рисуем кожу поверх мышц */
     "uniform float uTime;",
     "void main(){",
     "  vec3 n = normalize(vN);",
@@ -80,7 +81,14 @@
     "  float sweepY = mod(uTime * 0.42, 2.6) - 0.3;",
     "  c += vec3(0.40, 0.68, 1.0) * exp(-pow((vP.y - sweepY) * 13.0, 2.0)) * 0.10;",
 
-    "  gl_FragColor = vec4(c / (1.0 + c * 0.14), 1.0);",
+    "  vec3 outc = c / (1.0 + c * 0.14);",
+    "  if (uSkin > 0.5) {",                   /* кожа: стекловидная оболочка поверх мышц */
+    "    float edge = pow(1.0 - max(dot(n, v), 0.0), 2.2);",
+    "    outc = mix(vec3(0.62, 0.72, 0.88), vec3(0.88, 0.94, 1.0), edge);",
+    "    gl_FragColor = vec4(outc, 0.07 + edge * 0.48);",
+    "    return;",
+    "  }",
+    "  gl_FragColor = vec4(outc, 1.0);",
     "}"
   ].join("\n");
 
@@ -237,7 +245,8 @@
 
     var A = { pos: gl.getAttribLocation(prog, "aPos"), nor: gl.getAttribLocation(prog, "aNor") };
     var U = { mvp: gl.getUniformLocation(prog, "uMVP"), eye: gl.getUniformLocation(prog, "uEye"),
-              on: gl.getUniformLocation(prog, "uOn"), time: gl.getUniformLocation(prog, "uTime") };
+              on: gl.getUniformLocation(prog, "uOn"), time: gl.getUniformLocation(prog, "uTime"),
+              skin: gl.getUniformLocation(prog, "uSkin") };
 
     var parts = [], meta = null, live = true, ready = false;
     var yaw = WIDE.yaw, pitch = WIDE.pitch, dist = WIDE.d, tgt = WIDE.t.slice();
@@ -245,6 +254,7 @@
     var lit = new Float32Array(16), pulse = 0, beat = 0;
     var t0 = (w.performance ? performance.now() : Date.now());
     var scale = 1, qi = (w.innerWidth < 760 ? 1 : 0), hold = 0, acc = 0, accN = 0, tLast = 0;
+    var skinOn = true;                      /* кожа включена: фигура не пугает скелетом */
     var QUAL = [1.0, 0.85, 0.7, 0.55];
     var mvp = null, eye = [0, 0, 1];
 
@@ -277,6 +287,8 @@
     }
     function down(e) {
       pts[e.pointerId] = { x: e.clientX, y: e.clientY };
+      tapStart = Date.now();
+      tapPos = { x: e.clientX, y: e.clientY };
       pinch = spread();
       drag = pinch ? null : { x: e.clientX, y: e.clientY };
       auto = 0;
@@ -298,8 +310,19 @@
       drag = null;
     }
     function wheel(e) { e.preventDefault(); zoom(1 + (e.deltaY > 0 ? 1 : -1) * 0.09); }
-    var tapT = 0;
-    function tap() {
+    var tapT = 0, tapStart = 0, tapPos = null;
+    function tap(e) {
+      /* двойным нажатием считаем только одиночное короткое касание без сдвига:
+         при щипке два пальца отпускаются подряд, и возврат к обзору срабатывал сам */
+      var multi = false, id;
+      for (id in pts) if (pts.hasOwnProperty(id)) multi = true;
+      var moved = tapPos && e ? Math.abs(e.clientX - tapPos.x) + Math.abs(e.clientY - tapPos.y) : 99;
+      var longPress = Date.now() - tapStart > 300;
+      tapPos = null;
+      if (multi || moved > 8 || longPress) { tapT = 0; return; }
+      real();
+    }
+    function real() {
       var n = Date.now();
       if (n - tapT < 320) to = { t: WIDE.t.slice(), d: WIDE.d, yaw: null, pitch: WIDE.pitch };
       tapT = n;
@@ -325,7 +348,7 @@
         var ib = gl.createBuffer();
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
         gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(buf, c.io, c.ic), gl.STATIC_DRAW);
-        parts.push({ pb: pb, nb: nb, ib: ib, n: c.ic, g: c.g });
+        parts.push({ pb: pb, nb: nb, ib: ib, n: c.ic, g: c.g, skin: c.n === "skin" });
       });
       ready = true;
       if (onReady) onReady();
@@ -407,9 +430,7 @@
       gl.uniform3fv(U.eye, new Float32Array(eye));
       gl.uniform1f(U.time, t);
 
-      parts.forEach(function (p) {
-        var on1 = p.g >= 0 ? lit[p.g] : 0;
-        gl.uniform1f(U.on, on1 * (0.55 + 0.45 * pulse));
+      function drawPart(p) {
         gl.bindBuffer(gl.ARRAY_BUFFER, p.pb);
         gl.enableVertexAttribArray(A.pos);
         gl.vertexAttribPointer(A.pos, 3, gl.SHORT, true, 0, 0);
@@ -418,7 +439,25 @@
         gl.vertexAttribPointer(A.nor, 3, gl.BYTE, true, 0, 0);
         gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, p.ib);
         gl.drawElements(gl.TRIANGLES, p.n, gl.UNSIGNED_SHORT, 0);
+      }
+
+      gl.uniform1f(U.skin, 0);
+      parts.forEach(function (p) {
+        if (p.skin) return;
+        gl.uniform1f(U.on, (p.g >= 0 ? lit[p.g] : 0) * (0.55 + 0.45 * pulse));
+        drawPart(p);
       });
+
+      if (skinOn) {                                  /* кожа поверх: силуэт тела */
+        gl.uniform1f(U.skin, 1);
+        gl.uniform1f(U.on, 0);
+        gl.enable(gl.BLEND);
+        gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
+        gl.depthMask(false);
+        parts.forEach(function (p) { if (p.skin) drawPart(p); });
+        gl.depthMask(true);
+        gl.disable(gl.BLEND);
+      }
       requestAnimationFrame(frame);
     }
     size();
@@ -449,6 +488,7 @@
         auto = 0;
       },
       marks: function () { return meta ? (meta.marks || {}) : {}; },
+      skin: function (v) { if (v !== undefined) skinOn = !!v; return skinOn; },
       ready: function () { return ready; },
       project: project,
       view: function (y, pt, d, t) {
