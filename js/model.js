@@ -11,6 +11,7 @@
                "neck"];
 
   var BASE = "model/";
+  var BULK = 0.0075;   /* прибавка объёма мышц: анатомический препарат слишком худой */
   var data = null, pending = null;
 
   /* ── загрузка: один раз на страницу ── */
@@ -32,12 +33,13 @@
     "attribute vec3 aNor;",
     "uniform mat4 uMVP;",
     "uniform float uGrow;",                   /* на сколько раздувается работающая мышца */
+    "uniform float uBulk;",                   /* общий объём: модель анатомически худая */
     "varying vec3 vN;",
     "varying vec3 vP;",
     "void main(){",
     "  vec3 p = aPos * 2.0;",                 /* позиции сжаты вдвое при упаковке */
     "  vN = aNor;",
-    "  p += aNor * uGrow;",                   /* сокращение: мышца становится толще */
+    "  p += aNor * (uGrow + uBulk);",         /* сокращение плюс общий объём */
     "  vP = p;",
     "  gl_Position = uMVP * vec4(p, 1.0);",
     "}"
@@ -88,9 +90,9 @@
 
     "  vec3 outc = c / (1.0 + c * 0.14);",
     "  if (uSkin > 0.5) {",                   /* кожа: стекловидная оболочка поверх мышц */
-    "    float edge = pow(1.0 - max(dot(n, v), 0.0), 2.2);",
-    "    outc = mix(vec3(0.62, 0.72, 0.88), vec3(0.88, 0.94, 1.0), edge);",
-    "    gl_FragColor = vec4(outc, 0.07 + edge * 0.48);",
+    "    float edge = pow(1.0 - max(dot(n, v), 0.0), 1.6);",
+    "    outc = mix(vec3(0.58, 0.68, 0.84), vec3(0.86, 0.92, 1.0), edge);",
+    "    gl_FragColor = vec4(outc, 0.17 + edge * 0.30);",
     "    return;",
     "  }",
     "  gl_FragColor = vec4(outc, 1.0);",
@@ -254,7 +256,8 @@
               skin: gl.getUniformLocation(prog, "uSkin"),
               bone: gl.getUniformLocation(prog, "uBone"),
               aid: gl.getUniformLocation(prog, "uAid"),
-              grow: gl.getUniformLocation(prog, "uGrow") };
+              grow: gl.getUniformLocation(prog, "uGrow"),
+              bulk: gl.getUniformLocation(prog, "uBulk") };
 
     var parts = [], meta = null, live = true, ready = false;
     var yaw = WIDE.yaw, pitch = WIDE.pitch, dist = WIDE.d, tgt = WIDE.t.slice();
@@ -454,11 +457,15 @@
       parts.forEach(function (p) {
         if (p.skin) return;
         var raw = p.g >= 0 ? lit[p.g] : 0;
+        /* В режиме с кожей под оболочкой показываем только рабочие мышцы:
+           если светить сквозь неё всей анатомией, выходит каша из пятен. */
+        if (skinOn && raw === 0) return;
         gl.uniform1f(U.on, raw * (0.55 + 0.45 * pulse));
         gl.uniform1f(U.bone, p.g < 0 ? 1 : 0);
         gl.uniform1f(U.aid, raw > 0 && raw < 0.9 ? 1 : 0);   /* подсобная мышца — янтарная */
         /* работающая мышца в фазе усилия становится толще на пару миллиметров */
         gl.uniform1f(U.grow, p.g >= 0 ? lit[p.g] * pulse * 0.012 : 0);
+        gl.uniform1f(U.bulk, p.g >= 0 ? BULK : BULK * 0.25);   /* кости поднимаем едва-едва */
         drawPart(p);
       });
 
@@ -468,10 +475,15 @@
         gl.uniform1f(U.bone, 0);
         gl.uniform1f(U.aid, 0);
         gl.uniform1f(U.grow, 0);
+        gl.uniform1f(U.bulk, BULK * 2.6);              /* кожа идёт поверх раздавшихся мышц */
         gl.enable(gl.BLEND);
         gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
         gl.depthMask(false);
+        /* только ближняя сторона оболочки: обе стороны разом дают рябь */
+        gl.enable(gl.CULL_FACE);
+        gl.cullFace(gl.BACK);
         parts.forEach(function (p) { if (p.skin) drawPart(p); });
+        gl.disable(gl.CULL_FACE);
         gl.depthMask(true);
         gl.disable(gl.BLEND);
       }
