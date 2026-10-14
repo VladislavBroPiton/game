@@ -1061,14 +1061,17 @@
 .prow-s { color: var(--gray); font-size: 11.5px; font-weight: 400; margin-top: 3px; }
 
 /* ═══════════════ Профиль: расписание и настройки ═══════════════ */
-.srow { display: flex; align-items: center; gap: 12px; padding: 8px 0; }
+.srow { display: flex; align-items: center; gap: 8px; padding: 8px 0; flex-wrap: wrap; }
 .srow + .srow { border-top: 1px solid rgba(28,38,52,.6); }
-.srow-d { flex: 1; font-size: 14px; }
+.srow-d { flex: 1 0 100%; font-size: 14px; }
+@media (min-width: 560px) { .srow-d { flex: 1 1 auto; } }
 .srow-s {
   background: var(--card2); border: 1px solid var(--border2); color: var(--white);
   font: inherit; font-size: 13.5px; padding: 8px 11px; border-radius: 3px; min-width: 150px; cursor: pointer;
 }
 .srow-s:focus { outline: none; border-color: var(--fire); }
+.srow-s.second { opacity: .85; }
+.srow-s.second:not([data-set]) { color: var(--gray); }
 /* Кнопки под схемами: атлас крупно и объёмная проекция */
 .viewbtns { display: flex; gap: 8px; flex-wrap: wrap; margin: 12px 0 4px; }
 .viewbtns .btn.holo {
@@ -1154,7 +1157,7 @@
 .remsample-s { color: var(--gray); font-size: 11.5px; margin-top: 7px; line-height: 1.5; }
 
 @media (max-width: 720px) {
-  .srow-s { min-width: 128px; }
+  .srow-s { min-width: 0; flex: 1 1 calc(50% - 4px); }
   .prow-b { font-size: 14px; }
   .sum[style*="repeat(4"] { grid-template-columns: 1fr 1fr !important; }
 }
@@ -1885,12 +1888,50 @@ function normalizeState() {
    ВЫЧИСЛЕНИЯ
    ═══════════════════════════════════════════════ */
 
-/* Какая группа мышц назначена на дату */
-function groupOn(date) {
+/* Какие группы мышц назначены на дату.
+   В расписании день хранит либо один ключ, либо пару — тогда тренировка
+   идёт по двум группам сразу. Старые настройки с одним ключом работают
+   как прежде. */
+function dayGroups(date) {
   var d = new Date(date + "T00:00:00");
-  return S.split[d.getDay()] || DEFAULT_SPLIT[d.getDay()];
+  var v = S.split[d.getDay()];
+  if (!v) v = DEFAULT_SPLIT[d.getDay()];
+  var list = isArr(v) ? v.slice() : [v];
+  var out = [], i;
+  for (i = 0; i < list.length; i++) {
+    if (list[i] && GROUPS[list[i]] && out.indexOf(list[i]) < 0) out.push(list[i]);
+  }
+  return out.length ? out : [DEFAULT_SPLIT[d.getDay()]];
 }
+function groupsToday() { return dayGroups(today()); }
+
+/* Первая группа дня: для мест, где нужна одна (заголовок, иконка, босс) */
+function groupOn(date) { return dayGroups(date)[0]; }
 function groupToday() { return groupOn(today()); }
+
+/* Название дня: «Грудь» или «Грудь + Трицепс» */
+function dayName(date) {
+  var g = dayGroups(date), i, out = [];
+  for (i = 0; i < g.length; i++) out.push(gname(g[i]));
+  return out.join(" + ");
+}
+function dayShort(date) {
+  var g = dayGroups(date), i, out = [];
+  for (i = 0; i < g.length; i++) out.push(gshort(g[i]));
+  return out.join("+");
+}
+
+/* В какой группе лежит упражнение: нужно, когда в дне две группы */
+function groupOfExercise(ex, fallback) {
+  var k, i, lib;
+  for (k in GROUPS) {
+    if (!GROUPS.hasOwnProperty(k)) continue;
+    lib = EXERCISES[k] || [];
+    for (i = 0; i < lib.length; i++) if (lib[i].n === ex) return k;
+    if (S.custom[k] && S.custom[k].indexOf(ex) >= 0) return k;
+  }
+  return fallback || groupToday();
+}
 function gname(key) { return (GROUPS[key] || { name: key }).name; }
 function gshort(key) { var g = GROUPS[key]; return g ? (g.short || g.name) : key; }
 function gicon(key) { return (GROUPS[key] || { ic: "⚔️" }).ic; }
@@ -2232,7 +2273,7 @@ var restTimer = { left: 0, tick: null };
 
 function startWorkout(ex) {
   var t = today();
-  S.cur = { d: t, g: groupToday(), ex: ex, sets: [], t0: Date.now() };
+  S.cur = { d: t, g: groupOfExercise(ex, groupToday()), ex: ex, sets: [], t0: Date.now() };
   save();
   renderAll();
   go("train");
@@ -3279,9 +3320,9 @@ function renderHome() {
   document.getElementById("day-flame").style.display = S.streak.count ? "" : "none";
 
   /* задание дня */
-  var g = groupToday();
+  var gl = groupsToday(), g = gl[0];
   document.getElementById("gday-ic").textContent = gicon(g);
-  document.getElementById("gday-name").textContent = gname(g);
+  document.getElementById("gday-name").textContent = dayName(today());
   document.getElementById("gday-sub").textContent = recToday && !S.cur
     ? "Сделано. Можно добавить ещё упражнение."
     : "Одно упражнение, 20–30 минут.";
@@ -3306,13 +3347,12 @@ function renderWeek() {
   var h = "";
   for (var i = 0; i < 7; i++) {
     var date = shiftDate(monday, i);
-    var g = groupOn(date);
     var rec = S.days[date];
     var cls = date === t ? " is-now" : (rec ? " is-done" : "");
     var mark = rec ? "✓" : (date === t ? "⚔" : "·");
     h += '<div class="wday' + cls + '" title="' + dateLabel(date) + '">' +
            '<div class="d">' + DAYS_SHORT[new Date(date + "T00:00:00").getDay()] + "</div>" +
-           '<div class="g">' + gshort(g) + "</div>" +
+           '<div class="g">' + dayShort(date) + "</div>" +
            '<div class="m">' + mark + "</div>" +
          "</div>";
   }
@@ -3457,17 +3497,18 @@ function bossesHtml() {
 
 function renderTrain() {
   var el = document.getElementById("train-body");
-  var g = S.cur ? S.cur.g : groupToday();
+  var gl = groupsToday();
+  var g = S.cur ? S.cur.g : gl[0];
 
-  document.getElementById("train-title").textContent = S.cur ? S.cur.ex : gname(g);
+  document.getElementById("train-title").textContent = S.cur ? S.cur.ex : dayName(today());
   document.getElementById("train-sub").textContent = S.cur
     ? "Записывайте каждый подход: вес и сколько повторов вышло."
-    : "Задание дня: " + gname(g).toLowerCase() + ". Выберите упражнение или впишите своё.";
+    : "Задание дня: " + dayName(today()).toLowerCase() + ". Выберите упражнение или впишите своё.";
 
   if (!S.cur) {
-    el.innerHTML =
-      '<button class="btn sm ghost backbtn" onclick="go(\'home\')">← На главную</button>' +
-      questHtml(g) + renderPicker(g);
+    var h0 = '<button class="btn sm ghost backbtn" onclick="go(\'home\')">← На главную</button>', i;
+    for (i = 0; i < gl.length; i++) h0 += questHtml(gl[i]) + renderPicker(gl[i]);
+    el.innerHTML = h0;
     mountBossFx();
     return;
   }
@@ -3583,9 +3624,18 @@ function lastShort(last) {
 function jsq(s) { return "'" + String(s).replace(/\\/g, "\\\\").replace(/'/g, "\\'").replace(/"/g, "&quot;") + "'"; }
 
 function askOwnExercise() {
+  var gl = groupsToday(), pick = "", i;
+  if (gl.length > 1) {                              /* в дне две группы — спрашиваем, в какую */
+    pick = '<select class="srow-s" id="own-ex-group" style="width:100%;margin-bottom:10px">';
+    for (i = 0; i < gl.length; i++) pick += '<option value="' + gl[i] + '">' + esc(gname(gl[i])) + "</option>";
+    pick += "</select>";
+  }
   openModal(
     '<div class="sys-label">[ Своё упражнение ]</div><div class="sys-rule"></div>' +
-    "<p>Название останется в списке группы «" + esc(gname(groupToday())) + "».</p>" +
+    (gl.length > 1
+      ? "<p>Выберите, в список какой группы его добавить.</p>"
+      : "<p>Название останется в списке группы «" + esc(gname(gl[0])) + "».</p>") +
+    pick +
     '<input class="big" id="own-ex" maxlength="40" placeholder="Например: Жим гантелей на полу">' +
     '<div class="modal-btns"><button class="btn" onclick="closeModal()">Отмена</button>' +
     '<button class="btn primary" onclick="saveOwnExercise()">Добавить</button></div>'
@@ -3597,7 +3647,8 @@ function saveOwnExercise() {
   var el = document.getElementById("own-ex");
   var v = (el.value || "").trim();
   if (!v) { toast("Впишите название"); return; }
-  var g = groupToday();
+  var sel = document.getElementById("own-ex-group");
+  var g = (sel && sel.value) || groupToday();
   if (!S.custom[g]) S.custom[g] = [];
   if (S.custom[g].indexOf(v) < 0) S.custom[g].push(v);
   save(); closeModal();
@@ -4761,7 +4812,7 @@ function idbGet() {
 /* Всё, что нужно фоновому обработчику, чтобы собрать напоминание сам */
 function remSync() {
   var names = [], i;
-  for (i = 0; i < 7; i++) names.push(gname(S.split[i] || DEFAULT_SPLIT[i]));
+  for (i = 0; i < 7; i++) names.push(splitDay(i).filter(Boolean).map(gname).join(" + "));
   return idbPut({
     times: S.rem.times.slice(),
     done: setsToday() > 0 ? today() : "",
@@ -5286,7 +5337,7 @@ function remFire() {
   if (ok.length) remMark(ok);
 }
 
-function remHead() { return "Кузница: сегодня " + gname(groupToday()).toLowerCase(); }
+function remHead() { return "Кузница: сегодня " + dayName(today()).toLowerCase(); }
 
 function remToast() {
   var g = gname(groupToday());
@@ -5516,16 +5567,23 @@ function renderProfile() {
   }
 
   /* расписание недели: понедельник первым */
-  var rows = "";
+  var rows = '<div style="color:var(--gray);font-size:12.5px;margin-bottom:8px">' +
+             "Второй выбор — дополнительная группа на тот же день. Можно оставить «нет»." +
+             "</div>";
   var order = [1, 2, 3, 4, 5, 6, 0];
   var DAYS_FULL = ["Воскресенье", "Понедельник", "Вторник", "Среда", "Четверг", "Пятница", "Суббота"];
   for (i = 0; i < order.length; i++) {
-    var di = order[i], opts = "";
-    for (var k in GROUPS) if (GROUPS.hasOwnProperty(k)) {
-      opts += '<option value="' + k + '"' + (S.split[di] === k ? " selected" : "") + ">" + GROUPS[k].name + "</option>";
+    var di = order[i], cur = splitDay(di), k;
+    var first = "", second = '<option value="">— нет —</option>';
+    for (k in GROUPS) {
+      if (!GROUPS.hasOwnProperty(k)) continue;
+      first += '<option value="' + k + '"' + (cur[0] === k ? " selected" : "") + ">" + GROUPS[k].name + "</option>";
+      second += '<option value="' + k + '"' + (cur[1] === k ? " selected" : "") + ">" + GROUPS[k].name + "</option>";
     }
     rows += '<div class="srow"><div class="srow-d">' + DAYS_FULL[di] + "</div>" +
-            '<select class="srow-s" onchange="setSplitDay(' + di + ', this.value)">' + opts + "</select></div>";
+            '<select class="srow-s" onchange="setSplitDay(' + di + ', this.value, 0)">' + first + "</select>" +
+            '<select class="srow-s second" onchange="setSplitDay(' + di + ', this.value, 1)">' + second + "</select>" +
+            "</div>";
   }
 
   el.innerHTML =
@@ -5601,10 +5659,21 @@ function renderProfile() {
   renderHeat();
 }
 
-function setSplitDay(di, g) {
-  S.split[di] = g;
+/* Что стоит на дне недели: всегда пара [основная, вторая или пусто] */
+function splitDay(di) {
+  var v = S.split[di] || DEFAULT_SPLIT[di];
+  var l = isArr(v) ? v.slice() : [v];
+  return [l[0] || DEFAULT_SPLIT[di], l[1] || ""];
+}
+
+function setSplitDay(di, g, slot) {
+  var cur = splitDay(di);
+  cur[slot || 0] = g;
+  if (!cur[0]) cur[0] = DEFAULT_SPLIT[di];
+  if (cur[1] === cur[0]) cur[1] = "";              /* одна и та же группа дважды не нужна */
+  S.split[di] = cur[1] ? [cur[0], cur[1]] : cur[0];
   save(); renderAll();
-  toast("Расписание обновлено");
+  toast(cur[1] ? "В этот день две группы" : "Расписание обновлено");
 }
 
 function askGoal() {
