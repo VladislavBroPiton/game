@@ -84,6 +84,41 @@
     "}"
   ].join("\n");
 
+  /* Фон рисуется отдельным проходом: луч на каждый пиксель строится из
+     осей камеры, по нему находим пол и ставим сетку. Дёшево и не мешает модели. */
+  var BVS = [
+    "attribute vec2 aP;",
+    "varying vec2 vUv;",
+    "void main(){ vUv = aP; gl_Position = vec4(aP, 0.0, 1.0); }"
+  ].join("\n");
+
+  var BFS = [
+    "precision highp float;",
+    "varying vec2 vUv;",
+    "uniform vec3 uEye, uRight, uUp, uFwd;",
+    "uniform float uAsp, uTan, uTime;",
+    "void main(){",
+    "  vec3 rd = normalize(uFwd + uRight * (vUv.x * uAsp * uTan) + uUp * (vUv.y * uTan));",
+    "  float vg = length(vUv);",
+    "  vec3 c = mix(vec3(0.07,0.14,0.30), vec3(0.015,0.03,0.09), clamp(vg * 0.75, 0.0, 1.0));",
+    "  float a = smoothstep(1.45, 0.15, vg) * 0.96;",
+    "  if (rd.y < -0.001) {",
+    "    float tp = -uEye.y / rd.y;",
+    "    if (tp > 0.0 && tp < 16.0) {",
+    "      vec3 pf = uEye + rd * tp;",
+    "      vec2 gf = abs(fract(pf.xz * 3.2) - 0.5);",
+    "      float ln = 1.0 - smoothstep(0.0, 0.035, min(gf.x, gf.y));",
+    "      float fade = exp(-length(pf.xz) * 0.85);",
+    "      float pool = exp(-dot(pf.xz, pf.xz) * 4.0) * 0.5;",
+    "      float ring = exp(-pow((length(pf.xz) - mod(uTime * 0.5, 2.2)) * 5.0, 2.0)) * 0.2;",
+    "      c += vec3(0.25,0.55,1.0) * (ln * 0.30 + pool + ring) * fade;",
+    "      a = max(a, (ln * 0.45 + pool + ring) * fade);",
+    "    }",
+    "  }",
+    "  gl_FragColor = vec4(c, clamp(a, 0.0, 1.0));",
+    "}"
+  ].join("\n");
+
   function compile(gl, type, src) {
     var s = gl.createShader(type);
     gl.shaderSource(s, src);
@@ -155,10 +190,10 @@
     var dx = hi[0]-lo[0], dy = hi[1]-lo[1], dz = hi[2]-lo[2];
     var span = Math.sqrt(dx*dx + dy*dy + dz*dz);
     return {
-      t: [c[0] * 0.85, c[1], c[2] * 0.6],
+      t: [c[0], c[1], c[2] * 0.7],                  /* смотрим точно в центр мышцы */
       yaw: (SIDE[key] === undefined ? -0.32 : SIDE[key]),
       pitch: 0.05,
-      d: Math.max(0.5, span * 2.3)
+      d: Math.max(0.55, span * 2.6)
     };
   }
 
@@ -168,7 +203,10 @@
     var gl = null;
     /* сглаживание кромок стоит дорого на телефоне; вместо него берём
        чуть большее разрешение буфера */
-    try { gl = cv.getContext("webgl", { antialias: false, alpha: true, premultipliedAlpha: false }); } catch (e) {}
+    /* сглаживание кромок включаем только на больших экранах: на телефоне
+       оно дороже, чем выигрыш в чёткости */
+    var aa = (w.innerWidth >= 900 && (w.devicePixelRatio || 1) < 2);
+    try { gl = cv.getContext("webgl", { antialias: aa, alpha: true, premultipliedAlpha: false }); } catch (e) {}
     if (!gl) return null;
 
     var vs = compile(gl, gl.VERTEX_SHADER, VS), fs = compile(gl, gl.FRAGMENT_SHADER, FS);
@@ -178,6 +216,24 @@
     if (!gl.getProgramParameter(prog, gl.LINK_STATUS)) return null;
     gl.useProgram(prog);
     gl.enable(gl.DEPTH_TEST);
+
+    /* вторая программа — для фона */
+    var bvs = compile(gl, gl.VERTEX_SHADER, BVS), bfs = compile(gl, gl.FRAGMENT_SHADER, BFS);
+    var bprog = null, bq = null, BA = null, BU = null;
+    if (bvs && bfs) {
+      bprog = gl.createProgram();
+      gl.attachShader(bprog, bvs); gl.attachShader(bprog, bfs); gl.linkProgram(bprog);
+      if (gl.getProgramParameter(bprog, gl.LINK_STATUS)) {
+        bq = gl.createBuffer();
+        gl.bindBuffer(gl.ARRAY_BUFFER, bq);
+        gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1,-1, 3,-1, -1,3]), gl.STATIC_DRAW);
+        BA = gl.getAttribLocation(bprog, "aP");
+        BU = { eye: gl.getUniformLocation(bprog, "uEye"), right: gl.getUniformLocation(bprog, "uRight"),
+               up: gl.getUniformLocation(bprog, "uUp"), fwd: gl.getUniformLocation(bprog, "uFwd"),
+               asp: gl.getUniformLocation(bprog, "uAsp"), tan: gl.getUniformLocation(bprog, "uTan"),
+               time: gl.getUniformLocation(bprog, "uTime") };
+      } else { bprog = null; }
+    }
 
     var A = { pos: gl.getAttribLocation(prog, "aPos"), nor: gl.getAttribLocation(prog, "aNor") };
     var U = { mvp: gl.getUniformLocation(prog, "uMVP"), eye: gl.getUniformLocation(prog, "uEye"),
@@ -326,6 +382,27 @@
       var proj = persp(0.95, cv.width / Math.max(1, cv.height), 0.03, 20);
       mvp = mul(view, proj);
 
+      if (bprog) {                                   /* фон: сначала сцена, потом фигура */
+        var fv = norm3([tgt[0]-eye[0], tgt[1]-eye[1], tgt[2]-eye[2]]);
+        var rv = norm3(cross3(fv, [0, 1, 0]));
+        var uv2 = cross3(rv, fv);
+        gl.useProgram(bprog);
+        gl.disable(gl.DEPTH_TEST);
+        gl.uniform3fv(BU.eye, new Float32Array(eye));
+        gl.uniform3fv(BU.right, new Float32Array(rv));
+        gl.uniform3fv(BU.up, new Float32Array(uv2));
+        gl.uniform3fv(BU.fwd, new Float32Array(fv));
+        gl.uniform1f(BU.asp, cv.width / Math.max(1, cv.height));
+        gl.uniform1f(BU.tan, Math.tan(0.475));
+        gl.uniform1f(BU.time, t);
+        gl.bindBuffer(gl.ARRAY_BUFFER, bq);
+        gl.enableVertexAttribArray(BA);
+        gl.vertexAttribPointer(BA, 2, gl.FLOAT, false, 0, 0);
+        gl.drawArrays(gl.TRIANGLES, 0, 3);
+        gl.enable(gl.DEPTH_TEST);
+        gl.useProgram(prog);
+      }
+
       gl.uniformMatrix4fv(U.mvp, false, mvp);
       gl.uniform3fv(U.eye, new Float32Array(eye));
       gl.uniform1f(U.time, t);
@@ -364,6 +441,9 @@
       reset: function () { to = { t: WIDE.t.slice(), d: WIDE.d, yaw: WIDE.yaw, pitch: WIDE.pitch }; auto = 1; },
       focus: function (key) {
         var f = meta && key ? focusOf(meta, key) : null;
+        try {                                        /* след для проверок: куда встала камера */
+          localStorage.setItem("__model", JSON.stringify({ key: key, есть: !!f, f: f }));
+        } catch (e) {}
         to = f ? { t: f.t, d: f.d, yaw: f.yaw, pitch: f.pitch }
                : { t: WIDE.t.slice(), d: WIDE.d, yaw: WIDE.yaw, pitch: WIDE.pitch };
         auto = 0;
