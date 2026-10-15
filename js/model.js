@@ -36,10 +36,22 @@
       fetch(BASE + "body.json").then(function (r) { return r.json(); }),
       fetch(BASE + "body.bin").then(function (r) { return r.arrayBuffer(); })
     ]).then(function (res) {
-      data = { meta: res[0], buf: res[1] };
+      data = { meta: res[0], buf: res[1], skin: null };
       return data;
     });
     return pending;
+  }
+
+  /* Кожа лежит отдельным файлом и весит больше тела, поэтому грузится
+     только когда её включили. */
+  var skinPending = null;
+  function loadSkin() {
+    if (data && data.skin) return Promise.resolve(data.skin);
+    if (skinPending) return skinPending;
+    skinPending = fetch(BASE + "body-skin.bin")
+      .then(function (r) { return r.arrayBuffer(); })
+      .then(function (buf) { if (data) data.skin = buf; return buf; });
+    return skinPending;
   }
 
   var VS = [
@@ -71,6 +83,9 @@
     "uniform float uSeg;",                    /* 1 — рисуем перемычки пресса */
     "uniform vec3 uFib;",                     /* направление волокон мышцы */
     "uniform float uFibAmt;",                 /* насколько заметна штриховка */
+    "uniform vec3 uFocus;",                   /* центр рабочей мышцы: над ней кожа прозрачна */
+    "uniform float uFocusR;",                 /* её размер */
+    "uniform vec2 uSpan;",                    /* низ и верх мышцы: по ним рисуем сухожилия */
     "uniform float uTime;",
     "void main(){",
     "  vec3 n = normalize(vN);",
@@ -115,6 +130,14 @@
     "    c *= 1.0 + (f1 * 0.55 + f2 * 0.45) * uFibAmt;",
     "  }",
 
+    /* Сухожилия: у концов мышца переходит в светлую плотную связку.
+       В модели этого перехода нет, поэтому рисуем его по длине мышцы. */
+    "  if (uSpan.y > uSpan.x) {",
+    "    float t = clamp((vP.y - uSpan.x) / (uSpan.y - uSpan.x), 0.0, 1.0);",
+    "    float tend = smoothstep(0.16, 0.0, t) + smoothstep(0.84, 1.0, t);",
+    "    c = mix(c, vec3(0.93, 0.92, 0.88) * (0.55 + 0.45 * length(c)), tend * 0.55);",
+    "  }",
+
     /* Перемычки пресса. В анатомической модели прямая мышца живота — две
        гладкие ленты без сухожильных перемычек, поэтому кубики рисуем сами. */
     "  if (uSeg > 0.5) {",
@@ -127,10 +150,22 @@
     "    c += vec3(1.0, 0.72, 0.62) * (1.0 - groove) * 0.05;",
     "  }",
     "  vec3 outc = c / (1.0 + c * 0.14);",
-    "  if (uSkin > 0.5) {",                   /* кожа: стекловидная оболочка поверх мышц */
-    "    float edge = pow(1.0 - max(dot(n, v), 0.0), 1.6);",
-    "    outc = mix(vec3(0.58, 0.68, 0.84), vec3(0.86, 0.92, 1.0), edge);",
-    "    gl_FragColor = vec4(outc, 0.17 + edge * 0.30);",
+    "  if (uSkin > 0.5) {",                   /* кожа: матовая оболочка тела */
+    "    float edge = pow(1.0 - max(dot(n, v), 0.0), 1.7);",
+    "    float lam = max(dot(n, normalize(v + cr * 0.72 + cu * 0.92)), 0.0);",
+    "    float sp2 = pow(max(dot(n, normalize(normalize(v + cr * 0.72 + cu * 0.92) + v)), 0.0), 42.0);",
+    "    vec3 skin = vec3(0.86, 0.74, 0.68);",
+    "    vec3 sc = skin * (0.20 + lam * 0.80) + vec3(1.0) * sp2 * 0.28;",
+    "    sc += vec3(0.46, 0.62, 0.90) * edge * 0.40;",      /* холодный ободок по контуру */
+    "    sc = sc / (1.0 + sc * 0.22);",
+    /* над рабочей мышцей кожа расступается, чтобы её было видно */
+    "    float win = 0.0;",
+    "    if (uFocusR > 0.0) {",
+    "      float d = length(vP - uFocus);",
+    "      win = smoothstep(uFocusR * 1.35, uFocusR * 0.45, d);",
+    "    }",
+    "    float a = mix(0.80, 0.07, win) + edge * 0.18;",
+    "    gl_FragColor = vec4(sc, clamp(a, 0.0, 0.95));",
     "    return;",
     "  }",
     "  gl_FragColor = vec4(outc, 1.0);",
@@ -297,6 +332,9 @@
               seg: gl.getUniformLocation(prog, "uSeg"),
               fib: gl.getUniformLocation(prog, "uFib"),
               fibAmt: gl.getUniformLocation(prog, "uFibAmt"),
+              focus: gl.getUniformLocation(prog, "uFocus"),
+              focusR: gl.getUniformLocation(prog, "uFocusR"),
+              span: gl.getUniformLocation(prog, "uSpan"),
               grow: gl.getUniformLocation(prog, "uGrow"),
               bulk: gl.getUniformLocation(prog, "uBulk") };
 
@@ -304,6 +342,7 @@
     var yaw = WIDE.yaw, pitch = WIDE.pitch, dist = WIDE.d, tgt = WIDE.t.slice();
     var to = null, auto = 1, drag = null, pts = {}, pinch = 0;
     var lit = new Float32Array(16), pulse = 0, beat = 0;
+    var main = null, focus = null, spans = {};
     var t0 = (w.performance ? performance.now() : Date.now());
     var scale = 1, qi = (w.innerWidth < 760 ? 1 : 0), hold = 0, acc = 0, accN = 0, tLast = 0;
     var skinOn = false;                     /* по умолчанию плотная фигура: оболочка включается кнопкой */
@@ -319,6 +358,38 @@
         if (a.indexOf(GKEYS[i]) >= 0) lit[i] = 1;
         else if (b.indexOf(GKEYS[i]) >= 0) lit[i] = 0.45;   /* подсобная мышца видна, но тише */
       }
+      main = a.length ? a[0] : null;
+      focus = null;
+      spans = {};
+      if (!meta) return;
+      calcFocus();
+    }
+
+    /* Габариты групп: по ним кожа открывает окно и рисуются сухожилия */
+    function calcFocus() {
+      var marks = meta.marks || {}, fid, m, lo = {}, hi = {};
+      for (fid in marks) {
+        if (!marks.hasOwnProperty(fid)) continue;
+        m = marks[fid];
+        var gi = GKEYS.indexOf(m.g);
+        if (gi < 0) continue;
+        if (!lo[gi]) { lo[gi] = m.lo.slice(); hi[gi] = m.hi.slice(); }
+        for (var t = 0; t < 3; t++) {
+          lo[gi][t] = Math.min(lo[gi][t], m.lo[t]);
+          hi[gi][t] = Math.max(hi[gi][t], m.hi[t]);
+        }
+      }
+      var k;
+      for (k in lo) if (lo.hasOwnProperty(k)) spans[k] = [lo[k][1], hi[k][1]];
+
+      var mi = main ? GKEYS.indexOf(main) : -1;
+      if (mi < 0 || !lo[mi]) return;
+      /* окно ставим над той половиной тела, что ближе к камере по x */
+      var c = [(lo[mi][0] + hi[mi][0]) / 2, (lo[mi][1] + hi[mi][1]) / 2, (lo[mi][2] + hi[mi][2]) / 2];
+      var side = Math.max(Math.abs(lo[mi][0]), Math.abs(hi[mi][0]));
+      if (side > 0.09) c[0] = -side * 0.6;
+      var r = Math.max(hi[mi][0] - lo[mi][0], hi[mi][1] - lo[mi][1], hi[mi][2] - lo[mi][2]) * 0.62;
+      focus = { c: c, r: Math.max(0.10, r) };
     }
     setGroups(on, on2);
 
@@ -387,23 +458,38 @@
     cv.addEventListener("pointerup", tap);
     cv.addEventListener("wheel", wheel, { passive: false });
 
+    function addPart(c, buf) {
+      var pb = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, pb);
+      gl.bufferData(gl.ARRAY_BUFFER, new Int16Array(buf, c.vo, c.vc * 3), gl.STATIC_DRAW);
+      var nb = gl.createBuffer();
+      gl.bindBuffer(gl.ARRAY_BUFFER, nb);
+      gl.bufferData(gl.ARRAY_BUFFER, new Int8Array(buf, c.no, c.vc * 3), gl.STATIC_DRAW);
+      var ib = gl.createBuffer();
+      gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
+      gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(buf, c.io, c.ic), gl.STATIC_DRAW);
+      parts.push({ pb: pb, nb: nb, ib: ib, n: c.ic, g: c.g, skin: c.n === "skin" });
+    }
+
+    var skinReady = false, skinLoading = false;
+    function needSkin(cb) {
+      if (skinReady || skinLoading || !meta || !meta.skin) { if (cb) cb(skinReady); return; }
+      skinLoading = true;
+      loadSkin().then(function (buf) {
+        meta.skin.forEach(function (c) { addPart(c, buf); });
+        skinReady = true;
+        skinLoading = false;
+        if (cb) cb(true);
+      })["catch"](function () { skinLoading = false; if (cb) cb(false); });
+    }
+
     load().then(function (d) {
       if (!live) return;
       meta = d.meta;
       var buf = d.buf;
-      meta.chunks.forEach(function (c) {
-        var pb = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, pb);
-        gl.bufferData(gl.ARRAY_BUFFER, new Int16Array(buf, c.vo, c.vc * 3), gl.STATIC_DRAW);
-        var nb = gl.createBuffer();
-        gl.bindBuffer(gl.ARRAY_BUFFER, nb);
-        gl.bufferData(gl.ARRAY_BUFFER, new Int8Array(buf, c.no, c.vc * 3), gl.STATIC_DRAW);
-        var ib = gl.createBuffer();
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, ib);
-        gl.bufferData(gl.ELEMENT_ARRAY_BUFFER, new Uint16Array(buf, c.io, c.ic), gl.STATIC_DRAW);
-        parts.push({ pb: pb, nb: nb, ib: ib, n: c.ic, g: c.g, skin: c.n === "skin" });
-      });
+      meta.chunks.forEach(function (c) { addPart(c, buf); });
       ready = true;
+      calcFocus();
       if (onReady) onReady();
     })["catch"](function () { if (onReady) onReady(new Error("модель не загрузилась")); });
 
@@ -482,6 +568,8 @@
       gl.uniformMatrix4fv(U.mvp, false, mvp);
       gl.uniform3fv(U.eye, new Float32Array(eye));
       gl.uniform1f(U.time, t);
+      gl.uniform3f(U.focus, focus ? focus.c[0] : 0, focus ? focus.c[1] : 0, focus ? focus.c[2] : 0);
+      gl.uniform1f(U.focusR, focus ? focus.r : 0);
 
       function drawPart(p) {
         gl.bindBuffer(gl.ARRAY_BUFFER, p.pb);
@@ -508,6 +596,8 @@
         var fd = FIB[p.g];
         gl.uniform3f(U.fib, fd ? fd[0] : 0, fd ? fd[1] : 1, fd ? fd[2] : 0);
         gl.uniform1f(U.fibAmt, p.g >= 0 ? 0.085 : 0);        /* на костях волокон нет */
+        var sp = spans[p.g];
+        gl.uniform2f(U.span, sp ? sp[0] : 0, sp ? sp[1] : 0);
         /* работающая мышца в фазе усилия становится толще на пару миллиметров */
         gl.uniform1f(U.grow, p.g >= 0 ? lit[p.g] * pulse * 0.012 : 0);
         /* под кожей мышцы держим в анатомических границах, иначе они
@@ -524,6 +614,7 @@
         gl.uniform1f(U.aid, 0);
         gl.uniform1f(U.seg, 0);
         gl.uniform1f(U.fibAmt, 0);
+        gl.uniform2f(U.span, 0, 0);
         gl.uniform1f(U.grow, 0);
         gl.uniform1f(U.bulk, BULK * 0.55);             /* оболочка почти в своих размерах */
         gl.enable(gl.BLEND);
@@ -574,7 +665,13 @@
         auto = 0;
       },
       marks: function () { return meta ? (meta.marks || {}) : {}; },
-      skin: function (v) { if (v !== undefined) skinOn = !!v; return skinOn; },
+      skin: function (v, cb) {
+        if (v === undefined) return skinOn;
+        skinOn = !!v;
+        if (skinOn) needSkin(cb); else if (cb) cb(true);
+        return skinOn;
+      },
+      skinLoaded: function () { return skinReady; },
       ready: function () { return ready; },
       project: project,
       view: function (y, pt, d, t) {

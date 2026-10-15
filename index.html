@@ -3252,10 +3252,14 @@ var HOLO = null, MARKS = null, HOLO_ON = [], HOLO_ON2 = [];
 /* Кожа поверх мышц: с ней фигура выглядит как тело, без неё — как атлас */
 function toggleSkin(off) {
   if (!HOLO || !HOLO.skin) return;
-  HOLO.skin(!off);
   var a = document.getElementById("vt-skin"), b = document.getElementById("vt-muscle");
   if (a) a.className = off ? "vtab" : "vtab on";
   if (b) b.className = off ? "vtab on" : "vtab";
+  /* оболочка тела лежит отдельным файлом и качается при первом включении */
+  if (!off && HOLO.skinLoaded && !HOLO.skinLoaded()) toast("Загружаем оболочку тела…");
+  HOLO.skin(!off, function (ok) {
+    if (!off && !ok) toast("Оболочку загрузить не удалось");
+  });
 }
 
 /* Открыть окно сразу на объёмной проекции — минуя атлас */
