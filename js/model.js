@@ -135,6 +135,7 @@
     "  vec3 cr = normalize(cross(vec3(0.0, 1.0, 0.0), v));",
     "  vec3 cu = cross(v, cr);",
     "  vec3 l1 = normalize(v + cr * 0.72 + cu * 0.92);",
+    "  vec3 lkey = l1;",
     "  vec3 l2 = normalize(v - cr * 1.05 + cu * 0.12);",
     "  vec3 l3 = normalize(-v + cu * 0.55);",
     "  float k1 = max(dot(n, l1), 0.0);",
@@ -159,12 +160,26 @@
     "  c += env * (0.10 + fr * 0.45);",
     "  c += vec3(1.0) * sp * 0.85;",
     "  c += hot * fr * uOn * 0.5;",
+
+    /* Просвет: с обратной стороны мышца светится красным, как рука на фонарь.
+       Без этого ткань выглядит крашеным гипсом. */
+    "  float back = max(dot(-n, lkey), 0.0);",
+    "  c += vec3(0.62, 0.14, 0.10) * pow(back, 2.4) * (0.14 + uOn * 0.22);",
+
+    /* Блик вдоль волокон: у мышцы он вытянут поперёк пучков, а не круглый */
+    "  if (uFibAmt > 0.0) {",
+    "    vec3 at = normalize(uFib - n * dot(n, uFib) + vec3(0.0001));",
+    "    vec3 hv = normalize(lkey + v);",
+    "    float dt = dot(at, hv);",
+    "    float aniso = pow(sqrt(max(0.0, 1.0 - dt * dt)), 70.0);",
+    "    c += vec3(1.0, 0.96, 0.93) * aniso * 0.10;",
+    "  }",
     "  c *= 1.0 - crease * 0.30;",
 
     /* Работающая мышца блестит: в фазе усилия добавляется влажный блик */
     "  if (uOn > 0.01) {",
     "    float wet = pow(max(dot(n, normalize(normalize(v + cr * 0.72 + cu * 0.92) + v)), 0.0), 64.0);",
-    "    c += vec3(1.0, 0.94, 0.90) * wet * uOn * 0.55;",
+    "    c += vec3(1.0, 0.94, 0.90) * wet * uOn * 0.30;",
     "  }",
 
     /* бегущая полоса осмотра */
@@ -224,6 +239,9 @@
     "    float folds = clamp(where, 0.0, 1.0) * smoothstep(0.45, 0.95, fold);",
     "    vec3 sc = skin * (0.20 + lam * 0.80) * (0.94 + pore * 0.12) + vec3(1.0) * sp2 * 0.28;",
     "    sc *= 1.0 - folds * 0.22;",
+    /* кожа тонкая — по краям силуэта просвечивает тёплым */
+    "    float sback = max(dot(-n, normalize(v + cr * 0.72 + cu * 0.92)), 0.0);",
+    "    sc += vec3(0.52, 0.16, 0.12) * pow(sback, 1.8) * 0.30;",
     "    sc += vec3(0.16, 0.05, 0.03) * pow(1.0 - max(dot(n, v), 0.0), 3.4);",
     "    sc += vec3(0.46, 0.62, 0.90) * edge * 0.40;",      /* холодный ободок по контуру */
     "    sc = sc / (1.0 + sc * 0.22);",
