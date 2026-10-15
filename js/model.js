@@ -86,6 +86,7 @@
   ].join("\n");
 
   var FS = [
+    "#extension GL_OES_standard_derivatives : enable",
     "precision highp float;",
     "varying vec3 vN;",
     "varying vec3 vP;",
@@ -148,6 +149,12 @@
     "  c += vec3(1.0) * sp * 0.85;",
     "  c += hot * fr * uOn * 0.5;",
 
+    /* Работающая мышца блестит: в фазе усилия добавляется влажный блик */
+    "  if (uOn > 0.01) {",
+    "    float wet = pow(max(dot(n, normalize(normalize(v + cr * 0.72 + cu * 0.92) + v)), 0.0), 64.0);",
+    "    c += vec3(1.0, 0.94, 0.90) * wet * uOn * 0.55;",
+    "  }",
+
     /* бегущая полоса осмотра */
     "  float sweepY = mod(uTime * 0.42, 2.6) - 0.3;",
     "  c += vec3(0.40, 0.68, 1.0) * exp(-pow((vP.y - sweepY) * 13.0, 2.0)) * 0.10;",
@@ -197,7 +204,14 @@
     "    float sp2 = pow(max(dot(n, normalize(normalize(v + cr * 0.72 + cu * 0.92) + v)), 0.0), 42.0);",
     "    vec3 skin = vec3(0.86, 0.74, 0.68);",
     "    float pore = grain(vP, 620.0) * 0.5 + grain(vP, 230.0) * 0.5;",
+    /* складки собираются там, где тело сгибается: локоть, колено, подмышка */
+    "    float fold = sin(vP.y * 150.0 + sin(vP.x * 40.0) * 1.6) * 0.5 + 0.5;",
+    "    float where = smoothstep(0.10, 0.0, abs(vP.y - 1.02))",      /* локоть */
+    "                + smoothstep(0.09, 0.0, abs(vP.y - 0.40))",      /* колено */
+    "                + smoothstep(0.09, 0.0, abs(vP.y - 1.27));",     /* подмышка */
+    "    float folds = clamp(where, 0.0, 1.0) * smoothstep(0.45, 0.95, fold);",
     "    vec3 sc = skin * (0.20 + lam * 0.80) * (0.94 + pore * 0.12) + vec3(1.0) * sp2 * 0.28;",
+    "    sc *= 1.0 - folds * 0.22;",
     "    sc += vec3(0.16, 0.05, 0.03) * pow(1.0 - max(dot(n, v), 0.0), 3.4);",
     "    sc += vec3(0.46, 0.62, 0.90) * edge * 0.40;",      /* холодный ободок по контуру */
     "    sc = sc / (1.0 + sc * 0.22);",
@@ -340,7 +354,13 @@
     try { gl = cv.getContext("webgl", { antialias: aa, alpha: true, premultipliedAlpha: false }); } catch (e) {}
     if (!gl) return null;
 
-    var vs = compile(gl, gl.VERTEX_SHADER, VS), fs = compile(gl, gl.FRAGMENT_SHADER, FS);
+    /* производные нужны для затенения борозд; где их нет — считаем кривизну нулевой */
+    var src = FS;
+    if (!gl.getExtension("OES_standard_derivatives")) {
+      src = src.replace("#extension GL_OES_standard_derivatives : enable", "")
+               .replace(/length\(fwidth\(n\)\) \* 14\.0/g, "0.0");
+    }
+    var vs = compile(gl, gl.VERTEX_SHADER, VS), fs = compile(gl, gl.FRAGMENT_SHADER, src);
     if (!vs || !fs) return null;
     var prog = gl.createProgram();
     gl.attachShader(prog, vs); gl.attachShader(prog, fs); gl.linkProgram(prog);
