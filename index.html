@@ -3750,7 +3750,7 @@ function saveOwnExercise() {
   startWorkout(v);
 }
 
-var APP_VER = "v49";
+var APP_VER = "v51";
 
 /* Принудительное обновление: сносим офлайн-копию и перезагружаемся.
    Нужно, когда телефон держит старую сборку и правок не видно. */
@@ -6412,23 +6412,100 @@ function toggleBg() {
 
 /* ═══════════ Перенос прогресса между устройствами ═══════════ */
 
-function encodeState() {
-  try { return btoa(unescape(encodeURIComponent(JSON.stringify(S)))); }
-  catch (e) { return ""; }
+/* Код жмём gzip и помечаем меткой. Коды без метки — старые, читаются
+   по-прежнему, поэтому ранее сохранённый код не пропадает. */
+var SYNC_TAG = "KZ1:";
+
+/* В код уезжает всё, что нельзя восстановить: дневник, рекорды, настройки.
+   Лента событий и память о показанных напоминаниях остаются на своём
+   устройстве — normalizeState достроит их пустыми после загрузки. */
+function exportPayload() {
+  var o = {}, k;
+  for (k in S) if (S.hasOwnProperty(k)) o[k] = S[k];
+  o.log = [];
+  if (o.rem) {
+    var r = {}, k2;
+    for (k2 in o.rem) if (o.rem.hasOwnProperty(k2)) r[k2] = o.rem[k2];
+    r.seen = []; r.shown = {};
+    o.rem = r;
+  }
+  return o;
 }
+
+function utf8Bytes(str) {
+  var bin = unescape(encodeURIComponent(str)), a = new Uint8Array(bin.length), i;
+  for (i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return a;
+}
+function bytesUtf8(bytes) {
+  var s = "", i, CH = 8192;
+  for (i = 0; i < bytes.length; i += CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  return decodeURIComponent(escape(s));
+}
+function bytesToB64(bytes) {
+  var s = "", i, CH = 8192;
+  for (i = 0; i < bytes.length; i += CH) s += String.fromCharCode.apply(null, bytes.subarray(i, i + CH));
+  return btoa(s);
+}
+function b64ToBytes(b64) {
+  var bin = atob(b64), a = new Uint8Array(bin.length), i;
+  for (i = 0; i < bin.length; i++) a[i] = bin.charCodeAt(i);
+  return a;
+}
+/* Сжатие есть не везде: на старом браузере просто отдадим код без него */
+function gzipOk() {
+  return typeof CompressionStream === "function" &&
+         typeof DecompressionStream === "function" &&
+         typeof Response === "function" && typeof Uint8Array === "function";
+}
+function plainCode(json) {
+  try { return btoa(unescape(encodeURIComponent(json))); } catch (e) { return ""; }
+}
+
+/* Обе функции отдают обещание: сжатие в браузере асинхронное */
+function encodeState() {
+  var json = JSON.stringify(exportPayload());
+  if (!gzipOk()) return Promise.resolve(plainCode(json));
+  try {
+    var cs = new CompressionStream("gzip");
+    var w = cs.writable.getWriter();
+    w.write(utf8Bytes(json)); w.close();
+    return new Response(cs.readable).arrayBuffer().then(function (buf) {
+      return SYNC_TAG + bytesToB64(new Uint8Array(buf));
+    })["catch"](function () { return plainCode(json); });
+  } catch (e) { return Promise.resolve(plainCode(json)); }
+}
+
 function decodeState(str) {
-  try { return JSON.parse(decodeURIComponent(escape(atob(str.trim())))); }
-  catch (e) { return null; }
+  str = (str || "").trim();
+  if (str.indexOf(SYNC_TAG) !== 0) {                 /* старый код без сжатия */
+    try { return Promise.resolve(JSON.parse(decodeURIComponent(escape(atob(str))))); }
+    catch (e) { return Promise.resolve(null); }
+  }
+  if (!gzipOk()) return Promise.resolve(null);
+  try {
+    var ds = new DecompressionStream("gzip");
+    var w = ds.writable.getWriter();
+    w.write(b64ToBytes(str.slice(SYNC_TAG.length))); w.close();
+    return new Response(ds.readable).arrayBuffer().then(function (buf) {
+      return JSON.parse(bytesUtf8(new Uint8Array(buf)));
+    })["catch"](function () { return null; });
+  } catch (e) { return Promise.resolve(null); }
 }
 
 function showExport() {
   openModal(
     "<h3>Код синхронизации</h3>" +
-    "<p>Скопируйте всё содержимое, откройте игру на другом устройстве и вставьте через «Загрузить код».</p>" +
-    '<textarea id="ex" readonly>' + esc(encodeState()) + "</textarea>" +
+    "<p>Скопируйте всё содержимое, откройте игру на другом устройстве и вставьте через «Загрузить код». " +
+    "Переносятся тренировки, рекорды, достижения и настройки — лента событий остаётся на этом устройстве.</p>" +
+    '<textarea id="ex" readonly>Готовим код…</textarea>' +
     '<div class="modal-btns"><button class="btn" onclick="closeModal()">Закрыть</button>' +
     '<button class="btn primary" onclick="copyCode()">Скопировать</button></div>'
   );
+  encodeState().then(function (code) {
+    var t = document.getElementById("ex");
+    if (t) t.value = code || "Не удалось собрать код";
+  });
 }
 
 function copyCode() {
@@ -6449,14 +6526,15 @@ function showImport() {
 
 function doImport() {
   var v = document.getElementById("im").value;
-  var p = decodeState(v);
-  if (!p || !p.days) { toast("Код не распознан"); return; }
-  S = p;
-  normalizeState();
-  LOAD_BROKEN = false;            /* импорт — законный способ починить сломанное сохранение */
-  applyBg();
-  save(); closeModal(); renderAll();
-  toast("Прогресс загружен");
+  decodeState(v).then(function (p) {
+    if (!p || !p.days) { toast("Код не распознан"); return; }
+    S = p;
+    normalizeState();
+    LOAD_BROKEN = false;          /* импорт — законный способ починить сломанное сохранение */
+    applyBg();
+    save(); closeModal(); renderAll();
+    toast("Прогресс загружен");
+  });
 }
 
 function askRestore() {
